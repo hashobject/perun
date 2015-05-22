@@ -3,9 +3,7 @@
   :resource-paths #{"resources"}
   :dependencies '[[org.clojure/clojure "1.6.0"]
                  [adzerk/bootlaces "0.1.9" :scope "test"]
-                 [hiccup "1.0.5"]
                  [clj-time "0.9.0"]
-                 [clj-rss "0.1.9"]
                  [jeluard/boot-notify "0.1.2" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])

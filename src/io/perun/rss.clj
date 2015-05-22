@@ -21,6 +21,7 @@
      :author (get post "author_email")}))
 
 
+; TODO: use configs here
 (defn generate-rss-str [posts]
   (let [items (posts-rss-definitions posts)
         rss-str (apply rss-gen/channel-xml
