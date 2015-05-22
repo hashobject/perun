@@ -1,6 +1,9 @@
 (ns io.perun.utils
   (:require [clojure.java.io  :as io]
-            [boot.core        :as boot]))
+            [boot.core        :as boot]
+            [clj-time.core    :as clj-time]
+            [clj-time.coerce  :as clj-time-coerce]
+            [clj-time.format  :as clj-time-format]))
 
 
 (defn read-file [file]
@@ -13,8 +16,21 @@
 
 
 
-(defn read-posts [filename]
+(defn read-posts [fileset filename]
   (let [edn-file (->> fileset boot/input-files (boot/by-name [filename]) first)
         file-content (read-file edn-file)
         posts (read-string file-content)]
     posts))
+
+
+;; Dates utils
+
+(defn reformat-datestr [date-str initial-format final-format]
+  (let [date (clj-time-format/parse (clj-time-format/formatter initial-format) date-str)]
+        (clj-time-format/unparse (clj-time-format/formatter final-format) date)))
+
+
+
+(defn str-to-date [string]
+  (clj-time-coerce/to-date (clj-time-format/parse string)))
+

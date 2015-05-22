@@ -37,7 +37,7 @@
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [posts (util/read-posts "posts.edn")
+        (let [posts (util/read-posts fileset "posts.edn")
               sitemap-file (io/file tmp "public/sitemap.xml")
               sitemap-xml (create-sitemap posts)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]

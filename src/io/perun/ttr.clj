@@ -16,7 +16,7 @@
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [posts (util/read-posts "posts.edn")
+        (let [posts (util/read-posts fileset "posts.edn")
               updated-posts
                 (map
                   (fn [post]
