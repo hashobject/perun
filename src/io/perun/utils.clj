@@ -32,4 +32,3 @@
 
 (defn str-to-date [string]
   (clj-time-coerce/to-date (clj-time-format/parse string)))
-

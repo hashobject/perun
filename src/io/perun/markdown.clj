@@ -1,7 +1,7 @@
 (set-env!
   :dependencies '[[org.clojure/clojure "1.6.0"]
-                 [markdown-clj "0.9.40"]
-                 [endophile "0.1.2"]])
+                  [markdown-clj "0.9.40"]
+                  [endophile "0.1.2"]])
 
 (ns io.perun.markdown
   {:boot/export-tasks true}

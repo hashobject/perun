@@ -1,14 +1,14 @@
 (set-env!
   :dependencies '[[org.clojure/clojure "1.6.0"]
-                 [clj-rss "0.1.9"]])
+                  [clj-rss "0.1.9"]])
 
 (ns io.perun.rss
   {:boot/export-tasks true}
-  (:require [boot.core         :as boot]
-            [boot.util         :as u]
-            [io.perun.utils    :as util]
-            [clojure.java.io   :as io]
-            [clj-rss.core      :as rss-gen]))
+  (:require [boot.core       :as boot]
+            [boot.util       :as u]
+            [io.perun.utils  :as util]
+            [clojure.java.io :as io]
+            [clj-rss.core    :as rss-gen]))
 
 (def ^:private
   +defaults+ {:filename "feed.rss"

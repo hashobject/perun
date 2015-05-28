@@ -2,9 +2,9 @@
   :source-paths #{"src"}
   :resource-paths #{"resources"}
   :dependencies '[[org.clojure/clojure "1.6.0"]
-                 [adzerk/bootlaces "0.1.9" :scope "test"]
-                 [clj-time "0.9.0"]
-                 [jeluard/boot-notify "0.1.2" :scope "test"]])
+                  [adzerk/bootlaces "0.1.9" :scope "test"]
+                  [clj-time "0.9.0"]
+                  [jeluard/boot-notify "0.1.2" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 

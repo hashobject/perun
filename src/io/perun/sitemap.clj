@@ -1,6 +1,6 @@
 (set-env!
   :dependencies '[[org.clojure/clojure "1.6.0"]
-                 [sitemap "0.2.4"]])
+                  [sitemap "0.2.4"]])
 
 (ns io.perun.sitemap
   {:boot/export-tasks true}
