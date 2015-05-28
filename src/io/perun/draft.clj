@@ -23,7 +23,4 @@
               updated-posts (remove #(true? (:draft %)) posts)]
           (util/save-posts tmp options updated-posts)
           (u/info "Remove draft posts. Remaining %s posts\n" (count updated-posts))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))

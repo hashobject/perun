@@ -29,7 +29,4 @@
                   posts)]
           (util/save-posts tmp options updated-posts)
           (u/info "Added TTR to %s posts\n" (count updated-posts))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))

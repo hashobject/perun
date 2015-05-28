@@ -14,8 +14,6 @@
     io/make-parents
     (spit content)))
 
-
-
 (defn read-posts [fileset filename]
   (let [edn-file (->> fileset boot/input-files (boot/by-name [filename]) first)
         file-content (read-file edn-file)
@@ -27,6 +25,12 @@
   (let [posts-file (io/file tmp (:datafile options))
         content (prn-str updated-posts)]
     (write-to-file posts-file content)))
+
+(defn commit-and-next [fileset tmp next-handler]
+  (-> fileset
+      (boot/add-resource tmp)
+      boot/commit!
+      next-handler))
 
 ;; Dates utils
 

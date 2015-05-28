@@ -48,8 +48,5 @@
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
           (util/write-to-file sitemap-file sitemap-string)
           (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))
 

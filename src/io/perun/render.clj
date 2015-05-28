@@ -35,8 +35,5 @@
                   (util/write-to-file post-file html)))
             posts))
           (u/info (str "Render all pages/posts\n"))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))
 

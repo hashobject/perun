@@ -75,7 +75,4 @@
               content (prn-str parsed-files)]
           (util/write-to-file posts-file content)
           (u/info "Parsed %s markdown-files\n" (count markdown-files))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))

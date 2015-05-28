@@ -48,8 +48,5 @@
               rss-string (generate-rss-str posts options)]
           (util/write-to-file rss-file rss-string)
           (u/info (str "Generate RSS feed and save to " rss-filepath "\n"))
-          (-> fileset
-              (boot/add-resource tmp)
-              boot/commit!
-              next-handler))))))
+          (util/commit-and-next fileset tmp next-handler))))))
 
