@@ -14,7 +14,7 @@
   +defaults+ {:datafile "posts.edn"})
 
 (boot/deftask ttr
-  "Calculate time to read for each post"
+  "Calculate time to read for each file"
   [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
@@ -26,10 +26,8 @@
                   (fn [post]
                     (let [time-to-read (time-to-read/estimate-for-text (:content post))]
                       (assoc post :ttr time-to-read)))
-                  posts)
-              posts-file (io/file tmp (:datafile options))
-              content (prn-str updated-posts)]
-          (util/write-to-file posts-file content)
+                  posts)]
+          (util/save-posts tmp options updated-posts)
           (u/info "Added TTR to %s posts\n" (count updated-posts))
           (-> fileset
               (boot/add-resource tmp)

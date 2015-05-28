@@ -23,6 +23,11 @@
     posts))
 
 
+(defn save-posts [tmp options updated-posts]
+  (let [posts-file (io/file tmp (:datafile options))
+        content (prn-str updated-posts)]
+    (write-to-file posts-file content)))
+
 ;; Dates utils
 
 (defn reformat-datestr [date-str initial-format final-format]

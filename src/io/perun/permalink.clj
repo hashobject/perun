@@ -24,10 +24,8 @@
                   (fn [post]
                     (let [file-path (str (:target options) "/" (:filename post) "/index.html")]
                       (assoc post :filepath file-path)))
-                  posts)
-              posts-file (io/file tmp (:datafile options))
-              content (prn-str updated-posts)]
-          (util/write-to-file posts-file content)
+                  posts)]
+          (util/save-posts tmp options updated-posts)
           (u/info "Added permalinks to %s files\n" (count updated-posts))
           (-> fileset
               (boot/add-resource tmp)

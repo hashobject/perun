@@ -20,10 +20,8 @@
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
               posts (util/read-posts fileset (:datafile options))
-              updated-posts (remove #(true? (:draft %)) posts)
-              posts-file (io/file tmp (:datafile options))
-              content (prn-str updated-posts)]
-          (util/write-to-file posts-file content)
+              updated-posts (remove #(true? (:draft %)) posts)]
+          (util/save-posts tmp options updated-posts)
           (u/info "Remove draft posts. Remaining %s posts\n" (count updated-posts))
           (-> fileset
               (boot/add-resource tmp)
