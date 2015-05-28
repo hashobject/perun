@@ -16,31 +16,27 @@
               :target "public"
               :datafile "posts.edn"})
 
-(defn posts-sitemap-definitions [posts]
+(defn posts-sitemap-definitions [posts options]
   (map
     (fn [post]
-      {:loc (str "http://blog.hashobject.com/" (:filename post))
+      {:loc (str (:url options) (:filename post))
        :lastmod (get post "date_modified")
        :changefreq "weekly"
-       :priority 0.8}) posts))
+       :priority 0.8})
+    posts))
 
 
-; TODO fix changefreq for index page
-; DEFAULT LOC should be from opts
-(defn create-sitemap [posts]
-  (let [posts-pages (posts-sitemap-definitions posts)
-        all-pages (conj posts-pages
-                        {:loc (str "http://blog.hashobject.com/")
-                         :lastmod "2013-06-26"
-                         :changefreq "daily"
-                         :priority 1.0})]
-        all-pages))
+; TODO handle collections
+(defn create-sitemap [posts options]
+  (let [pages (posts-sitemap-definitions posts options)]
+        pages))
 
 (boot/deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str "Generated sitemap filename"
    o target   OUTDIR   str "The output directory"
-   d datafile DATAFILE str "Datafile with all parsed meta information"]
+   d datafile DATAFILE str "Datafile with all parsed meta information"
+   u url      URL      str "Base URL"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
@@ -48,7 +44,7 @@
               posts (util/read-posts fileset (:datafile options))
               sitemap-filepath (str (:target options) "/" (:filename options))
               sitemap-file (io/file tmp sitemap-filepath)
-              sitemap-xml (create-sitemap posts)
+              sitemap-xml (create-sitemap posts options)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
           (util/write-to-file sitemap-file sitemap-string)
           (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))
