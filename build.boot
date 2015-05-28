@@ -27,6 +27,7 @@
 (require '[io.perun.draft :refer :all])
 (require '[io.perun.sitemap :refer :all])
 (require '[io.perun.rss :refer :all])
+
 (require '[jeluard.boot-notify :refer [notify]])
 
 (deftask build
@@ -35,6 +36,12 @@
   (comp (markdown)
         (draft)
         (ttr)
-        (sitemap)
-        (rss)
+        (sitemap :filename "sitemap.xml")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
+
+
+(deftask release-snapshot
+  "Release snapshot"
+  []
+  (comp (pom) (jar) (push-snapshot)))

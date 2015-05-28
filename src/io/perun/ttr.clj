@@ -10,20 +10,24 @@
             [clojure.java.io   :as io]
             [time-to-read.core :as time-to-read]))
 
+(def ^:private
+  +defaults+ {:datafile "posts.edn"})
+
 (boot/deftask ttr
   "Calculate time to read for each post"
-  []
+  [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [posts (util/read-posts fileset "posts.edn")
+        (let [options (merge +defaults+ *opts*)
+              posts (util/read-posts fileset (:datafile options))
               updated-posts
                 (map
                   (fn [post]
                     (let [time-to-read (time-to-read/estimate-for-text (:content post))]
                       (assoc post :ttr time-to-read)))
                   posts)
-              posts-file (io/file tmp "posts.edn")
+              posts-file (io/file tmp (:datafile options))
               content (prn-str updated-posts)]
           (util/write-to-file posts-file content)
           (u/info "Added TTR to %s posts\n" (count updated-posts))

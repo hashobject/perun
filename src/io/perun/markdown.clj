@@ -5,13 +5,16 @@
 
 (ns io.perun.markdown
   {:boot/export-tasks true}
-  (:require [boot.core         :as boot]
-            [boot.util         :as u]
+  (:require [boot.core          :as boot]
+            [boot.util          :as u]
             [io.perun.utils :as util]
-            [clojure.java.io   :as io]
-            [markdown.core     :as markdown-converter]
-            [endophile.core    :as markdown-parser]))
+            [clojure.java.io    :as io]
+            [markdown.core      :as markdown-converter]
+            [endophile.core     :as markdown-parser]))
 
+
+(def ^:private
+  +defaults+ {:datafile "posts.edn"})
 
 (defn post-to-clj [file]
   (into []
@@ -61,13 +64,14 @@
 
 (boot/deftask markdown
   "Parse markdown files"
-  []
+  [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]))
+        (let [options (merge +defaults+ *opts*)
+              markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]))
               parsed-files (map process-post markdown-files)
-              posts-file (io/file tmp "posts.edn")
+              posts-file (io/file tmp (:datafile options))
               content (prn-str parsed-files)]
           (util/write-to-file posts-file content)
           (u/info "Parsed %s markdown-files\n" (count markdown-files))

@@ -11,6 +11,11 @@
             [sitemap.core      :as sitemap-gen]))
 
 
+(def ^:private
+  +defaults+ {:filename "sitemap.xml"
+              :target "public"
+              :datafile "posts.edn"})
+
 (defn posts-sitemap-definitions [posts]
   (map
     (fn [post]
@@ -33,16 +38,20 @@
 
 (boot/deftask sitemap
   "Generate sitemap"
-  []
+  [f filename FILENAME str "Generated sitemap filename"
+   o target   OUTDIR   str "The output directory"
+   d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [posts (util/read-posts fileset "posts.edn")
-              sitemap-file (io/file tmp "public/sitemap.xml")
+        (let [options (merge +defaults+ *opts*)
+              posts (util/read-posts fileset (:datafile options))
+              sitemap-filepath (str (:target options) "/" (:filename options))
+              sitemap-file (io/file tmp sitemap-filepath)
               sitemap-xml (create-sitemap posts)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
           (util/write-to-file sitemap-file sitemap-string)
-          (u/info "Generate sitemap")
+          (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))
           (-> fileset
               (boot/add-resource tmp)
               boot/commit!

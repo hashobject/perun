@@ -6,18 +6,22 @@
   {:boot/export-tasks true}
   (:require [boot.core         :as boot]
             [boot.util         :as u]
-            [io.perun.utils :as util]
+            [io.perun.utils    :as util]
             [clojure.java.io   :as io]))
+
+(def ^:private
+  +defaults+ {:datafile "posts.edn"})
 
 (boot/deftask draft
   "Exclude draft posts"
-  []
+  [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
-        (let [posts (util/read-posts fileset "posts.edn")
+        (let [options (merge +defaults+ *opts*)
+              posts (util/read-posts fileset (:datafile options))
               updated-posts (remove #(true? (:draft %)) posts)
-              posts-file (io/file tmp "posts.edn")
+              posts-file (io/file tmp (:datafile options))
               content (prn-str updated-posts)]
           (util/write-to-file posts-file content)
           (u/info "Remove draft posts. Remaining %s posts\n" (count updated-posts))
