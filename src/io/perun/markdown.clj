@@ -5,12 +5,12 @@
 
 (ns io.perun.markdown
   {:boot/export-tasks true}
-  (:require [boot.core          :as boot]
-            [boot.util          :as u]
-            [io.perun.utils :as util]
-            [clojure.java.io    :as io]
-            [markdown.core      :as markdown-converter]
-            [endophile.core     :as markdown-parser]))
+  (:require [boot.core       :as boot]
+            [boot.util       :as u]
+            [io.perun.utils  :as util]
+            [clojure.java.io :as io]
+            [markdown.core   :as markdown-converter]
+            [endophile.core  :as markdown-parser]))
 
 
 (def ^:private

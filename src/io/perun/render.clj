@@ -3,10 +3,10 @@
 
 (ns io.perun.render
   {:boot/export-tasks true}
-  (:require [boot.core         :as boot]
-            [boot.util         :as u]
-            [io.perun.utils    :as util]
-            [clojure.java.io   :as io]))
+  (:require [boot.core       :as boot]
+            [boot.util       :as u]
+            [io.perun.utils  :as util]
+            [clojure.java.io :as io]))
 
 
 (def ^:private

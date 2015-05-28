@@ -1,9 +1,9 @@
 (ns io.perun.utils
-  (:require [clojure.java.io  :as io]
-            [boot.core        :as boot]
-            [clj-time.core    :as clj-time]
-            [clj-time.coerce  :as clj-time-coerce]
-            [clj-time.format  :as clj-time-format]))
+  (:require [clojure.java.io :as io]
+            [boot.core       :as boot]
+            [clj-time.core   :as clj-time]
+            [clj-time.coerce :as clj-time-coerce]
+            [clj-time.format :as clj-time-format]))
 
 
 (defn read-file [file]
