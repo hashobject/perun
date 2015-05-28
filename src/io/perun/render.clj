@@ -28,7 +28,9 @@
               (fn [post]
                 (let [render-fn (resolve renderer)
                       html (render-fn post)
-                      post-file-path (str (:target options) "/" (:filename post) "/index.html")
+                      post-file-path (str (:target options) "/"
+                                          (or (:filepath post)
+                                              (str (:filename post) ".html")))
                       post-file (io/file tmp post-file-path)]
                   (util/write-to-file post-file html)))
             posts))
