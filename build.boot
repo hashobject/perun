@@ -27,8 +27,12 @@
 (require '[io.perun.draft :refer :all])
 (require '[io.perun.sitemap :refer :all])
 (require '[io.perun.rss :refer :all])
+(require '[io.perun.render :refer :all])
 
 (require '[jeluard.boot-notify :refer [notify]])
+
+
+(defn renderer [data] "hello")
 
 (deftask build
   "Build blog."
@@ -38,6 +42,7 @@
         (ttr)
         (sitemap :filename "sitemap.xml")
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (render :renderer 'renderer)
         (notify)))
 
 
