@@ -30,9 +30,8 @@
                       html (render-fn post)
                       post-file-path (str (:target options) "/"
                                           (or (:filepath post)
-                                              (str (:filename post) ".html")))
-                      post-file (io/file tmp post-file-path)]
-                  (util/write-to-file post-file html)))
+                                              (str (:filename post) ".html")))]
+                  (util/create-file tmp post-file-path html)))
             posts))
           (u/info (str "Render all pages/posts\n"))
           (util/commit-and-next fileset tmp next-handler))))))

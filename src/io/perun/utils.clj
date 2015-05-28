@@ -14,6 +14,10 @@
     io/make-parents
     (spit content)))
 
+(defn create-file [tmp filepath content]
+  (let [file (io/file tmp filepath)]
+    (write-to-file file content)))
+
 (defn read-posts [fileset filename]
   (let [edn-file (->> fileset boot/input-files (boot/by-name [filename]) first)
         file-content (read-file edn-file)

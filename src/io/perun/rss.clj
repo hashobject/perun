@@ -44,9 +44,8 @@
         (let [options (merge +defaults+ *opts*)
               posts (util/read-posts fileset (:datafile options))
               rss-filepath (str (:target options) "/" (:filename options))
-              rss-file (io/file tmp rss-filepath)
               rss-string (generate-rss-str posts options)]
-          (util/write-to-file rss-file rss-string)
+          (util/create-file tmp rss-filepath rss-string)
           (u/info (str "Generate RSS feed and save to " rss-filepath "\n"))
           (util/commit-and-next fileset tmp next-handler))))))
 

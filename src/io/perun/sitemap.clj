@@ -43,10 +43,9 @@
         (let [options (merge +defaults+ *opts*)
               posts (util/read-posts fileset (:datafile options))
               sitemap-filepath (str (:target options) "/" (:filename options))
-              sitemap-file (io/file tmp sitemap-filepath)
               sitemap-xml (create-sitemap posts options)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
-          (util/write-to-file sitemap-file sitemap-string)
+          (util/create-file tmp sitemap-filepath sitemap-string)
           (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))
           (util/commit-and-next fileset tmp next-handler))))))
 
