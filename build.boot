@@ -34,8 +34,12 @@
 (require '[jeluard.boot-notify :refer [notify]])
 
 
+; testing functions
 (defn renderer [data] (:name data))
-(defn index-renderer [files] (str "all files:" (count files)))
+
+(defn index-renderer [files]
+  (let [names (map :name files)]
+    (clojure.string/join "\n" names)))
 
 (deftask build
   "Build blog."

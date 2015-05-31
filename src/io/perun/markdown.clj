@@ -30,7 +30,9 @@
 
 
 (defn parse-file-defn [lines]
-  (let [metadata {}]
+  ; we use `original` file flag to distinguish between generated files
+  ; (e.x. created those by plugins)
+  (let [metadata {:original true}]
         (into metadata
           (for [line lines]
             (let [tokens (clojure.string/split line #":" 2)

@@ -21,8 +21,8 @@
     (fn [file]
       {:loc (str (:url options) (:filename file))
        :lastmod (:date_modified file)
-       :changefreq "weekly"
-       :priority 0.8})
+       :changefreq (or (:sitemap_changefreq file) "weekly")
+       :priority (or (:sitemap_priority file) 0.8)})
     files))
 
 ; TODO handle collections
