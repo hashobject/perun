@@ -12,11 +12,14 @@
  - support rendering to any format
 
 
+## Example
+
+See generated blog as an example [blog.hashobject.com](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
 
 ## TODO
 
-  - [ ] - robots.txt plugin
-  - [ ] - humans.txt plugin
+  - [ ] robots.txt plugin
+  - [ ] humans.txt plugin
 
 ## Contributions
 
