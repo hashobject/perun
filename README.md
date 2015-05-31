@@ -1,5 +1,10 @@
 # perun
 
+Static site generator using [Boot](http://boot-clj.com/).
+Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
+Perun is a collection of plugins/boot tasks that you can chain together and build something custom
+that suits your needs.
+
 ## Plugins
 
  - markdown parser
