@@ -20,7 +20,7 @@
   (map
     (fn [file]
       {:loc (str (:url options) (:filename file))
-       :lastmod (get file "date_modified")
+       :lastmod (:date_modified file)
        :changefreq "weekly"
        :priority 0.8})
     files))

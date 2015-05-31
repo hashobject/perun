@@ -29,11 +29,13 @@
 (require '[io.perun.sitemap :refer :all])
 (require '[io.perun.rss :refer :all])
 (require '[io.perun.render :refer :all])
+(require '[io.perun.collection :refer :all])
 
 (require '[jeluard.boot-notify :refer [notify]])
 
 
-(defn renderer [data] "hello")
+(defn renderer [data] (:name data))
+(defn index-renderer [files] (str "all files:" (count files)))
 
 (deftask build
   "Build blog."
@@ -42,9 +44,10 @@
         (draft)
         (ttr)
         (permalink)
+        (render :renderer 'renderer)
+        (collection :renderer 'index-renderer :page "index.html" :filter identity)
         (sitemap :filename "sitemap.xml")
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (render :renderer 'renderer)
         (notify)))
 
 

@@ -37,7 +37,7 @@
                   key-token (trim-if-not-nil (first tokens))
                   value-token (trim-if-not-nil (second tokens))]
                   (if (not (clojure.string/blank? key-token))
-                    [key-token value-token]))))))
+                    [(keyword key-token) value-token]))))))
 
 (defn generate-file-url [file]
   (let [filepath (:path file)

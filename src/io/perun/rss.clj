@@ -17,12 +17,12 @@
 
 (defn rss-definitions [files]
   (for [file files]
-    {:link (get file "canonical_url")
-     :guid (get file "canonical_url")
-     :pubDate (util/str-to-date (get file "date_published"))
-     :title (get file "name")
-     :description (get file "description")
-     :author (get file "author_email")}))
+    {:link (:canonical_url file)
+     :guid (:canonical_url file)
+     :pubDate (util/str-to-date (:date_published file))
+     :title (:name file)
+     :description (:description file)
+     :author (:author_email file)}))
 
 (defn generate-rss-str [files options]
   (let [opts (select-keys options [:title :description :link])
