@@ -12,7 +12,9 @@
 (def ^:private
   +defaults+ {:target "public"
               :datafile "meta.edn"
-              :filterer identity})
+              :filterer identity
+              :sortby (fn [file]
+                (:date_published file))})
 
 (boot/deftask collection
   "Render collection files"
@@ -20,6 +22,7 @@
    d datafile DATAFILE str  "Datafile with all parsed meta information"
    r renderer RENDERER sym  "Page renderer"
    f filterer FILTER   code "Filter function"
+   s sortby   SORTBY   code "Sort by function"
    p page     PAGE     str  "Collection result page path"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
@@ -27,8 +30,9 @@
         (let [options (merge +defaults+ *opts*)
               files (util/read-files-defs fileset (:datafile options))
               filtered-files (filter (:filterer options) files)
+              sorted-files (sort-by (:sortby options) filtered-files)
               render-fn (resolve renderer)
-              html (render-fn filtered-files)
+              html (render-fn sorted-files)
               page-filepath (str (:target options) "/" page)]
             (util/create-file tmp page-filepath html)
           (u/info (str "Render collection " page "\n"))
