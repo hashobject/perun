@@ -13,14 +13,14 @@
   +defaults+ {:datafile "posts.edn"})
 
 (boot/deftask draft
-  "Exclude draft posts"
+  "Exclude draft files"
   [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              posts (util/read-posts fileset (:datafile options))
-              updated-posts (remove #(true? (:draft %)) posts)]
-          (util/save-posts tmp options updated-posts)
-          (u/info "Remove draft posts. Remaining %s posts\n" (count updated-posts))
+              files (util/read-posts fileset (:datafile options))
+              updated-files-def (remove #(true? (:draft %)) files)]
+          (util/save-posts tmp options updated-files-def)
+          (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
           (util/commit-and-next fileset tmp next-handler))))))

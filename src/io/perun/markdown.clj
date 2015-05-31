@@ -16,7 +16,7 @@
 (def ^:private
   +defaults+ {:datafile "posts.edn"})
 
-(defn post-to-clj [file]
+(defn file-to-clj [file]
   (into []
         (-> file
             util/read-file
@@ -29,7 +29,7 @@
     (clojure.string/trim s)))
 
 
-(defn parse-post-defn [lines]
+(defn parse-file-defn [lines]
   (let [metadata {}]
         (into metadata
           (for [line lines]
@@ -39,7 +39,7 @@
                   (if (not (clojure.string/blank? key-token))
                     [key-token value-token]))))))
 
-(defn generate-post-url [file]
+(defn generate-file-url [file]
   (let [filepath (:path file)
         filename (last (clojure.string/split filepath #"/"))
         length (count filename)
@@ -52,12 +52,12 @@
       util/read-file
       markdown-converter/md-to-html-string))
 
-(defn process-post [file]
-  (let [post (post-to-clj file)
-        data (:data (first post))
+(defn process-file [file]
+  (let [file-def (file-to-clj file)
+        data (:data (first file-def))
         lines (clojure.string/split data #"\n")
-        filename (generate-post-url file)
-        metadata (parse-post-defn lines)
+        filename (generate-file-url file)
+        metadata (parse-file-defn lines)
         content (original-md-to-html-str file)]
     (assoc metadata :filename filename
                     :content content)))
@@ -70,9 +70,9 @@
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
               markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]))
-              parsed-files (map process-post markdown-files)
-              posts-file (io/file tmp (:datafile options))
+              parsed-files (map process-file markdown-files)
+              datafile (io/file tmp (:datafile options))
               content (prn-str parsed-files)]
-          (util/write-to-file posts-file content)
+          (util/write-to-file datafile content)
           (u/info "Parsed %s markdown-files\n" (count markdown-files))
           (util/commit-and-next fileset tmp next-handler))))))

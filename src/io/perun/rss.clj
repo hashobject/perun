@@ -15,18 +15,18 @@
               :target "public"
               :datafile "posts.edn"})
 
-(defn posts-rss-definitions [posts]
-  (for [post posts]
-    {:link (get post "canonical_url")
-     :guid (get post "canonical_url")
-     :pubDate (util/str-to-date (get post "date_published"))
-     :title (get post "name")
-     :description (get post "description")
-     :author (get post "author_email")}))
+(defn rss-definitions [files]
+  (for [file files]
+    {:link (get file "canonical_url")
+     :guid (get file "canonical_url")
+     :pubDate (util/str-to-date (get file "date_published"))
+     :title (get file "name")
+     :description (get file "description")
+     :author (get file "author_email")}))
 
-(defn generate-rss-str [posts options]
+(defn generate-rss-str [files options]
   (let [opts (select-keys options [:title :description :link])
-        items (posts-rss-definitions posts)
+        items (rss-definitions files)
         rss-str (apply rss-gen/channel-xml opts items)]
     rss-str))
 

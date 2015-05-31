@@ -16,7 +16,7 @@
               :target "public"
               :datafile "posts.edn"})
 
-(defn posts-sitemap-definitions [posts options]
+(defn sitemap-definitions [posts options]
   (map
     (fn [post]
       {:loc (str (:url options) (:filename post))
@@ -28,7 +28,7 @@
 
 ; TODO handle collections
 (defn create-sitemap [posts options]
-  (let [pages (posts-sitemap-definitions posts options)]
+  (let [pages (sitemap-definitions posts options)]
         pages))
 
 (boot/deftask sitemap
