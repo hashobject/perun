@@ -20,13 +20,13 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              files (util/read-posts fileset (:datafile options))
+              files (util/read-files-defs fileset (:datafile options))
               updated-files
                 (map
                   (fn [file-def]
                     (let [time-to-read (time-to-read/estimate-for-text (:content file-def))]
                       (assoc file-def :ttr time-to-read)))
                   files)]
-          (util/save-posts tmp options updated-files)
+          (util/save-files-defs tmp options updated-files)
           (u/info "Added TTR to %s files\n" (count updated-files))
           (util/commit-and-next fileset tmp next-handler))))))

@@ -16,19 +16,18 @@
               :target "public"
               :datafile "posts.edn"})
 
-(defn sitemap-definitions [posts options]
+(defn sitemap-definitions [files options]
   (map
-    (fn [post]
-      {:loc (str (:url options) (:filename post))
-       :lastmod (get post "date_modified")
+    (fn [file]
+      {:loc (str (:url options) (:filename file))
+       :lastmod (get file "date_modified")
        :changefreq "weekly"
        :priority 0.8})
-    posts))
-
+    files))
 
 ; TODO handle collections
-(defn create-sitemap [posts options]
-  (let [pages (sitemap-definitions posts options)]
+(defn create-sitemap [files options]
+  (let [pages (sitemap-definitions files options)]
         pages))
 
 (boot/deftask sitemap
@@ -41,9 +40,9 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              posts (util/read-posts fileset (:datafile options))
+              files (util/read-files-defs fileset (:datafile options))
               sitemap-filepath (str (:target options) "/" (:filename options))
-              sitemap-xml (create-sitemap posts options)
+              sitemap-xml (create-sitemap files options)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
           (util/create-file tmp sitemap-filepath sitemap-string)
           (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))

@@ -14,7 +14,7 @@
               :datafile "posts.edn"})
 
 (boot/deftask render
-  "Render pages/posts"
+  "Render pages"
   [o target   OUTDIR   str "The output directory"
    d datafile DATAFILE str "Datafile with all parsed meta information"
    r renderer RENDERER sym "Page renderer"]
@@ -22,17 +22,17 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              posts (util/read-posts fileset (:datafile options))]
+              files (util/read-files-defs fileset (:datafile options))]
            (doall
             (map
-              (fn [post]
+              (fn [file]
                 (let [render-fn (resolve renderer)
-                      html (render-fn post)
-                      post-file-path (str (:target options) "/"
-                                          (or (:filepath post)
-                                              (str (:filename post) ".html")))]
-                  (util/create-file tmp post-file-path html)))
-            posts))
-          (u/info (str "Render all pages/posts\n"))
+                      html (render-fn file)
+                      page-filepath (str (:target options) "/"
+                                          (or (:filepath file)
+                                              (str (:filename file) ".html")))]
+                  (util/create-file tmp page-filepath html)))
+            files))
+          (u/info (str "Render all pages\n"))
           (util/commit-and-next fileset tmp next-handler))))))
 

@@ -18,17 +18,17 @@
   (let [file (io/file tmp filepath)]
     (write-to-file file content)))
 
-(defn read-posts [fileset filename]
+(defn read-files-defs [fileset filename]
   (let [edn-file (->> fileset boot/input-files (boot/by-name [filename]) first)
         file-content (read-file edn-file)
-        posts (read-string file-content)]
-    posts))
+        files (read-string file-content)]
+    files))
 
 
-(defn save-posts [tmp options updated-posts]
-  (let [posts-file (io/file tmp (:datafile options))
-        content (prn-str updated-posts)]
-    (write-to-file posts-file content)))
+(defn save-files-defs [tmp options updated-files]
+  (let [defs-file (io/file tmp (:datafile options))
+        content (prn-str updated-files)]
+    (write-to-file defs-file content)))
 
 (defn commit-and-next [fileset tmp next-handler]
   (-> fileset

@@ -11,6 +11,10 @@
 (def ^:private
   +defaults+ {:datafile "posts.edn"})
 
+(defn create-filepath [file options]
+  (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
+    (assoc file :filepath file-path)))
+
 (boot/deftask permalink
   "Make files permalinked"
   [d datafile DATAFILE str "Datafile with all parsed meta information"]
@@ -18,13 +22,8 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              posts (util/read-posts fileset (:datafile options))
-              updated-posts
-                (map
-                  (fn [post]
-                    (let [file-path (str (:target options) "/" (:filename post) "/index.html")]
-                      (assoc post :filepath file-path)))
-                  posts)]
-          (util/save-posts tmp options updated-posts)
-          (u/info "Added permalinks to %s files\n" (count updated-posts))
+              files (util/read-files-defs fileset (:datafile options))
+              updated-files (map #(create-filepath % options) files)]
+          (util/save-files-defs tmp options updated-files)
+          (u/info "Added permalinks to %s files\n" (count updated-files))
           (util/commit-and-next fileset tmp next-handler))))))

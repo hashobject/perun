@@ -42,9 +42,9 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              posts (util/read-posts fileset (:datafile options))
+              files (util/read-files-defs fileset (:datafile options))
               rss-filepath (str (:target options) "/" (:filename options))
-              rss-string (generate-rss-str posts options)]
+              rss-string (generate-rss-str files options)]
           (util/create-file tmp rss-filepath rss-string)
           (u/info (str "Generate RSS feed and save to " rss-filepath "\n"))
           (util/commit-and-next fileset tmp next-handler))))))
