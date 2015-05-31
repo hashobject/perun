@@ -9,7 +9,7 @@
             [clojure.java.io :as io]))
 
 (def ^:private
-  +defaults+ {:datafile "posts.edn"})
+  +defaults+ {:datafile "meta.edn"})
 
 (defn create-filepath [file options]
   (let [file-path (str (:target options) "/" (:filename file) "/index.html")]

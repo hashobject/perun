@@ -14,7 +14,7 @@
 
 
 (def ^:private
-  +defaults+ {:datafile "posts.edn"})
+  +defaults+ {:datafile "meta.edn"})
 
 (defn file-to-clj [file]
   (into []

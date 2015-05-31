@@ -11,7 +11,7 @@
 
 (def ^:private
   +defaults+ {:target "public"
-              :datafile "posts.edn"})
+              :datafile "meta.edn"})
 
 (boot/deftask render
   "Render pages"

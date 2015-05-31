@@ -13,7 +13,7 @@
 (def ^:private
   +defaults+ {:filename "feed.rss"
               :target "public"
-              :datafile "posts.edn"})
+              :datafile "meta.edn"})
 
 (defn rss-definitions [files]
   (for [file files]

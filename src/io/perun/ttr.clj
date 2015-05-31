@@ -11,7 +11,7 @@
             [time-to-read.core :as time-to-read]))
 
 (def ^:private
-  +defaults+ {:datafile "posts.edn"})
+  +defaults+ {:datafile "meta.edn"})
 
 (boot/deftask ttr
   "Calculate time to read for each file"

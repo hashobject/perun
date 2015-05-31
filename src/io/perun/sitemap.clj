@@ -14,7 +14,7 @@
 (def ^:private
   +defaults+ {:filename "sitemap.xml"
               :target "public"
-              :datafile "posts.edn"})
+              :datafile "meta.edn"})
 
 (defn sitemap-definitions [files options]
   (map
