@@ -1,5 +1,22 @@
 # perun
 
+## Plugins
+
+ - markdown parser
+ - collections
+ - drafts
+ - calculate time to read for each page
+ - sitemap
+ - rss
+ - permalinks
+ - support rendering to any format
+
+
+
+## TODO
+
+  - [ ] - robots.txt plugin
+  - [ ] - humans.txt plugin
 
 ## Contributions
 
