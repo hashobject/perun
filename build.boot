@@ -55,6 +55,11 @@
         (notify)))
 
 
+(deftask install-locally
+  "Install locally"
+  []
+  (comp (pom) (jar) (install)))
+
 (deftask release-snapshot
   "Release snapshot"
   []
