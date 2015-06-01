@@ -81,6 +81,8 @@ See documentation for each task to find all supported options for each plugin.
 
   - [ ] robots.txt plugin
   - [ ] humans.txt plugin
+  - [ ] amazon s3 plugin
+  - [ ] github webhooks plugin
 
 ## Contributions
 
