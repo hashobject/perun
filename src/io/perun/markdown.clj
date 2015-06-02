@@ -13,15 +13,23 @@
             [endophile.core  :as markdown-parser]))
 
 
+(defn generate-filename [file]
+  (let [filepath (:path file)
+        filename (last (clojure.string/split filepath #"/"))
+        length (count filename)
+        short-name (subs filename 9 (- length 3))]
+        short-name))
+
 (def ^:private
-  +defaults+ {:datafile "meta.edn"})
+  +defaults+ {:datafile "meta.edn"
+              :create-filename generate-filename})
 
 (defn file-to-clj [file]
-  (into []
-        (-> file
-            util/read-file
-            markdown-parser/mp
-            markdown-parser/to-clj)))
+  (-> file
+      util/read-file
+      markdown-parser/mp
+      markdown-parser/to-clj
+      first))
 
 (defn trim-if-not-nil [s]
   (if (clojure.string/blank? s)
@@ -41,38 +49,33 @@
                   (if (not (clojure.string/blank? key-token))
                     [(keyword key-token) value-token]))))))
 
-(defn generate-file-url [file]
-  (let [filepath (:path file)
-        filename (last (clojure.string/split filepath #"/"))
-        length (count filename)
-        short-name (subs filename 9 (- length 3))]
-        short-name))
 
-
-(defn original-md-to-html-str [file]
+(defn markdown-to-html [file]
   (-> file
       util/read-file
       markdown-converter/md-to-html-string))
 
-(defn process-file [file]
+(defn process-file [file options]
   (let [file-def (file-to-clj file)
-        data (:data (first file-def))
+        data (:data file-def)
         lines (clojure.string/split data #"\n")
-        filename (generate-file-url file)
+        create-filename-fn (:create-filename options)
+        filename (create-filename-fn file)
         metadata (parse-file-defn lines)
-        content (original-md-to-html-str file)]
+        content (markdown-to-html file)]
     (assoc metadata :filename filename
                     :content content)))
 
 (boot/deftask markdown
   "Parse markdown files"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
+  [d datafile        DATAFILE        str "Target datafile with all parsed meta information"
+   f create-filename CREATE_FILENAME code "Function that creates final target filename of the file"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
               markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]))
-              parsed-files (map process-file markdown-files)
+              parsed-files (map #(process-file % options) markdown-files)
               datafile (io/file tmp (:datafile options))
               content (prn-str parsed-files)]
           (util/write-to-file datafile content)
