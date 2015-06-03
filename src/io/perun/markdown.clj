@@ -56,15 +56,15 @@
       markdown-converter/md-to-html-string))
 
 (defn process-file [file options]
-  (let [file-def (file-to-clj file)
-        data (:data file-def)
-        lines (clojure.string/split data #"\n")
-        create-filename-fn (:create-filename options)
-        filename (create-filename-fn file)
-        metadata (parse-file-defn lines)
-        content (markdown-to-html file)]
-    (assoc metadata :filename filename
-                    :content content)))
+  (if-let [file-def (file-to-clj file)]
+    (if-let [data (:data file-def)]
+      (let [lines (clojure.string/split data #"\n")
+            create-filename-fn (:create-filename options)
+            filename (create-filename-fn file)
+            metadata (parse-file-defn lines)
+            content (markdown-to-html file)]
+        (assoc metadata :filename filename
+                        :content content)))))
 
 (boot/deftask markdown
   "Parse markdown files"
@@ -79,5 +79,5 @@
               datafile (io/file tmp (:datafile options))
               content (prn-str parsed-files)]
           (util/write-to-file datafile content)
-          (u/info "Parsed %s markdown-files\n" (count markdown-files))
+          (u/info "Parsed %s markdown files\n" (count markdown-files))
           (util/commit-and-next fileset tmp next-handler))))))

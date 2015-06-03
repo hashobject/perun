@@ -17,7 +17,7 @@
   "Render pages"
   [o target   OUTDIR   str "The output directory"
    d datafile DATAFILE str "Datafile with all parsed meta information"
-   r renderer RENDERER sym "Page renderer"]
+   r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
       (fn handler [fileset]
@@ -26,7 +26,7 @@
            (doall
             (map
               (fn [file]
-                (let [render-fn (resolve renderer)
+                (let [render-fn (:renderer options)
                       html (render-fn file)
                       page-filepath (str (:target options) "/"
                                           (or (:filepath file)

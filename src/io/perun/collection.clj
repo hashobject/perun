@@ -22,7 +22,7 @@
   "Render collection files"
   [o target     OUTDIR     str  "The output directory"
    d datafile   DATAFILE   str  "Datafile with all parsed meta information"
-   r renderer   RENDERER   sym  "Page renderer"
+   r renderer   RENDERER   code "Page renderer"
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
    c comparator COMPARATOR code "Sort by comparator function"
@@ -34,7 +34,7 @@
               files (util/read-files-defs fileset (:datafile options))
               filtered-files (filter (:filterer options) files)
               sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
-              render-fn (resolve renderer)
+              render-fn (:renderer options)
               html (render-fn sorted-files)
               page-filepath (str (:target options) "/" page)]
             (util/create-file tmp page-filepath html)
