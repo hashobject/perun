@@ -87,6 +87,8 @@ There is another special file called `meta.edn` that would be created one time b
 
   - [ ] robots.txt plugin
   - [ ] humans.txt plugin
+  - [ ] amazon s3 plugin
+  - [ ] github webhooks plugin
 
 ## Contributions
 
