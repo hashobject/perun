@@ -7,7 +7,7 @@
   {:boot/export-tasks true}
   (:require [boot.core       :as boot]
             [boot.util       :as u]
-            [io.perun.utils  :as util]
+            [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [markdown.core   :as markdown-converter]
             [endophile.core  :as markdown-parser]))
@@ -26,7 +26,7 @@
 
 (defn file-to-clj [file]
   (-> file
-      util/read-file
+      perun/read-file
       markdown-parser/mp
       markdown-parser/to-clj
       first))
@@ -52,7 +52,7 @@
 
 (defn markdown-to-html [file]
   (-> file
-      util/read-file
+      perun/read-file
       markdown-converter/md-to-html-string))
 
 (defn process-file [file options]
@@ -78,6 +78,6 @@
               parsed-files (map #(process-file % options) markdown-files)
               datafile (io/file tmp (:datafile options))
               content (prn-str parsed-files)]
-          (util/write-to-file datafile content)
+          (perun/write-to-file datafile content)
           (u/info "Parsed %s markdown files\n" (count markdown-files))
-          (util/commit-and-next fileset tmp next-handler))))))
+          (perun/commit-and-next fileset tmp next-handler))))))

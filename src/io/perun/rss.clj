@@ -6,7 +6,7 @@
   {:boot/export-tasks true}
   (:require [boot.core       :as boot]
             [boot.util       :as u]
-            [io.perun.utils  :as util]
+            [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [clj-rss.core    :as rss-gen]))
 
@@ -19,7 +19,7 @@
   (for [file files]
     {:link (:canonical_url file)
      :guid (:canonical_url file)
-     :pubDate (util/str-to-date (:date_published file))
+     :pubDate (perun/str-to-date (:date_published file))
      :title (:name file)
      :description (:description file)
      :author (:author_email file)}))
@@ -42,10 +42,10 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              files (util/read-files-defs fileset (:datafile options))
+              files (perun/read-files-defs fileset (:datafile options))
               rss-filepath (str (:target options) "/" (:filename options))
               rss-string (generate-rss-str files options)]
-          (util/create-file tmp rss-filepath rss-string)
+          (perun/create-file tmp rss-filepath rss-string)
           (u/info (str "Generate RSS feed and save to " rss-filepath "\n"))
-          (util/commit-and-next fileset tmp next-handler))))))
+          (perun/commit-and-next fileset tmp next-handler))))))
 

@@ -6,7 +6,7 @@
   {:boot/export-tasks true}
   (:require [boot.core       :as boot]
             [boot.util       :as u]
-            [io.perun.utils  :as util]
+            [io.perun.core   :as perun]
             [clojure.java.io :as io]))
 
 (def ^:private
@@ -19,8 +19,8 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              files (util/read-files-defs fileset (:datafile options))
+              files (perun/read-files-defs fileset (:datafile options))
               updated-files-def (remove #(true? (:draft %)) files)]
-          (util/save-files-defs tmp options updated-files-def)
+          (perun/save-files-defs tmp options updated-files-def)
           (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
-          (util/commit-and-next fileset tmp next-handler))))))
+          (perun/commit-and-next fileset tmp next-handler))))))

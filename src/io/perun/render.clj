@@ -5,7 +5,7 @@
   {:boot/export-tasks true}
   (:require [boot.core       :as boot]
             [boot.util       :as u]
-            [io.perun.utils  :as util]
+            [io.perun.core   :as perun]
             [clojure.java.io :as io]))
 
 
@@ -22,7 +22,7 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              files (util/read-files-defs fileset (:datafile options))]
+              files (perun/read-files-defs fileset (:datafile options))]
            (doall
             (map
               (fn [file]
@@ -31,8 +31,8 @@
                       page-filepath (str (:target options) "/"
                                           (or (:filepath file)
                                               (str (:filename file) ".html")))]
-                  (util/create-file tmp page-filepath html)))
+                  (perun/create-file tmp page-filepath html)))
             files))
           (u/info (str "Render all pages\n"))
-          (util/commit-and-next fileset tmp next-handler))))))
+          (perun/commit-and-next fileset tmp next-handler))))))
 

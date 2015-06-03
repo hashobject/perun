@@ -6,7 +6,7 @@
   {:boot/export-tasks true}
   (:require [boot.core       :as boot]
             [boot.util       :as u]
-            [io.perun.utils  :as util]
+            [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [sitemap.core    :as sitemap-gen]))
 
@@ -40,11 +40,11 @@
     (fn middleware [next-handler]
       (fn handler [fileset]
         (let [options (merge +defaults+ *opts*)
-              files (util/read-files-defs fileset (:datafile options))
+              files (perun/read-files-defs fileset (:datafile options))
               sitemap-filepath (str (:target options) "/" (:filename options))
               sitemap-xml (create-sitemap files options)
               sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
-          (util/create-file tmp sitemap-filepath sitemap-string)
+          (perun/create-file tmp sitemap-filepath sitemap-string)
           (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))
-          (util/commit-and-next fileset tmp next-handler))))))
+          (perun/commit-and-next fileset tmp next-handler))))))
 

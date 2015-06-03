@@ -42,7 +42,7 @@
     (clojure.string/join "\n" names)))
 
 (deftask build
-  "Build test blog. This task is just for testing here."
+  "Build test blog. This task is just for testing different plugins together."
   []
   (comp (markdown)
         (draft)
