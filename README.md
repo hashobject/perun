@@ -17,6 +17,12 @@ that suits your needs.
  - support rendering to any format
 
 
+## Use cases
+
+ - generate blog from markdown files
+ - generate documentation for your open source library bases on README.md
+ - any case where you'd want to use jekyll or another static site generator
+
 ## Example
 
 See generated blog as an example [blog.hashobject.com](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot).
