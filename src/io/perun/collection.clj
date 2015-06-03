@@ -13,10 +13,8 @@
   +defaults+ {:target "public"
               :datafile "meta.edn"
               :filterer identity
-              :sortby (fn [file]
-                (:date_published file))
-              :comparator (fn [i1 i2]
-                (compare i1 i2))})
+              :sortby (fn [file] (:date_published file))
+              :comparator (fn [i1 i2] (compare i1 i2))})
 
 (boot/deftask collection
   "Render collection files"
