@@ -15,8 +15,8 @@
 
 (boot/deftask render
   "Render pages"
-  [o target   OUTDIR   str "The output directory"
-   d datafile DATAFILE str "Datafile with all parsed meta information"
+  [o target   OUTDIR   str  "The output directory"
+   d datafile DATAFILE str  "Datafile with all parsed meta information"
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]

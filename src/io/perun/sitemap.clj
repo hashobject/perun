@@ -16,7 +16,7 @@
               :target "public"
               :datafile "meta.edn"})
 
-(defn sitemap-definitions [files options]
+(defn create-sitemap [files options]
   (map
     (fn [file]
       {:loc (str (:url options) (:filename file))
@@ -24,11 +24,6 @@
        :changefreq (or (:sitemap_changefreq file) "weekly")
        :priority (or (:sitemap_priority file) 0.8)})
     files))
-
-; TODO handle collections
-(defn create-sitemap [files options]
-  (let [pages (sitemap-definitions files options)]
-        pages))
 
 (boot/deftask sitemap
   "Generate sitemap"

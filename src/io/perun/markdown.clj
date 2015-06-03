@@ -13,7 +13,9 @@
             [endophile.core  :as markdown-parser]))
 
 
-(defn generate-filename [file]
+(defn generate-filename
+  "Default implementaion for the `create-filename` task option"
+  [file]
   (let [filepath (:path file)
         filename (last (clojure.string/split filepath #"/"))
         length (count filename)
