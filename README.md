@@ -70,12 +70,18 @@ See documentation for each task to find all supported options for each plugin.
           (draft)
           (ttr)
           (permalink)
-          (render :renderer 'renderer)
-          (collection :renderer 'index-renderer :page "index.html")
+          (render :renderer renderer)
+          (collection :renderer index-renderer :page "index.html")
           (sitemap :filename "sitemap.xml")
           (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
           (notify)))
 ```
+
+## How does it work
+
+Perun embraces Boot task model. Filesystem is the main abstraction and the most important thing you should care about.
+Basically static Perun is set of composable tasks/plugins/function that take set of files as input (e.x. source markdown files for your blog) and produce another set of files as output (e.x. generated deployable html for your blog).
+There is another special file called `meta.edn` that would be created one time by some task (e.x. markdown). This file will hold all meta information. Each task/plugin can update metae.dn with more information (or deleted some entries from it).
 
 ## TODO
 
