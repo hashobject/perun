@@ -14,7 +14,7 @@
 
 
 (defn generate-filename
-  "Default implementaion for the `create-filename` task option"
+  "Default implementation for the `create-filename` task option"
   [file]
   (let [filepath (:path file)
         filename (last (clojure.string/split filepath #"/"))
@@ -70,7 +70,7 @@
 
 (boot/deftask markdown
   "Parse markdown files"
-  [d datafile        DATAFILE        str "Target datafile with all parsed meta information"
+  [d datafile        DATAFILE        str  "Target datafile with all parsed meta information"
    f create-filename CREATE_FILENAME code "Function that creates final target filename of the file"]
   (let [tmp (boot/temp-dir!)]
     (fn middleware [next-handler]
