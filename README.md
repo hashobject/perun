@@ -1,8 +1,8 @@
 # perun
 
-Static site generator using [Boot](http://boot-clj.com/).
+Simple, composable static site generator using [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
-Perun is a collection of plugins/boot tasks that you can chain together and build something custom
+Perun is a collection of boot tasks/plugins that you can chain together and build something custom
 that suits your needs.
 
 ## Plugins
@@ -16,6 +16,35 @@ that suits your needs.
  - permalinks
  - support rendering to any format
 
+## Plugins
+
+Everything in Perun is build like independent task. The simplest blog engine will look like:
+
+```
+  (deftask build
+    "Build blog."
+    []
+    (comp (markdown)
+          (render :renderer renderer)))
+
+```
+
+But if you want to make permalinks, generate sitemap and rss feed, hide unfinished post, add time to read to each post then you will do:
+
+```
+  (deftask build
+    "Build blog."
+    []
+    (comp (markdown)
+          (draft)
+          (ttr)
+          (permalink)
+          (render :renderer renderer)
+          (sitemap :filename "sitemap.xml")
+          (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+          (notify)))
+
+```
 
 ## Use cases
 
