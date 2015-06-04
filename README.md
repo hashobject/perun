@@ -67,7 +67,7 @@ Perun embraces Boot task model. Filesystem is the main abstraction and the most 
 When you use Perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
 
 `meta.edn` is a special file that holds that is usually created once by some task (e.x. `markdown`). This file will hold all meta information about each page of your site. Each task/plugin can update `meta.edn` with more information (or deleted some entries from it).
-You can create `meta.end` manually. It's just a Clojure list of maps. Each map hash meta information about each final generated page. There is no defined format for the map.
+You can create `meta.edn` manually. It's just a Clojure list of maps. Each map hash meta information about each final generated page. There is no defined format for the map.
 
 ## Install
 
