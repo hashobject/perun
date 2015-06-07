@@ -104,11 +104,18 @@ See documentation for each task to find all supported options for each plugin.
                    [hiccup "1.0.5"]
                    [perun "0.1.0-SNAPSHOT"]
                    [clj-time "0.9.0"]
+                   [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
                    [jeluard/boot-notify "0.1.2" :scope "test"]])
 
-  (task-options!
-    pom {:project 'blog.hashobject.com
-         :version "0.2.0"})
+(task-options!
+  pom {:project 'blog.hashobject.com
+       :version "0.2.0"}
+  s3-sync {
+    :bucket "blog.hashobject.com"
+    :source "resources/public/"
+    :access-key (System/getenv "AWS_ACCESS_KEY")
+    :secret-key (System/getenv "AWS_SECRET_KEY")
+    :options {"Cache-Control" "max-age=315360000, no-transform, public"}})
 
   (require '[io.perun.markdown :refer :all])
   (require '[io.perun.ttr :refer :all])
@@ -119,6 +126,7 @@ See documentation for each task to find all supported options for each plugin.
   (require '[io.perun.render :refer :all])
   (require '[io.perun.collection :refer :all])
 
+  (require '[hashobject.boot-s3 :refer :all])
   (require '[jeluard.boot-notify :refer [notify]])
 
   (defn renderer [data] (:name data))
@@ -138,6 +146,7 @@ See documentation for each task to find all supported options for each plugin.
           (collection :renderer index-renderer :page "index.html")
           (sitemap :filename "sitemap.xml")
           (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+          (s3-sync)
           (notify)))
 ```
 
