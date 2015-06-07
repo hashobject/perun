@@ -45,6 +45,20 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
           (notify)))
 
 ```
+You can also chain this with standard boot tasks. E.x. if you want to upload generated files to Amazon S3 you might use
+[boot-s3](https://github.com/hashobject/boot-s3) plugin.
+
+Then your code might look like this:
+```
+  (deftask build
+    "Build blog."
+    []
+    (comp (markdown)
+          (render :renderer renderer)
+          (s3-sync)))
+
+```
+
 
 ## Use cases
 
@@ -139,7 +153,6 @@ After you created `build` task simply do:
 
   - [ ] robots.txt plugin
   - [ ] humans.txt plugin
-  - [ ] amazon s3 plugin
   - [ ] github webhooks plugin
 
 ## Contributions
