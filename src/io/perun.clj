@@ -174,16 +174,13 @@
         (let [options (merge +render-defaults+ *opts*)
               datafile (find-data-file fileset (:datafile options))
               files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))]
-           (doall
-            (map
-              (fn [file]
-                (let [render-fn (:renderer options)
-                      html (render-fn file)
-                      page-filepath (str (:target options) "/"
-                                         (or (:filepath file)
-                                             (str (:filename file) ".html")))]
-                  (perun/create-file tmp page-filepath html)))
-            files))
+          (doseq [file files]
+            (let [render-fn (:renderer options)
+                  html (render-fn file)
+                  page-filepath (str (:target options) "/"
+                                     (or (:filepath file)
+                                         (str (:filename file) ".html")))]
+              (perun/create-file tmp page-filepath html)))
           (u/info (str "Render all pages\n"))
           (commit-and-next fileset tmp next-handler))))))
 
