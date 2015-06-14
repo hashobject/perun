@@ -72,8 +72,8 @@ See generated blog as an example [blog.hashobject.com](https://github.com/hashob
 
 Perun works in the following steps:
 
-  1. read all the files from the source directory and create `meta.edn` file will all meta information available for all tasks/plugins
-  2. call each perun task/plugin to manipulate the files
+  1. read all the files from the source directory and create fileset metadata `(:metadata (meta fileset)` with all meta information available for all tasks/plugins
+  2. call each perun task/plugin to manipulate the fileset metadata
   3. write the results to the destination directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
