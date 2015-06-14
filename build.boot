@@ -27,8 +27,8 @@
                      "url"  "http://www.eclipse.org/legal/epl-v10.html"}})
 
 
-(require '[io.perun :refer :all])
-(require '[jeluard.boot-notify :refer [notify]])
+(require '[io.perun :refer :all]
+         '[jeluard.boot-notify :refer [notify]])
 
 
 ; testing functions
@@ -47,8 +47,8 @@
         (permalink)
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html" :filter identity)
-        ;(sitemap :filename "sitemap.xml")
-        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (sitemap :filename "sitemap.xml")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask release-snapshot

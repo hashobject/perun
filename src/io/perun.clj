@@ -46,7 +46,6 @@
                                 ~markdown-files
                                 ~options))
             fs-with-meta (with-meta fileset {:metadata parsed-metadata})]
-        (u/info "Parsed markdown files\n")
         fs-with-meta))))
 
 (def ^:private ttr-deps
