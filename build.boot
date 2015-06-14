@@ -1,15 +1,15 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"src" "resources"}
-  :dependencies '[[boot/core "2.1.2" :scope "provided"]
-                  [adzerk/bootlaces "0.1.9" :scope "test"]
+  :dependencies '[[boot/core "2.1.2" :scope "test"]
+                  [adzerk/bootlaces "0.1.11" :scope "test"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]
-                  [clj-time "0.9.0" :scope "test"]
-                  [markdown-clj "0.9.40" :scope "test"]
-                  [endophile "0.1.2" :scope "test"]
-                  [time-to-read "0.1.0" :scope "test"]
-                  [sitemap "0.2.4" :scope "test"]
-                  [clj-rss "0.1.9" :scope "test"]])
+                  [clj-time "0.9.0"]
+                  [markdown-clj "0.9.40"]
+                  [endophile "0.1.2"]
+                  [time-to-read "0.1.0"]
+                  [sitemap "0.2.4"]
+                  [clj-rss "0.1.9"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
@@ -51,13 +51,18 @@
         ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
-
-(deftask install-locally
-  "Install locally"
-  []
-  (comp (pom) (jar) (install)))
-
 (deftask release-snapshot
   "Release snapshot"
   []
-  (comp (pom) (jar) (push-snapshot)))
+  (comp (build-jar) (push-snapshot)))
+
+
+(deftask dev
+  "Dev process"
+  []
+  (comp
+    (watch)
+    (repl :server true)
+    (pom)
+    (jar)
+    (install)))

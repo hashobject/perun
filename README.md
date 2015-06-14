@@ -14,7 +14,7 @@ that suits your needs.
  - sitemap
  - rss
  - permalinks
- - support rendering to any format
+ - rendering to any format
 
 ## Plugins
 
