@@ -1,13 +1,15 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[org.clojure/clojure "1.6.0"]
+  :dependencies '[[boot/core "2.1.2" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]
-
-                  [clj-time "0.9.0" :scope "provided"]
-                  [markdown-clj "0.9.40" :scope "provoded"]
-                  [endophile "0.1.2" :scope "provided"]])
+                  [clj-time "0.9.0" :scope "test"]
+                  [markdown-clj "0.9.40" :scope "test"]
+                  [endophile "0.1.2" :scope "test"]
+                  [time-to-read "0.1.0" :scope "test"]
+                  [sitemap "0.2.4" :scope "test"]
+                  [clj-rss "0.1.9" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
