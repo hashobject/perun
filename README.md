@@ -148,9 +148,10 @@ After you created `build` task simply do:
 
 ## TODO
 
-  - [ ] robots.txt plugin
-  - [ ] humans.txt plugin
-  - [ ] github webhooks plugin
+  - [ ] improve readme
+  - [ ] more plugins
+  - [ ] create perun.io site using perun
+  - [ ] create section with all sites build using perun
 
 ## Contributions
 
