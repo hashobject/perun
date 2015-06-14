@@ -20,7 +20,7 @@ that suits your needs.
 
 Everything in Perun is build like independent task. The simplest blog engine will look like:
 
-```
+```clojure
   (deftask build
     "Build blog."
     []
@@ -31,7 +31,7 @@ Everything in Perun is build like independent task. The simplest blog engine wil
 
 But if you want to make permalinks, generate sitemap and rss feed, hide unfinished post, add time to read to each post then you will do:
 
-```
+```clojure
   (deftask build
     "Build blog."
     []
@@ -49,7 +49,7 @@ You can also chain this with standard boot tasks. E.x. if you want to upload gen
 [boot-s3](https://github.com/hashobject/boot-s3) plugin.
 
 Then your code might look like this:
-```
+```clojure
   (deftask build
     "Build blog."
     []
@@ -87,7 +87,7 @@ Some task/plugins however might require existence of specific keys.
 
 ## Install
 
-```
+```clojure
 [perun "0.1.0-SNAPSHOT"]
 ```
 
@@ -96,7 +96,7 @@ Some task/plugins however might require existence of specific keys.
 Create `build.boot` file with similar content. For each task please specify your own options.
 See documentation for each task to find all supported options for each plugin.
 
-```
+```clojure
   (set-env!
     :source-paths #{"src"}
     :resource-paths #{"resources"}
