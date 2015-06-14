@@ -158,7 +158,7 @@
                                    (or (:filepath file)
                                        (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
-        (u/info (str "Render all pages\n"))
+        (u/info "Render all pages\n")
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
