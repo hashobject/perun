@@ -38,18 +38,16 @@
   "Parse markdown files"
   [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
   (let [pod (create-pod markdown-deps)
-        tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [markdown-files (->> fileset boot/user-files (boot/by-ext ["md" "markdown"]) (map #(.getPath (boot/tmp-file %))))
             parsed-metadata (pod/with-call-in @pod
                               (io.perun.markdown/parse-markdown
-                                ~(.getPath tmp)
-                                ~options
-                                ~markdown-files))
+                                ~markdown-files
+                                ~options))
             fs-with-meta (with-meta fileset {:metadata parsed-metadata})]
         (u/info "Parsed markdown files\n")
-        (commit fs-with-meta tmp)))))
+        fs-with-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -57,27 +55,23 @@
 (deftask ttr
   "Calculate time to read for each file"
   []
-  (let [pod (create-pod ttr-deps)
-        tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
+  (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
       (let [metadata (:metadata (meta fileset))
             updated-metadata (pod/with-call-in @pod
                                 (io.perun.ttr/calculate-ttr ~metadata))
             fs-with-meta (with-meta fileset {:metadata updated-metadata})]
-        (commit fs-with-meta tmp)))))
+        fs-with-meta))))
 
 (deftask draft
   "Exclude draft files"
   []
-  (let [tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [files-metadata (:metadata (meta fileset))
-            updated-metadata (remove #(true? (:draft %)) files-metadata)
-            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
-        (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
-        (commit fs-with-meta tmp)))))
+  (boot/with-pre-wrap fileset
+    (let [files-metadata (:metadata (meta fileset))
+          updated-metadata (remove #(true? (:draft %)) files-metadata)
+          fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+      (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
+      fs-with-meta)))
 
 (defn- create-filepath [file options]
   (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
@@ -86,14 +80,13 @@
 (deftask permalink
   "Make files permalinked"
   []
-  (let [tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
+  (let [options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [files-metadata (:metadata (meta fileset))
             updated-metadata (map #(create-filepath % options) files-metadata)
             fs-with-meta (with-meta fileset {:metadata updated-metadata})]
         (u/info "Added permalinks to %s files\n" (count updated-metadata))
-        (commit fs-with-meta tmp)))))
+        fs-with-meta))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])

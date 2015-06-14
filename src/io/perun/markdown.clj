@@ -59,7 +59,7 @@
         (assoc metadata :filename filename
                         :content content)))))
 
-(defn parse-markdown [tgt-path options markdown-files]
+(defn parse-markdown [markdown-files options]
   (let [parsed-files (map #(process-file (io/file %) options) markdown-files)]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))
