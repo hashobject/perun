@@ -117,15 +117,7 @@ See documentation for each task to find all supported options for each plugin.
     :secret-key (System/getenv "AWS_SECRET_KEY")
     :options {"Cache-Control" "max-age=315360000, no-transform, public"}})
 
-  (require '[io.perun.markdown :refer :all])
-  (require '[io.perun.ttr :refer :all])
-  (require '[io.perun.draft :refer :all])
-  (require '[io.perun.permalink :refer :all])
-  (require '[io.perun.sitemap :refer :all])
-  (require '[io.perun.rss :refer :all])
-  (require '[io.perun.render :refer :all])
-  (require '[io.perun.collection :refer :all])
-
+  (require '[io.perun :refer :all])
   (require '[hashobject.boot-s3 :refer :all])
   (require '[jeluard.boot-notify :refer [notify]])
 
