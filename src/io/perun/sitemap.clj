@@ -13,10 +13,9 @@
        :priority (or (:sitemap_priority file) 0.8)})
     files))
 
-(defn generate-sitemap [tgt-path datafile-path options]
+(defn generate-sitemap [tgt-path files-metadata options]
   (let [sitemap-filepath (str (:target options) "/" (:filename options))
-        files (perun/read-files-defs datafile-path)
-        sitemap-xml (create-sitemap files options)
+        sitemap-xml (create-sitemap files-metadata options)
         sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
     (perun/create-file tgt-path sitemap-filepath sitemap-string)
     (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))))

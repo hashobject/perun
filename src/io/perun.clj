@@ -114,11 +114,11 @@
         tmp (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
+      (let [files-metadata (:metadata (meta fileset))]
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap
             ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
+            ~files-metadata
             ~options))
         (commit fileset tmp)))))
 
@@ -142,11 +142,11 @@
         tmp (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
+      (let [files-metadata (:metadata (meta fileset))]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss
             ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
+            ~files-metadata
             ~options))
         (commit fileset tmp)))))
 
@@ -162,9 +162,8 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))]
-        (doseq [file files]
+      (let [files-metadata (:metadata (meta fileset))]
+        (doseq [file files-metadata]
           (let [render-fn (:renderer options)
                 html (render-fn file)
                 page-filepath (str (:target options) "/"
@@ -193,10 +192,9 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +collection-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            filtered-files (filter (:filterer options) files)
-            sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
+      (let [files-metadata (:metadata (meta fileset))
+            filtered-files (filter (:filterer options) files-metadata)
+            sorted-files (sort-by (:sortby options) (:comparator options) files-metadata)
             render-fn (:renderer options)
             html (render-fn sorted-files)
             page-filepath (str (:target options) "/" page)]
