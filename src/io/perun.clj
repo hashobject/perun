@@ -41,7 +41,7 @@
         tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]) (map #(.getPath (boot/tmp-file %))))
+      (let [markdown-files (->> fileset boot/user-files (boot/by-ext ["md" "markdown"]) (map #(.getPath (boot/tmp-file %))))
             parsed-metadata (pod/with-call-in @pod
                               (io.perun.markdown/parse-markdown
                                 ~(.getPath tmp)

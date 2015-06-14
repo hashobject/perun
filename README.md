@@ -117,29 +117,29 @@ See documentation for each task to find all supported options for each plugin.
     :secret-key (System/getenv "AWS_SECRET_KEY")
     :options {"Cache-Control" "max-age=315360000, no-transform, public"}})
 
-  (require '[io.perun :refer :all])
-  (require '[hashobject.boot-s3 :refer :all])
-  (require '[jeluard.boot-notify :refer [notify]])
+(require '[io.perun :refer :all])
+(require '[hashobject.boot-s3 :refer :all])
+(require '[jeluard.boot-notify :refer [notify]])
 
-  (defn renderer [data] (:name data))
+(defn renderer [data] (:name data))
 
-  (defn index-renderer [files]
-    (let [names (map :name files)]
-      (clojure.string/join "\n" names)))
+(defn index-renderer [files]
+  (let [names (map :name files)]
+    (clojure.string/join "\n" names)))
 
-  (deftask build
-    "Build blog."
-    []
-    (comp (markdown)
-          (draft)
-          (ttr)
-          (permalink)
-          (render :renderer renderer)
-          (collection :renderer index-renderer :page "index.html")
-          (sitemap :filename "sitemap.xml")
-          (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-          (s3-sync)
-          (notify)))
+(deftask build
+  "Build blog."
+  []
+  (comp (markdown)
+        (draft)
+        (ttr)
+        (permalink)
+        (render :renderer renderer)
+        (collection :renderer index-renderer :page "index.html")
+        (sitemap :filename "sitemap.xml")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (s3-sync)
+        (notify)))
 ```
 
 After you created `build` task simply do:
