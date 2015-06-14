@@ -4,12 +4,6 @@
             [clojure.java.io :as io]
             [sitemap.core    :as sitemap-gen]))
 
-
-(def ^:private
-  +defaults+ {:filename "sitemap.xml"
-              :target "public"
-              :datafile "meta.edn"})
-
 (defn create-sitemap [files options]
   (map
     (fn [file]
