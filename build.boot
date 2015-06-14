@@ -1,6 +1,6 @@
 (set-env!
   :source-paths #{"src"}
-  :resource-paths #{"resources"}
+  :resource-paths #{"src" "resources"}
   :dependencies '[[boot/core "2.1.2" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]
@@ -32,7 +32,7 @@
 
 
 ; testing functions
-(defn renderer [data] (:name data))
+(defn renderer [data] (:content data))
 
 (defn index-renderer [files]
   (let [names (map :name files)]
@@ -47,8 +47,8 @@
         (permalink)
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html" :filter identity)
-        (sitemap :filename "sitemap.xml")
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        ;(sitemap :filename "sitemap.xml")
+        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
 
