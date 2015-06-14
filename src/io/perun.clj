@@ -9,7 +9,7 @@
   '[[clj-time "0.9.0"]])
 
 (def ^:private
-  +defaults+ {:datafile "meta.edn"})
+  +defaults+ {})
 
 (defn- create-pod [deps]
   (-> (boot/get-env)
@@ -36,50 +36,42 @@
 
 (deftask markdown
   "Parse markdown files"
-  [d datafile        DATAFILE        str "Target datafile with all parsed meta information"
-   f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
+  [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
   (let [pod (create-pod markdown-deps)
-        tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset boot/user-files (boot/by-ext ["md" "markdown"]) (map #(.getPath (boot/tmp-file %))))]
-        (pod/with-call-in @pod
-          (io.perun.markdown/parse-markdown
-            ~(.getPath tmp)
-            ~options
-            ~markdown-files))
-        (commit fileset tmp)))))
+      (let [markdown-files (->> fileset boot/user-files (boot/by-ext ["md" "markdown"]) (map #(.getPath (boot/tmp-file %))))
+            parsed-metadata (pod/with-call-in @pod
+                              (io.perun.markdown/parse-markdown
+                                ~markdown-files
+                                ~options))
+            fs-with-meta (with-meta fileset {:metadata parsed-metadata})]
+        (u/info "Parsed markdown files\n")
+        fs-with-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
 (deftask ttr
   "Calculate time to read for each file"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
-  (let [pod (create-pod ttr-deps)
-        tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
+  []
+  (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
-        (pod/with-call-in @pod
-          (io.perun.ttr/calculate-ttr
-            ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
-            ~options))
-        (commit fileset tmp)))))
+      (let [metadata (:metadata (meta fileset))
+            updated-metadata (pod/with-call-in @pod
+                                (io.perun.ttr/calculate-ttr ~metadata))
+            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+        fs-with-meta))))
 
 (deftask draft
   "Exclude draft files"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
-  (let [tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            updated-files-def (remove #(true? (:draft %)) files)]
-        (perun/save-files-defs tmp options updated-files-def)
-        (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
-        (commit fileset tmp)))))
+  []
+  (boot/with-pre-wrap fileset
+    (let [files-metadata (:metadata (meta fileset))
+          updated-metadata (remove #(true? (:draft %)) files-metadata)
+          fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+      (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
+      fs-with-meta)))
 
 (defn- create-filepath [file options]
   (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
@@ -87,16 +79,14 @@
 
 (deftask permalink
   "Make files permalinked"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
-  (let [tmp (boot/tmp-dir!)
-        options (merge +defaults+ *opts*)]
+  []
+  (let [options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            updated-files (map #(create-filepath % options) files)]
-        (perun/save-files-defs tmp options updated-files)
-        (u/info "Added permalinks to %s files\n" (count updated-files))
-        (commit fileset tmp)))))
+      (let [files-metadata (:metadata (meta fileset))
+            updated-metadata (map #(create-filepath % options) files-metadata)
+            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+        (u/info "Added permalinks to %s files\n" (count updated-metadata))
+        fs-with-meta))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -110,17 +100,16 @@
   "Generate sitemap"
   [f filename FILENAME str "Generated sitemap filename"
    o target   OUTDIR   str "The output directory"
-   d datafile DATAFILE str "Datafile with all parsed meta information"
    u url      URL      str "Base URL"]
   (let [pod (create-pod sitemap-deps)
         tmp (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
+      (let [files-metadata (:metadata (meta fileset))]
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap
             ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
+            ~files-metadata
             ~options))
         (commit fileset tmp)))))
 
@@ -136,7 +125,6 @@
   "Generate RSS feed"
   [f filename    FILENAME    str "Generated RSS feed filename"
    o target      OUTDIR      str "The output directory"
-   d datafile    DATAFILE    str "Datafile with all parsed meta information"
    t title       TITLE       str "RSS feed title"
    p description DESCRIPTION str "RSS feed description"
    l link        LINK        str "RSS feed link"]
@@ -144,11 +132,11 @@
         tmp (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
+      (let [files-metadata (:metadata (meta fileset))]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss
             ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
+            ~files-metadata
             ~options))
         (commit fileset tmp)))))
 
@@ -159,14 +147,12 @@
 (deftask render
   "Render pages"
   [o target   OUTDIR   str  "The output directory"
-   d datafile DATAFILE str  "Datafile with all parsed meta information"
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))]
-        (doseq [file files]
+      (let [files-metadata (:metadata (meta fileset))]
+        (doseq [file files-metadata]
           (let [render-fn (:renderer options)
                 html (render-fn file)
                 page-filepath (str (:target options) "/"
@@ -186,7 +172,6 @@
 (deftask collection
   "Render collection files"
   [o target     OUTDIR     str  "The output directory"
-   d datafile   DATAFILE   str  "Datafile with all parsed meta information"
    r renderer   RENDERER   code "Page renderer"
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
@@ -195,10 +180,9 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +collection-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            filtered-files (filter (:filterer options) files)
-            sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
+      (let [files-metadata (:metadata (meta fileset))
+            filtered-files (filter (:filterer options) files-metadata)
+            sorted-files (sort-by (:sortby options) (:comparator options) files-metadata)
             render-fn (:renderer options)
             html (render-fn sorted-files)
             page-filepath (str (:target options) "/" page)]

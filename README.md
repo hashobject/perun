@@ -21,42 +21,40 @@ that suits your needs.
 Everything in Perun is build like independent task. The simplest blog engine will look like:
 
 ```clojure
-  (deftask build
-    "Build blog."
-    []
-    (comp (markdown)
-          (render :renderer renderer)))
+(deftask build
+  "Build blog."
+  []
+  (comp (markdown)
+        (render :renderer renderer)))
 
 ```
 
 But if you want to make permalinks, generate sitemap and rss feed, hide unfinished post, add time to read to each post then you will do:
 
 ```clojure
-  (deftask build
-    "Build blog."
-    []
-    (comp (markdown)
-          (draft)
-          (ttr)
-          (permalink)
-          (render :renderer renderer)
-          (sitemap :filename "sitemap.xml")
-          (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-          (notify)))
-
+(deftask build
+  "Build blog."
+  []
+  (comp (markdown)
+        (draft)
+        (ttr)
+        (permalink)
+        (render :renderer renderer)
+        (sitemap :filename "sitemap.xml")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (notify)))
 ```
 You can also chain this with standard boot tasks. E.x. if you want to upload generated files to Amazon S3 you might use
 [boot-s3](https://github.com/hashobject/boot-s3) plugin.
 
 Then your code might look like this:
 ```clojure
-  (deftask build
-    "Build blog."
-    []
-    (comp (markdown)
-          (render :renderer renderer)
-          (s3-sync)))
-
+(deftask build
+  "Build blog."
+  []
+  (comp (markdown)
+        (render :renderer renderer)
+        (s3-sync)))
 ```
 
 
@@ -78,12 +76,10 @@ Perun works in the following steps:
   2. call each perun task/plugin to manipulate the files
   3. write the results to the destination directory
 
-Perun embraces Boot task model. Filesystem is the main abstraction and the most important thing you should care about.
+Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
 When you use Perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
 
-`meta.edn` is a special file that holds that is usually created once by some task (e.x. `markdown`). This file will hold all meta information about each page of your site. Each task/plugin can update `meta.edn` with more information (or deleted some entries from it).
-You can create `meta.edn` manually. It's just a Clojure list of maps. Each map hash meta information about each final generated page. There is no defined format for the map. So you are free do define your own schema for the page metadata.
-Some task/plugins however might require existence of specific keys.
+Fileset passed to every task has metadata `(:metadata (meta fileset)`. This metadata contains accumulated information from each task. More info about structure of this metadata is coming.
 
 ## Install
 
@@ -97,15 +93,15 @@ Create `build.boot` file with similar content. For each task please specify your
 See documentation for each task to find all supported options for each plugin.
 
 ```clojure
-  (set-env!
-    :source-paths #{"src"}
-    :resource-paths #{"resources"}
-    :dependencies '[[org.clojure/clojure "1.6.0"]
-                   [hiccup "1.0.5"]
-                   [perun "0.1.0-SNAPSHOT"]
-                   [clj-time "0.9.0"]
-                   [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
-                   [jeluard/boot-notify "0.1.2" :scope "test"]])
+(set-env!
+  :source-paths #{"src"}
+  :resource-paths #{"resources"}
+  :dependencies '[[org.clojure/clojure "1.6.0"]
+                 [hiccup "1.0.5"]
+                 [perun "0.1.0-SNAPSHOT"]
+                 [clj-time "0.9.0"]
+                 [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
+                 [jeluard/boot-notify "0.1.2" :scope "test"]])
 
 (task-options!
   pom {:project 'blog.hashobject.com

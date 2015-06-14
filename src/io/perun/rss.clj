@@ -20,10 +20,9 @@
         rss-str (apply rss-gen/channel-xml opts items)]
     rss-str))
 
-(defn generate-rss [tgt-path datafile-path options]
-  (let [files (perun/read-files-defs datafile-path)
-        rss-filepath (str (:target options) "/" (:filename options))
-        rss-string (generate-rss-str files options)]
+(defn generate-rss [tgt-path files-metadata options]
+  (let [rss-filepath (str (:target options) "/" (:filename options))
+        rss-string (generate-rss-str files-metadata options)]
     (perun/create-file tgt-path rss-filepath rss-string)
     (u/info (str "Generate RSS feed and save to " rss-filepath "\n"))))
 
