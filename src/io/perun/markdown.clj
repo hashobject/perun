@@ -1,12 +1,5 @@
-(set-env!
-  :dependencies '[[org.clojure/clojure "1.6.0"]
-                  [markdown-clj "0.9.40"]
-                  [endophile "0.1.2"]])
-
 (ns io.perun.markdown
-  {:boot/export-tasks true}
-  (:require [boot.core       :as boot]
-            [boot.util       :as u]
+  (:require [boot.util       :as u]
             [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [markdown.core   :as markdown-converter]
@@ -16,19 +9,16 @@
 (defn generate-filename
   "Default implementation for the `create-filename` task option"
   [file]
-  (let [filepath (:path file)
+  (let [filepath (.getPath file)
         filename (last (clojure.string/split filepath #"/"))
         length (count filename)
         short-name (subs filename 9 (- length 3))]
         short-name))
 
-(def ^:private
-  +defaults+ {:datafile "meta.edn"
-              :create-filename generate-filename})
 
 (defn file-to-clj [file]
   (-> file
-      perun/read-file
+      slurp
       markdown-parser/mp
       markdown-parser/to-clj
       first))
@@ -54,32 +44,23 @@
 
 (defn markdown-to-html [file]
   (-> file
-      perun/read-file
+      slurp
       markdown-converter/md-to-html-string))
 
 (defn process-file [file options]
   (if-let [file-def (file-to-clj file)]
     (if-let [data (:data file-def)]
       (let [lines (clojure.string/split data #"\n")
-            create-filename-fn (:create-filename options)
+            create-filename-fn (eval (read-string (:create-filename options)))
             filename (create-filename-fn file)
             metadata (parse-file-defn lines)
             content (markdown-to-html file)]
         (assoc metadata :filename filename
                         :content content)))))
 
-(boot/deftask markdown
-  "Parse markdown files"
-  [d datafile        DATAFILE        str  "Target datafile with all parsed meta information"
-   f create-filename CREATE_FILENAME code "Function that creates final target filename of the file"]
-  (let [tmp (boot/temp-dir!)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [options (merge +defaults+ *opts*)
-              markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]))
-              parsed-files (map #(process-file % options) markdown-files)
-              datafile (io/file tmp (:datafile options))
-              content (prn-str parsed-files)]
-          (perun/write-to-file datafile content)
-          (u/info "Parsed %s markdown files\n" (count markdown-files))
-          (perun/commit-and-next fileset tmp next-handler))))))
+(defn parse-markdown [tgt-path options markdown-files]
+  (let [parsed-files (map #(process-file (io/file %) options) markdown-files)
+        datafile (io/file tgt-path (:datafile options))
+        content (prn-str parsed-files)]
+    (perun/write-to-file datafile content)
+    (u/info "Parsed %s markdown files\n" (count markdown-files))))
