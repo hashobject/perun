@@ -47,6 +47,7 @@
       slurp
       markdown-converter/md-to-html-string))
 
+; TODO we need to validate that create-filename is a function
 (defn process-file [file options]
   (if-let [file-def (file-to-clj file)]
     (if-let [data (:data file-def)]
@@ -63,4 +64,5 @@
         datafile (io/file tgt-path (:datafile options))
         content (prn-str parsed-files)]
     (perun/write-to-file datafile content)
-    (u/info "Parsed %s markdown files\n" (count markdown-files))))
+    (u/info "Parsed %s markdown files\n" (count markdown-files))
+    parsed-files))

@@ -42,13 +42,15 @@
         tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]) (map #(.getPath (boot/tmp-file %))))]
-        (pod/with-call-in @pod
-          (io.perun.markdown/parse-markdown
-            ~(.getPath tmp)
-            ~options
-            ~markdown-files))
-        (commit fileset tmp)))))
+      (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]) (map #(.getPath (boot/tmp-file %))))
+            parsed-metadata (pod/with-call-in @pod
+                              (io.perun.markdown/parse-markdown
+                                ~(.getPath tmp)
+                                ~options
+                                ~markdown-files))
+            fs-with-meta (with-meta fileset {:metadata parsed-metadata})]
+        (u/info "Parsed markdown files\n")
+        (commit fs-with-meta tmp)))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -60,13 +62,11 @@
         tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))]
-        (pod/with-call-in @pod
-          (io.perun.ttr/calculate-ttr
-            ~(.getPath tmp)
-            ~(.getPath (boot/tmp-file datafile))
-            ~options))
-        (commit fileset tmp)))))
+      (let [metadata (:metadata (meta fileset))
+            updated-metadata (pod/with-call-in @pod
+                                (io.perun.ttr/calculate-ttr ~metadata))
+            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+        (commit fs-with-meta tmp)))))
 
 (deftask draft
   "Exclude draft files"
@@ -74,12 +74,11 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            updated-files-def (remove #(true? (:draft %)) files)]
-        (perun/save-files-defs tmp options updated-files-def)
-        (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
-        (commit fileset tmp)))))
+      (let [files-metadata (:metadata (meta fileset))
+            updated-metadata (remove #(true? (:draft %)) files-metadata)
+            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+        (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
+        (commit fs-with-meta tmp)))))
 
 (defn- create-filepath [file options]
   (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
@@ -91,12 +90,11 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [datafile (find-data-file fileset (:datafile options))
-            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-            updated-files (map #(create-filepath % options) files)]
-        (perun/save-files-defs tmp options updated-files)
-        (u/info "Added permalinks to %s files\n" (count updated-files))
-        (commit fileset tmp)))))
+      (let [files-metadata (:metadata (meta fileset))
+            updated-metadata (map #(create-filepath % options) files-metadata)
+            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+        (u/info "Added permalinks to %s files\n" (count updated-metadata))
+        (commit fs-with-meta tmp)))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
