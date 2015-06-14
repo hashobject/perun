@@ -3,7 +3,7 @@
   :resource-paths #{"src" "resources"}
   :dependencies '[[boot/core "2.1.2" :scope "test"]
                   [adzerk/bootlaces "0.1.11" :scope "test"]
-                  [jeluard/boot-notify "0.1.2" :scope "test"]
+                  [jeluard/boot-notify "0.2.0" :scope "test"]
                   [clj-time "0.9.0"]
                   [markdown-clj "0.9.40"]
                   [endophile "0.1.2"]

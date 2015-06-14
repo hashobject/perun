@@ -18,5 +18,4 @@
         sitemap-xml (create-sitemap files-metadata options)
         sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
     (perun/create-file tgt-path sitemap-filepath sitemap-string)
-    (u/info (str "Generate sitemap and save to " sitemap-filepath "\n"))))
-
+    (u/info "Generate sitemap and save to %s\n" sitemap-filepath)))
