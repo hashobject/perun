@@ -29,11 +29,10 @@
   (merge +defaults+
          {:create-filename "io.perun.markdown/generate-filename"}))
 
-(defn- commit-and-next [fileset tmp next-handler]
+(defn- commit [fileset tmp]
   (-> fileset
       (boot/add-resource tmp)
-      boot/commit!
-      next-handler))
+      boot/commit!))
 
 (deftask markdown
   "Parse markdown files"
@@ -42,15 +41,14 @@
   (let [pod (create-pod markdown-deps)
         tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]) (map #(.getPath (boot/tmp-file %))))]
-          (pod/with-call-in @pod
-            (io.perun.markdown/parse-markdown
-              ~(.getPath tmp)
-              ~options
-              ~markdown-files))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [markdown-files (->> fileset boot/user-files (boot/by-ext [".md"]) (map #(.getPath (boot/tmp-file %))))]
+        (pod/with-call-in @pod
+          (io.perun.markdown/parse-markdown
+            ~(.getPath tmp)
+            ~options
+            ~markdown-files))
+        (commit fileset tmp)))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -61,29 +59,27 @@
   (let [pod (create-pod ttr-deps)
         tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))]
-          (pod/with-call-in @pod
-            (io.perun.ttr/calculate-ttr
-              ~(.getPath tmp)
-              ~(.getPath (boot/tmp-file datafile))
-              ~options))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))]
+        (pod/with-call-in @pod
+          (io.perun.ttr/calculate-ttr
+            ~(.getPath tmp)
+            ~(.getPath (boot/tmp-file datafile))
+            ~options))
+        (commit fileset tmp)))))
 
 (deftask draft
   "Exclude draft files"
   [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))
-              files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-              updated-files-def (remove #(true? (:draft %)) files)]
-          (perun/save-files-defs tmp options updated-files-def)
-          (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))
+            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
+            updated-files-def (remove #(true? (:draft %)) files)]
+        (perun/save-files-defs tmp options updated-files-def)
+        (u/info "Remove draft files. Remaining %s files\n" (count updated-files-def))
+        (commit fileset tmp)))))
 
 (defn- create-filepath [file options]
   (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
@@ -94,14 +90,13 @@
   [d datafile DATAFILE str "Datafile with all parsed meta information"]
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))
-              files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-              updated-files (map #(create-filepath % options) files)]
-          (perun/save-files-defs tmp options updated-files)
-          (u/info "Added permalinks to %s files\n" (count updated-files))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))
+            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
+            updated-files (map #(create-filepath % options) files)]
+        (perun/save-files-defs tmp options updated-files)
+        (u/info "Added permalinks to %s files\n" (count updated-files))
+        (commit fileset tmp)))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -120,15 +115,14 @@
   (let [pod (create-pod sitemap-deps)
         tmp (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))]
-          (pod/with-call-in @pod
-            (io.perun.sitemap/generate-sitemap
-              ~(.getPath tmp)
-              ~(.getPath (boot/tmp-file datafile))
-              ~options))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))]
+        (pod/with-call-in @pod
+          (io.perun.sitemap/generate-sitemap
+            ~(.getPath tmp)
+            ~(.getPath (boot/tmp-file datafile))
+            ~options))
+        (commit fileset tmp)))))
 
 (def ^:private rss-deps
   '[[clj-rss "0.1.9"]])
@@ -149,15 +143,14 @@
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))]
-          (pod/with-call-in @pod
-            (io.perun.rss/generate-rss
-              ~(.getPath tmp)
-              ~(.getPath (boot/tmp-file datafile))
-              ~options))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))]
+        (pod/with-call-in @pod
+          (io.perun.rss/generate-rss
+            ~(.getPath tmp)
+            ~(.getPath (boot/tmp-file datafile))
+            ~options))
+        (commit fileset tmp)))))
 
 (def ^:private +render-defaults+
   (merge +defaults+
@@ -170,19 +163,18 @@
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))
-              files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))]
-          (doseq [file files]
-            (let [render-fn (:renderer options)
-                  html (render-fn file)
-                  page-filepath (str (:target options) "/"
-                                     (or (:filepath file)
-                                         (str (:filename file) ".html")))]
-              (perun/create-file tmp page-filepath html)))
-          (u/info (str "Render all pages\n"))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))
+            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))]
+        (doseq [file files]
+          (let [render-fn (:renderer options)
+                html (render-fn file)
+                page-filepath (str (:target options) "/"
+                                   (or (:filepath file)
+                                       (str (:filename file) ".html")))]
+            (perun/create-file tmp page-filepath html)))
+        (u/info (str "Render all pages\n"))
+        (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
   (merge +defaults+
@@ -202,15 +194,14 @@
    p page       PAGE       str  "Collection result page path"]
   (let [tmp (boot/tmp-dir!)
         options (merge +collection-defaults+ *opts*)]
-    (fn middleware [next-handler]
-      (fn handler [fileset]
-        (let [datafile (find-data-file fileset (:datafile options))
-              files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
-              filtered-files (filter (:filterer options) files)
-              sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
-              render-fn (:renderer options)
-              html (render-fn sorted-files)
-              page-filepath (str (:target options) "/" page)]
-            (perun/create-file tmp page-filepath html)
-          (u/info (str "Render collection " page "\n"))
-          (commit-and-next fileset tmp next-handler))))))
+    (boot/with-pre-wrap fileset
+      (let [datafile (find-data-file fileset (:datafile options))
+            files (perun/read-files-defs (.getPath (boot/tmp-file datafile)))
+            filtered-files (filter (:filterer options) files)
+            sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
+            render-fn (:renderer options)
+            html (render-fn sorted-files)
+            page-filepath (str (:target options) "/" page)]
+        (perun/create-file tmp page-filepath html)
+        (u/info (str "Render collection " page "\n"))
+        (commit fileset tmp)))))
