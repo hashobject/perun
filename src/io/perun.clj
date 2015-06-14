@@ -9,7 +9,7 @@
   '[[clj-time "0.9.0"]])
 
 (def ^:private
-  +defaults+ {:datafile "meta.edn"})
+  +defaults+ {})
 
 (defn- create-pod [deps]
   (-> (boot/get-env)
@@ -36,8 +36,7 @@
 
 (deftask markdown
   "Parse markdown files"
-  [d datafile        DATAFILE        str "Target datafile with all parsed meta information"
-   f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
+  [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
   (let [pod (create-pod markdown-deps)
         tmp (boot/tmp-dir!)
         options (merge +markdown-defaults+ *opts*)]
@@ -57,7 +56,7 @@
 
 (deftask ttr
   "Calculate time to read for each file"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
+  []
   (let [pod (create-pod ttr-deps)
         tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
@@ -70,7 +69,7 @@
 
 (deftask draft
   "Exclude draft files"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
+  []
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
@@ -86,7 +85,7 @@
 
 (deftask permalink
   "Make files permalinked"
-  [d datafile DATAFILE str "Datafile with all parsed meta information"]
+  []
   (let [tmp (boot/tmp-dir!)
         options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
@@ -108,7 +107,6 @@
   "Generate sitemap"
   [f filename FILENAME str "Generated sitemap filename"
    o target   OUTDIR   str "The output directory"
-   d datafile DATAFILE str "Datafile with all parsed meta information"
    u url      URL      str "Base URL"]
   (let [pod (create-pod sitemap-deps)
         tmp (boot/tmp-dir!)
@@ -134,7 +132,6 @@
   "Generate RSS feed"
   [f filename    FILENAME    str "Generated RSS feed filename"
    o target      OUTDIR      str "The output directory"
-   d datafile    DATAFILE    str "Datafile with all parsed meta information"
    t title       TITLE       str "RSS feed title"
    p description DESCRIPTION str "RSS feed description"
    l link        LINK        str "RSS feed link"]
@@ -157,7 +154,6 @@
 (deftask render
   "Render pages"
   [o target   OUTDIR   str  "The output directory"
-   d datafile DATAFILE str  "Datafile with all parsed meta information"
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
@@ -183,7 +179,6 @@
 (deftask collection
   "Render collection files"
   [o target     OUTDIR     str  "The output directory"
-   d datafile   DATAFILE   str  "Datafile with all parsed meta information"
    r renderer   RENDERER   code "Page renderer"
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"

@@ -60,9 +60,6 @@
                         :content content)))))
 
 (defn parse-markdown [tgt-path options markdown-files]
-  (let [parsed-files (map #(process-file (io/file %) options) markdown-files)
-        datafile (io/file tgt-path (:datafile options))
-        content (prn-str parsed-files)]
-    (perun/write-to-file datafile content)
+  (let [parsed-files (map #(process-file (io/file %) options) markdown-files)]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))
