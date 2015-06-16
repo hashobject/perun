@@ -3,8 +3,8 @@
             [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [clojure.string  :as str]
-            [markdown.core   :as markdown-converter]))
-
+            [markdown.core   :as markdown-converter]
+            [clj-yaml.core   :as yaml]))
 
 (defn generate-filename
   "Default implementation for the `create-filename` task option"
@@ -15,12 +15,6 @@
         short-name (subs filename 9 (- length 3))]
         short-name))
 
-(defn trim-if-not-nil [s]
-  (if (clojure.string/blank? s)
-    s
-    (clojure.string/trim s)))
-
-
 (defn extract-between [s prefix suffix]
   (-> s
       (clojure.string/split prefix)
@@ -28,43 +22,30 @@
       (clojure.string/split suffix)
       first))
 
-
-(defn parse-file-metadata [content]
-  (let [metadata-str (extract-between content #"---" #"---")
-        metadata-lines (str/split metadata-str #"\n")
-        ; we use `original` file flag to distinguish between generated files
-        ; (e.x. created those by plugins)
-        metadata {:original true}]
-    (into metadata
-      (for [line metadata-lines]
-        (let [tokens (str/split line #":" 2)
-              key-token (trim-if-not-nil (first tokens))
-              value-token (trim-if-not-nil (second tokens))]
-              (if (not (str/blank? key-token))
-                [(keyword key-token) value-token]))))))
-
-(defn file-to-metadata [file]
-  (-> file
-      slurp
-      parse-file-metadata))
+(defn parse-file-metadata [file-content]
+  (let [metadata-str (extract-between file-content #"---" #"---")
+        parsed-yaml (yaml/parse-string metadata-str)]
+    ; we use `original` file flag to distinguish between generated files
+    ; (e.x. created those by plugins)
+    (assoc parsed-yaml :original true)))
 
 (defn remove-metadata [content]
-  (first (drop 2 (str/split content #"---"))))
+  (first (drop 2 (str/split content #"---\n"))))
 
-(defn markdown-to-html [file]
-  (-> file
-      slurp
+(defn markdown-to-html [file-content]
+  (-> file-content
       remove-metadata
       markdown-converter/md-to-html-string))
 
 ; TODO we need to validate that create-filename is a function
 (defn process-file [file options]
-  (if-let [metadata (file-to-metadata file)]
-    (let [create-filename-fn (eval (read-string (:create-filename options)))
-          filename (create-filename-fn file)
-          content (markdown-to-html file)]
-        (assoc metadata :filename filename
-                        :content content))))
+  (let [file-content (slurp file)]
+    (if-let [metadata (parse-file-metadata file-content)]
+      (let [create-filename-fn (eval (read-string (:create-filename options)))
+            filename (create-filename-fn file)
+            content (markdown-to-html file-content)]
+          (assoc metadata :filename filename
+                          :content content)))))
 
 (defn parse-markdown [markdown-files options]
   (let [parsed-files (map #(process-file (io/file %) options) markdown-files)

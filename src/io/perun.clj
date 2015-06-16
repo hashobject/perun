@@ -22,7 +22,8 @@
   (->> fileset boot/input-files (boot/by-name [filename]) first))
 
 (def ^:private markdown-deps
-  '[[markdown-clj "0.9.40"]])
+  '[[markdown-clj "0.9.40"]
+    [circleci/clj-yaml "0.5.3"]])
 
 (def ^:private +markdown-defaults+
   (merge +defaults+
