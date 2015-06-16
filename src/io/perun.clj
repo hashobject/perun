@@ -3,10 +3,12 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.pod :as pod]
             [boot.util :as u]
-            [io.perun.core :as perun]))
+            [io.perun.core :as perun]
+            [potpuri.core :as potpuri]))
 
 (def ^:private global-deps
-  '[[clj-time "0.9.0"]])
+  '[[clj-time "0.9.0"]
+    [metosin/potpuri "0.2.2"]])
 
 (def ^:private
   +defaults+ {})
@@ -66,10 +68,10 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files-metadata (:metadata (meta fileset))
-          updated-metadata (into {} (remove #(true? (:draft (val %))) files-metadata))
-          fs-with-meta (with-meta fileset {:metadata updated-metadata})]
-      (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
+    (let [files (:metadata (meta fileset))
+          updated-files (potpuri/filter-vals #(not (true? (:draft %))) files)
+          fs-with-meta (with-meta fileset {:metadata updated-files})]
+      (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
 (defn- create-filepath [file options]
@@ -82,7 +84,7 @@
   (let [options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [files (:metadata (meta fileset))
-            updated-files (perun/update-map files #(create-filepath % options))
+            updated-files (potpuri/map-vals #(create-filepath % options) files)
             fs-with-meta (with-meta fileset {:metadata updated-files})]
         (u/info "Added permalinks to %s files\n" (count updated-files))
         fs-with-meta))))
