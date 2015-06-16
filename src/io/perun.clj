@@ -22,8 +22,7 @@
   (->> fileset boot/input-files (boot/by-name [filename]) first))
 
 (def ^:private markdown-deps
-  '[[markdown-clj "0.9.40"]
-    [endophile "0.1.2"]])
+  '[[markdown-clj "0.9.40"]])
 
 (def ^:private +markdown-defaults+
   (merge +defaults+
