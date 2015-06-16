@@ -23,7 +23,7 @@
       first))
 
 (defn parse-file-metadata [file-content]
-  (let [metadata-str (extract-between file-content #"---" #"---")
+  (let [metadata-str (extract-between file-content #"---\n" #"---\n")
         parsed-yaml (yaml/parse-string metadata-str)]
     ; we use `original` file flag to distinguish between generated files
     ; (e.x. created those by plugins)
