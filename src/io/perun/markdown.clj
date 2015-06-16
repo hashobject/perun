@@ -2,6 +2,7 @@
   (:require [boot.util       :as u]
             [io.perun.core   :as perun]
             [clojure.java.io :as io]
+            [clojure.string  :as str]
             [markdown.core   :as markdown-converter]))
 
 
@@ -30,16 +31,16 @@
 
 (defn parse-file-metadata [content]
   (let [metadata-str (extract-between content #"---" #"---")
-        metadata-lines (clojure.string/split metadata-str #"\n")
+        metadata-lines (str/split metadata-str #"\n")
         ; we use `original` file flag to distinguish between generated files
         ; (e.x. created those by plugins)
         metadata {:original true}]
     (into metadata
       (for [line metadata-lines]
-        (let [tokens (clojure.string/split line #":" 2)
+        (let [tokens (str/split line #":" 2)
               key-token (trim-if-not-nil (first tokens))
               value-token (trim-if-not-nil (second tokens))]
-              (if (not (clojure.string/blank? key-token))
+              (if (not (str/blank? key-token))
                 [(keyword key-token) value-token]))))))
 
 (defn file-to-metadata [file]
@@ -48,7 +49,7 @@
       parse-file-metadata))
 
 (defn remove-metadata [content]
-  (first (drop 2 (clojure.string/split content #"---"))))
+  (first (drop 2 (str/split content #"---"))))
 
 (defn markdown-to-html [file]
   (-> file
