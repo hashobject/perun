@@ -6,7 +6,7 @@
             [clj-rss.core    :as rss-gen]))
 
 (defn rss-definitions [files]
-  (for [file files]
+  (for [file (vals files)]
     {:link (:canonical_url file)
      :guid (:canonical_url file)
      :pubDate (date/str-to-date (:date_published file))
@@ -20,9 +20,9 @@
         rss-str (apply rss-gen/channel-xml opts items)]
     rss-str))
 
-(defn generate-rss [tgt-path files-metadata options]
+(defn generate-rss [tgt-path files options]
   (let [rss-filepath (str (:target options) "/" (:filename options))
-        rss-string (generate-rss-str files-metadata options)]
+        rss-string (generate-rss-str files options)]
     (perun/create-file tgt-path rss-filepath rss-string)
     (u/info "Generate RSS feed and save to %s\n" rss-filepath)))
 

@@ -63,5 +63,5 @@
 
 (defn parse-markdown [markdown-files options]
   (let [parsed-files (into {} (map #(process-file (io/file %) options) markdown-files))]
-    (u/info (prn-str parsed-files))
+    (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))

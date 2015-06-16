@@ -11,7 +11,7 @@
        :lastmod (:date_modified file)
        :changefreq (or (:sitemap_changefreq file) "weekly")
        :priority (or (:sitemap_priority file) 0.8)})
-    files))
+    (vals files)))
 
 (defn generate-sitemap [tgt-path files-metadata options]
   (let [sitemap-filepath (str (:target options) "/" (:filename options))

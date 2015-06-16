@@ -67,7 +67,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [files-metadata (:metadata (meta fileset))
-          updated-metadata (remove #(true? (:draft %)) files-metadata)
+          updated-metadata (into {} (remove #(true? (:draft (val %))) files-metadata))
           fs-with-meta (with-meta fileset {:metadata updated-metadata})]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-metadata))
       fs-with-meta)))
@@ -81,10 +81,10 @@
   []
   (let [options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files-metadata (:metadata (meta fileset))
-            updated-metadata (map #(create-filepath % options) files-metadata)
-            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
-        (u/info "Added permalinks to %s files\n" (count updated-metadata))
+      (let [files (:metadata (meta fileset))
+            updated-files (perun/update-map files #(create-filepath % options))
+            fs-with-meta (with-meta fileset {:metadata updated-files})]
+        (u/info "Added permalinks to %s files\n" (count updated-files))
         fs-with-meta))))
 
 (def ^:private sitemap-deps
@@ -150,8 +150,8 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files-metadata (:metadata (meta fileset))]
-        (doseq [file files-metadata]
+      (let [files (vals (:metadata (meta fileset)))]
+        (doseq [file files]
           (let [render-fn (:renderer options)
                 html (render-fn file)
                 page-filepath (str (:target options) "/"
@@ -179,9 +179,9 @@
   (let [tmp (boot/tmp-dir!)
         options (merge +collection-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files-metadata (:metadata (meta fileset))
-            filtered-files (filter (:filterer options) files-metadata)
-            sorted-files (sort-by (:sortby options) (:comparator options) files-metadata)
+      (let [files (vals (:metadata (meta fileset)))
+            filtered-files (filter (:filterer options) files)
+            sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
             render-fn (:renderer options)
             html (render-fn sorted-files)
             page-filepath (str (:target options) "/" page)]
