@@ -55,11 +55,13 @@
             create-filename-fn (eval (read-string (:create-filename options)))
             filename (create-filename-fn file)
             metadata (parse-file-defn lines)
-            content (markdown-to-html file)]
-        (assoc metadata :filename filename
-                        :content content)))))
+            content (markdown-to-html file)
+            updated-meta (assoc metadata
+                                  :filename filename
+                                  :content content)]
+        [(.getName file) updated-meta]))))
 
 (defn parse-markdown [markdown-files options]
-  (let [parsed-files (map #(process-file (io/file %) options) markdown-files)]
-    (u/info "Parsed %s markdown files\n" (count markdown-files))
+  (let [parsed-files (into {} (map #(process-file (io/file %) options) markdown-files))]
+    (u/info (prn-str parsed-files))
     parsed-files))
