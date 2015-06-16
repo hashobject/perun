@@ -1,15 +1,15 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"src" "resources"}
-  :dependencies '[[boot/core "2.1.2" :scope "test"]
-                  [adzerk/bootlaces "0.1.11" :scope "test"]
-                  [jeluard/boot-notify "0.2.0" :scope "test"]
-                  [clj-time "0.9.0"]
-                  [markdown-clj "0.9.40"]
-                  [endophile "0.1.2"]
-                  [time-to-read "0.1.0"]
-                  [sitemap "0.2.4"]
-                  [clj-rss "0.1.9"]])
+  :dependencies '[[boot/core "2.1.2" :scope "provided"]
+                  [adzerk/bootlaces "0.1.9" :scope "test"]
+                  [jeluard/boot-notify "0.1.2" :scope "test"]
+                  [clj-time "0.9.0" :scope "test"]
+                  [markdown-clj "0.9.40" :scope "test"]
+                  [endophile "0.1.2" :scope "test"]
+                  [time-to-read "0.1.0" :scope "test"]
+                  [sitemap "0.2.4" :scope "test"]
+                  [clj-rss "0.1.9" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
@@ -18,6 +18,7 @@
 (bootlaces! +version+)
 
 (task-options!
+  aot {:all true}
   pom {:project 'perun
        :version +version+
        :description "Static site generation build with Clojure and Boot"
