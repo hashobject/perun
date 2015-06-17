@@ -16,38 +16,44 @@
         short-name))
 
 (defn extract-between [s prefix suffix]
-  (-> s
-      (str/split prefix)
-      second
-      (str/split suffix)
-      first))
+  (some-> s
+          (str/split prefix)
+          second
+          (str/split suffix)
+          first))
 
 (defn parse-file-metadata [file-content]
-  (let [metadata-str (extract-between file-content #"---\n" #"---\n")
-        parsed-yaml (yaml/parse-string metadata-str)]
-    ; we use `original` file flag to distinguish between generated files
-    ; (e.x. created those by plugins)
-    (assoc parsed-yaml :original true)))
+  (if-let [metadata-str (extract-between file-content #"---\n" #"---\n")]
+    (if-let [parsed-yaml (yaml/parse-string metadata-str)]
+      ; we use `original` file flag to distinguish between generated files
+      ; (e.x. created those by plugins)
+      (assoc parsed-yaml :original true)
+      {:original true})
+    {:original true}))
 
 (defn remove-metadata [content]
-  (first (drop 2 (str/split content #"---\n"))))
+  (let [splitted (str/split content #"---\n")]
+    (if (> (count splitted) 2)
+      (first (drop 2 splitted))
+      content)))
 
 (defn markdown-to-html [file-content]
+  (u/info file-content)
   (-> file-content
       remove-metadata
       markdown-converter/md-to-html-string))
 
 ; TODO we need to validate that create-filename is a function
 (defn process-file [file options]
-  (let [file-content (slurp file)]
-    (if-let [metadata (parse-file-metadata file-content)]
-      (let [create-filename-fn (eval (read-string (:create-filename options)))
-            filename (create-filename-fn file)
-            content (markdown-to-html file-content)
-            updated-meta (assoc metadata
-                                  :filename filename
-                                  :content content)]
-        [(.getName file) updated-meta]))))
+  (let [file-content (slurp file)
+        metadata (parse-file-metadata file-content)
+        create-filename-fn (eval (read-string (:create-filename options)))
+        filename (create-filename-fn file)
+        content (markdown-to-html file-content)
+        updated-meta (assoc metadata
+                              :filename filename
+                              :content content)]
+      [(.getName file) updated-meta]))
 
 (defn parse-markdown [markdown-files options]
   (let [parsed-files (into {} (map #(process-file (io/file %) options) markdown-files))]
