@@ -23,7 +23,7 @@
 
 (def ^:private markdown-deps
   '[[markdown-clj "0.9.67"]
-    [endophile "0.1.2"]])
+    [circleci/clj-yaml "0.5.3"]])
 
 (def ^:private +markdown-defaults+
   (merge +defaults+
