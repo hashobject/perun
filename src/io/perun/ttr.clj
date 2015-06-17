@@ -1,13 +1,14 @@
 (ns io.perun.ttr
   (:require [boot.util         :as u]
+            [io.perun.core     :as perun]
             [time-to-read.core :as time-to-read]))
 
-(defn calculate-ttr [files-metadata]
-  (let [updated-metadata
-        (map
-          (fn [metadata]
-            (let [time-to-read (time-to-read/estimate-for-text (:content metadata))]
-              (assoc metadata :ttr time-to-read)))
-          files-metadata)]
-    (u/info "Added TTR to %s files\n" (count updated-metadata))
-    updated-metadata))
+
+(defn calculate-ttr [files]
+  (let [updated-files
+          (perun/map-vals
+            (fn [metadata]
+              (assoc metadata :ttr (time-to-read/estimate-for-text (:content metadata))))
+            files)]
+    (u/info "Added TTR to %s files\n" (count updated-files))
+    updated-files))
