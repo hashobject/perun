@@ -17,9 +17,9 @@
 
 (defn extract-between [s prefix suffix]
   (-> s
-      (clojure.string/split prefix)
+      (str/split prefix)
       second
-      (clojure.string/split suffix)
+      (str/split suffix)
       first))
 
 (defn parse-file-metadata [file-content]
@@ -43,12 +43,13 @@
     (if-let [metadata (parse-file-metadata file-content)]
       (let [create-filename-fn (eval (read-string (:create-filename options)))
             filename (create-filename-fn file)
-            content (markdown-to-html file-content)]
-          (assoc metadata :filename filename
-                          :content content)))))
+            content (markdown-to-html file-content)
+            updated-meta (assoc metadata
+                                  :filename filename
+                                  :content content)]
+        [(.getName file) updated-meta]))))
 
 (defn parse-markdown [markdown-files options]
-  (let [parsed-files (map #(process-file (io/file %) options) markdown-files)
-        files (remove nil? parsed-files)]
+  (let [parsed-files (into {} (map #(process-file (io/file %) options) markdown-files))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
-    files))
+    parsed-files))
