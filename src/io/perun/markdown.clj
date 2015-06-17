@@ -48,14 +48,11 @@
 (defn process-file [file options]
   (let [file-content (slurp file)
         metadata     (parse-file-metadata file-content)
-        create-filename-fn (eval (read-string (:create-filename options)))
-        filename     (create-filename-fn file)
-        content      (markdown-to-html file-content)
-        updated-meta (assoc metadata
-                              :filename filename
-                              :content content)]
+        create-filename-fn (eval (read-string (:create-filename options)))]
       (u/info "Processing Markdown: %s\n" (.getName file))
-      [(.getName file) updated-meta]))
+      [(.getName file) (assoc metadata
+                              :filename (create-filename-fn file)
+                              :content (markdown-to-html file-content))]))
 
 (defn parse-markdown [markdown-files options]
   (let [parsed-files (into {} (map #(process-file (io/file %) options) markdown-files))]
