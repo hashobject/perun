@@ -72,18 +72,22 @@
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
-(defn- create-filepath [file]
-  (assoc file :filepath (str  "/" (:filename file) "/index.html")))
+(defn ^:private default-permalink-fn [metadata]
+  (str  "/" (:slug metadata) "/index.html"))
 
 (deftask permalink
-  "Make files permalinked. E.x. about.html will become about/index.html"
-  []
+  ;; Make files permalinked. E.x. about.html will become about/index.html"
+  "Adds :permalink key to files metadata. Value of key will determine target path"
+  [f permalink-fn PERMALINKFN str "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
     (let [files         (:metadata (meta fileset))
-          updated-files (perun/map-vals create-filepath files)
-          fs-with-meta  (with-meta fileset {:metadata updated-files})]
+          permalink-fn  (or permalink-fn default-permalink-fn)
+          assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
+          updated-files (perun/map-vals assoc-perma files)]
+      (u/dbug "Generated Permalinks:\n%s\n"
+              (pr-str (map :permalink (vals updated-files))))
       (u/info "Added permalinks to %s files\n" (count updated-files))
-      fs-with-meta)))
+      (with-meta fileset {:metadata updated-files}))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -150,7 +154,7 @@
           (let [render-fn (:renderer options)
                 html (render-fn file)
                 page-filepath (str (:out-dir options) "/"
-                                   (or (:filepath file)
+                                   (or (:permalink file)
                                        (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
