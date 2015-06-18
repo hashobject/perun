@@ -38,15 +38,24 @@
   "Parse markdown files"
   [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
   (let [pod (create-pod markdown-deps)
-        options (merge +markdown-defaults+ *opts*)]
+        options (merge +markdown-defaults+ *opts*)
+        last-markdown-files (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset boot/user-files (boot/by-ext ["md" "markdown"]) (map #(.getPath (boot/tmp-file %))))
-            parsed-metadata (pod/with-call-in @pod
-                              (io.perun.markdown/parse-markdown
-                                ~markdown-files
-                                ~options))
-            fs-with-meta (with-meta fileset {:metadata parsed-metadata})]
-        fs-with-meta))))
+      (let [markdown-files (->> fileset
+                                (boot/fileset-diff @last-markdown-files)
+                                boot/user-files
+                                (boot/by-ext ["md" "markdown"])
+                                (map #(.getPath (boot/tmp-file %))))]
+            (do
+              (reset! last-markdown-files fileset)
+              (let [parsed-metadata (pod/with-call-in @pod
+                                      (io.perun.markdown/parse-markdown
+                                        ~markdown-files
+                                        ~options))
+                    initial-metadata (or (:metadata (meta fileset)) {})
+                    final-metadata (merge initial-metadata parsed-metadata)
+                    fs-with-meta (with-meta fileset {:metadata final-metadata})]
+          fs-with-meta))))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -77,7 +86,7 @@
     (assoc file :filepath file-path)))
 
 (deftask permalink
-  "Make files permalinked"
+  "Make files permalinked. E.x. about.html will become about/index.html"
   []
   (let [options (merge +defaults+ *opts*)]
     (boot/with-pre-wrap fileset
