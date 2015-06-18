@@ -174,7 +174,7 @@
   (merge +defaults+
          {:target "public"
           :filterer identity
-          :sortby (fn [file] (:date_published file))
+          :sortby (fn [file] (:date-published file))
           :comparator (fn [i1 i2] (compare i1 i2))}))
 
 (deftask collection
