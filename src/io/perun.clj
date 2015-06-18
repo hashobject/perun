@@ -8,9 +8,6 @@
 (def ^:private global-deps
   '[[clj-time "0.9.0"]])
 
-(def ^:private
-  +defaults+ {})
-
 (defn- create-pod [deps]
   (-> (boot/get-env)
       (update-in [:dependencies] into global-deps)
@@ -26,8 +23,7 @@
     [circleci/clj-yaml "0.5.3"]])
 
 (def ^:private +markdown-defaults+
-  (merge +defaults+
-         {:create-filename "io.perun.markdown/generate-filename"}))
+  {:create-filename "io.perun.markdown/generate-filename"})
 
 (defn- commit [fileset tmp]
   (-> fileset
@@ -88,21 +84,19 @@
 (deftask permalink
   "Make files permalinked. E.x. about.html will become about/index.html"
   []
-  (let [options (merge +defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [files (:metadata (meta fileset))
-            updated-files (perun/map-vals #(create-filepath % options) files)
-            fs-with-meta (with-meta fileset {:metadata updated-files})]
-        (u/info "Added permalinks to %s files\n" (count updated-files))
-        fs-with-meta))))
+  (boot/with-pre-wrap fileset
+    (let [files (:metadata (meta fileset))
+          updated-files (perun/map-vals #(create-filepath % *opts*) files)
+          fs-with-meta (with-meta fileset {:metadata updated-files})]
+      (u/info "Added permalinks to %s files\n" (count updated-files))
+      fs-with-meta)))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
 
 (def ^:private +sitemap-defaults+
-  (merge +defaults+
-         {:filename "sitemap.xml"
-          :target "public"}))
+  {:filename "sitemap.xml"
+   :target "public"})
 
 (deftask sitemap
   "Generate sitemap"
@@ -125,9 +119,8 @@
   '[[clj-rss "0.1.9"]])
 
 (def ^:private +rss-defaults+
-  (merge +defaults+
-         {:filename "feed.rss"
-          :target "public"}))
+  {:filename "feed.rss"
+   :target "public"})
 
 (deftask rss
   "Generate RSS feed"
@@ -149,8 +142,7 @@
         (commit fileset tmp)))))
 
 (def ^:private +render-defaults+
-  (merge +defaults+
-         {:target "public"}))
+  {:target "public"})
 
 (deftask render
   "Render pages"
@@ -171,11 +163,10 @@
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
-  (merge +defaults+
-         {:target "public"
-          :filterer identity
-          :sortby (fn [file] (:date-published file))
-          :comparator (fn [i1 i2] (compare i1 i2))}))
+  {:target "public"
+   :filterer identity
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i1 i2))})
 
 (deftask collection
   "Render collection files"
