@@ -77,17 +77,16 @@
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
-(defn- create-filepath [file options]
-  (let [file-path (str (:target options) "/" (:filename file) "/index.html")]
-    (assoc file :filepath file-path)))
+(defn- create-filepath [file]
+  (assoc file :filepath (str  "/" (:filename file) "/index.html")))
 
 (deftask permalink
   "Make files permalinked. E.x. about.html will become about/index.html"
   []
   (boot/with-pre-wrap fileset
-    (let [files (:metadata (meta fileset))
-          updated-files (perun/map-vals #(create-filepath % *opts*) files)
-          fs-with-meta (with-meta fileset {:metadata updated-files})]
+    (let [files         (:metadata (meta fileset))
+          updated-files (perun/map-vals create-filepath files)
+          fs-with-meta  (with-meta fileset {:metadata updated-files})]
       (u/info "Added permalinks to %s files\n" (count updated-files))
       fs-with-meta)))
 
