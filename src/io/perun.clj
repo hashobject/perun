@@ -82,7 +82,7 @@
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
-  [s slug-fn SLUGFN sym "Function to build slug from filename"]
+  [s slug-fn SLUGFN code "Function to build slug from filename"]
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (:metadata (meta fileset))
@@ -100,7 +100,7 @@
 (deftask permalink
   ;; Make files permalinked. E.x. about.html will become about/index.html"
   "Adds :permalink key to files metadata. Value of key will determine target path"
-  [f permalink-fn PERMALINKFN str "Function to build permalink from TmpFile metadata"]
+  [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
     (let [files         (:metadata (meta fileset))
           permalink-fn  (or permalink-fn default-permalink-fn)
