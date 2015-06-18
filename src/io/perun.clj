@@ -138,11 +138,11 @@
         (commit fileset tmp)))))
 
 (def ^:private +render-defaults+
-  {:target "public"})
+  {:out-dir "public"})
 
 (deftask render
   "Render pages"
-  [o target   OUTDIR   str  "The output directory"
+  [o out-dir  OUTDIR   str  "The output directory"
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
@@ -151,7 +151,7 @@
         (doseq [file files]
           (let [render-fn (:renderer options)
                 html (render-fn file)
-                page-filepath (str (:target options) "/"
+                page-filepath (str (:out-dir options) "/"
                                    (or (:filepath file)
                                        (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
@@ -159,14 +159,14 @@
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
-  {:target "public"
+  {:out-dir "public"
    :filterer identity
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i1 i2))})
 
 (deftask collection
   "Render collection files"
-  [o target     OUTDIR     str  "The output directory"
+  [o out-dir    OUTDIR     str  "The output directory"
    r renderer   RENDERER   code "Page renderer"
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
@@ -180,7 +180,7 @@
             sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
             render-fn (:renderer options)
             html (render-fn sorted-files)
-            page-filepath (str (:target options) "/" page)]
+            page-filepath (str (:out-dir options) "/" page)]
         (perun/create-file tmp page-filepath html)
         (u/info (str "Render collection " page "\n"))
         (commit fileset tmp)))))
