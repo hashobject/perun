@@ -15,23 +15,23 @@
       pod/make-pod
       future))
 
-(def ^:private markdown-deps
-  '[[endophile "0.1.2"]
-    [circleci/clj-yaml "0.5.3"]])
-
-(def ^:private +markdown-defaults+
-  {:create-filename "io.perun.markdown/generate-filename"})
-
 (defn- commit [fileset tmp]
   (-> fileset
       (boot/add-resource tmp)
       boot/commit!))
 
+(def ^:private markdown-deps
+  '[[endophile "0.1.2"]
+    [circleci/clj-yaml "0.5.3"]])
+
 (deftask markdown
-  "Parse markdown files"
-  [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
+  "Parse markdown files
+
+  This task will look for files ending with `md` or `markdown`
+  and add a `:content` key to their metadata containing the
+  HTML resulting from processing the markdown file's content"
+  []
   (let [pod (create-pod markdown-deps)
-        options (merge +markdown-defaults+ *opts*)
         last-markdown-files (atom nil)]
     (boot/with-pre-wrap fileset
       (let [markdown-files (->> fileset
@@ -42,9 +42,7 @@
             (do
               (reset! last-markdown-files fileset)
               (let [parsed-metadata (pod/with-call-in @pod
-                                      (io.perun.markdown/parse-markdown
-                                        ~markdown-files
-                                        ~options))
+                                      (io.perun.markdown/parse-markdown ~markdown-files))
                     initial-metadata (or (:metadata (meta fileset)) {})
                     final-metadata (merge initial-metadata parsed-metadata)
                     fs-with-meta (with-meta fileset {:metadata final-metadata})]
