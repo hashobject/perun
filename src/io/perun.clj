@@ -15,9 +15,6 @@
       pod/make-pod
       future))
 
-(defn find-data-file [fileset filename]
-  (->> fileset boot/input-files (boot/by-name [filename]) first))
-
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
     [circleci/clj-yaml "0.5.3"]])
