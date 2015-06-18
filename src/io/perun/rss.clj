@@ -7,12 +7,12 @@
 
 (defn rss-definitions [files]
   (for [file (vals files)]
-    {:link (:canonical_url file)
-     :guid (:canonical_url file)
-     :pubDate (date/str-to-date (:date_published file))
+    {:link (:canonical-url file)
+     :guid (:canonical-url file)
+     :pubDate (date/str-to-date (:date-published file))
      :title (:name file)
      :description (:description file)
-     :author (:author_email file)}))
+     :author (:author-email file)}))
 
 (defn generate-rss-str [files options]
   (let [opts (select-keys options [:title :description :link])
