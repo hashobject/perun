@@ -110,7 +110,7 @@
    Make files permalinked. E.x. about.html will become about/index.html"
   [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
-    (let [files         (:metadata (meta fileset))
+    (let [files         (get-meta fileset)
           permalink-fn  (or permalink-fn default-permalink-fn)
           assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
           updated-files (perun/map-vals assoc-perma files)]
@@ -135,7 +135,7 @@
         tmp (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (:metadata (meta fileset))]
+      (let [files (vals (get-meta fileset))]
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap
             ~(.getPath tmp)
@@ -161,7 +161,7 @@
         tmp (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (:metadata (meta fileset))]
+      (let [files (vals (get-meta fileset))]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss
             ~(.getPath tmp)

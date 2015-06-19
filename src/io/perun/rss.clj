@@ -6,7 +6,7 @@
             [clj-rss.core    :as rss-gen]))
 
 (defn rss-definitions [files]
-  (for [file (vals files)]
+  (for [file files]
     {:link (:canonical-url file)
      :guid (:canonical-url file)
      :pubDate (date/str-to-date (:date-published file))
