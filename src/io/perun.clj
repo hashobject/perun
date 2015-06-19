@@ -86,9 +86,8 @@
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (:metadata (meta fileset))
-          updated-files (into {}
-                              (for [[f m] files]
-                                [f (assoc m :slug (slug-fn f))]))]
+          assoc-slug    (fn [f] (assoc f :slug (slug-fn f)))
+          updated-files (perun/map-vals assoc-slug files)]
       (u/dbug "Generated Slugs:\n%s\n"
               (pr-str (map :slug (vals updated-files))))
       (u/info "Added slugs to %s files\n" (count updated-files))
@@ -98,8 +97,9 @@
   (str  "/" (:slug metadata) "/index.html"))
 
 (deftask permalink
-  ;; Make files permalinked. E.x. about.html will become about/index.html"
-  "Adds :permalink key to files metadata. Value of key will determine target path"
+  "Adds :permalink key to files metadata. Value of key will determine target path.
+
+   Make files permalinked. E.x. about.html will become about/index.html"
   [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
     (let [files         (:metadata (meta fileset))

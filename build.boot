@@ -33,7 +33,8 @@
 
 
 ; testing functions
-(defn renderer [data] (:content data))
+(defn renderer [data]
+  (:content data))
 
 (defn index-renderer [files]
   (let [names (map :name files)]
@@ -45,6 +46,7 @@
   (comp (markdown)
         (draft)
         (ttr)
+        ;(slug)
         (permalink)
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html" :filter identity)
