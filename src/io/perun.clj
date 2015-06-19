@@ -3,6 +3,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.pod :as pod]
             [boot.util :as u]
+            [clojure.string :as string]
             [io.perun.core :as perun]))
 
 (def ^:private global-deps
@@ -15,23 +16,23 @@
       pod/make-pod
       future))
 
-(def ^:private markdown-deps
-  '[[endophile "0.1.2"]
-    [circleci/clj-yaml "0.5.3"]])
-
-(def ^:private +markdown-defaults+
-  {:create-filename "io.perun.markdown/generate-filename"})
-
 (defn- commit [fileset tmp]
   (-> fileset
       (boot/add-resource tmp)
       boot/commit!))
 
+(def ^:private markdown-deps
+  '[[endophile "0.1.2"]
+    [circleci/clj-yaml "0.5.3"]])
+
 (deftask markdown
-  "Parse markdown files"
-  [f create-filename CREATE_FILENAME str "Function that creates final target filename of the file"]
+  "Parse markdown files
+
+  This task will look for files ending with `md` or `markdown`
+  and add a `:content` key to their metadata containing the
+  HTML resulting from processing the markdown file's content"
+  []
   (let [pod (create-pod markdown-deps)
-        options (merge +markdown-defaults+ *opts*)
         last-markdown-files (atom nil)]
     (boot/with-pre-wrap fileset
       (let [markdown-files (->> fileset
@@ -42,9 +43,7 @@
             (do
               (reset! last-markdown-files fileset)
               (let [parsed-metadata (pod/with-call-in @pod
-                                      (io.perun.markdown/parse-markdown
-                                        ~markdown-files
-                                        ~options))
+                                      (io.perun.markdown/parse-markdown ~markdown-files))
                     initial-metadata (or (:metadata (meta fileset)) {})
                     final-metadata (merge initial-metadata parsed-metadata)
                     fs-with-meta (with-meta fileset {:metadata final-metadata})]
@@ -74,18 +73,43 @@
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
-(defn- create-filepath [file]
-  (assoc file :filepath (str  "/" (:filename file) "/index.html")))
+(defn ^:private default-slug-fn [filename]
+  (->> (string/split filename #"[-\.]")
+       (drop 3)
+       drop-last
+       (string/join "-")
+       string/lower-case))
+
+(deftask slug
+  "Adds :slug key to files metadata. Slug is derived from filename."
+  [s slug-fn SLUGFN code "Function to build slug from filename"]
+  (boot/with-pre-wrap fileset
+    (let [slug-fn       (or slug-fn default-slug-fn)
+          files         (:metadata (meta fileset))
+          updated-files (into {}
+                              (for [[f m] files]
+                                [f (assoc m :slug (slug-fn f))]))]
+      (u/dbug "Generated Slugs:\n%s\n"
+              (pr-str (map :slug (vals updated-files))))
+      (u/info "Added slugs to %s files\n" (count updated-files))
+      (with-meta fileset {:metadata updated-files}))))
+
+(defn ^:private default-permalink-fn [metadata]
+  (str  "/" (:slug metadata) "/index.html"))
 
 (deftask permalink
-  "Make files permalinked. E.x. about.html will become about/index.html"
-  []
+  ;; Make files permalinked. E.x. about.html will become about/index.html"
+  "Adds :permalink key to files metadata. Value of key will determine target path"
+  [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
     (let [files         (:metadata (meta fileset))
-          updated-files (perun/map-vals create-filepath files)
-          fs-with-meta  (with-meta fileset {:metadata updated-files})]
+          permalink-fn  (or permalink-fn default-permalink-fn)
+          assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
+          updated-files (perun/map-vals assoc-perma files)]
+      (u/dbug "Generated Permalinks:\n%s\n"
+              (pr-str (map :permalink (vals updated-files))))
       (u/info "Added permalinks to %s files\n" (count updated-files))
-      fs-with-meta)))
+      (with-meta fileset {:metadata updated-files}))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -138,11 +162,11 @@
         (commit fileset tmp)))))
 
 (def ^:private +render-defaults+
-  {:target "public"})
+  {:out-dir "public"})
 
 (deftask render
   "Render pages"
-  [o target   OUTDIR   str  "The output directory"
+  [o out-dir  OUTDIR   str  "The output directory"
    r renderer RENDERER code "Page renderer"]
   (let [tmp (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
@@ -151,22 +175,22 @@
         (doseq [file files]
           (let [render-fn (:renderer options)
                 html (render-fn file)
-                page-filepath (str (:target options) "/"
-                                   (or (:filepath file)
+                page-filepath (str (:out-dir options) "/"
+                                   (or (:permalink file)
                                        (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
-  {:target "public"
+  {:out-dir "public"
    :filterer identity
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i1 i2))})
 
 (deftask collection
   "Render collection files"
-  [o target     OUTDIR     str  "The output directory"
+  [o out-dir    OUTDIR     str  "The output directory"
    r renderer   RENDERER   code "Page renderer"
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
@@ -180,7 +204,7 @@
             sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
             render-fn (:renderer options)
             html (render-fn sorted-files)
-            page-filepath (str (:target options) "/" page)]
+            page-filepath (str (:out-dir options) "/" page)]
         (perun/create-file tmp page-filepath html)
         (u/info (str "Render collection " page "\n"))
         (commit fileset tmp)))))
