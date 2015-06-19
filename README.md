@@ -160,7 +160,7 @@ After you created `build` task simply do:
 
 We love contributions. Please submit your pull requests.
 
-#### Contributor list
+## Contributor list
 
 - [Martin Klepsch](https://github.com/martinklepsch)
 - [Juho Teperi](https://github.com/Deraen)
