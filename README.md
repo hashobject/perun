@@ -13,8 +13,8 @@ that suits your needs.
  - calculate time to read for each page
  - sitemap
  - rss
- - permalinks
  - slugs
+ - permalinks
  - rendering to any format
 
 ## Plugins
@@ -86,7 +86,7 @@ Fileset passed to every task has metadata `(:metadata (meta fileset)`. This meta
 ## Install
 
 ```clojure
-[perun "0.1.0-SNAPSHOT"]
+[perun "0.1.2-SNAPSHOT"]
 ```
 
 ## Usage
