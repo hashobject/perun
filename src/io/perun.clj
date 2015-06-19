@@ -7,7 +7,7 @@
             [io.perun.core :as perun]))
 
 (def ^:private global-deps
-  '[[clj-time "0.9.0"]])
+  '[])
 
 (defn- create-pod [deps]
   (-> (boot/get-env)

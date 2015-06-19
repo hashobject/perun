@@ -1,7 +1,6 @@
 (ns io.perun.rss
   (:require [boot.util       :as u]
             [io.perun.core   :as perun]
-            [io.perun.date   :as date]
             [clojure.java.io :as io]
             [clj-rss.core    :as rss-gen]))
 
@@ -9,7 +8,7 @@
   (for [file files]
     {:link (:canonical-url file)
      :guid (:canonical-url file)
-     :pubDate (date/str-to-date (:date-published file))
+     :pubDate (:date-published file)
      :title (:name file)
      :description (:description file)
      :author (:author-email file)}))
