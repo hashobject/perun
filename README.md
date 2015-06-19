@@ -86,7 +86,7 @@ Fileset passed to every task has metadata `(:metadata (meta fileset)`. This meta
 ## Install
 
 ```clojure
-[perun "0.1.2-SNAPSHOT"]
+[perun "0.1.3-SNAPSHOT"]
 ```
 
 ## Usage
