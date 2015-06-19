@@ -65,9 +65,11 @@
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
       (let [files (get-meta fileset)
-            updated-metadata (pod/with-call-in @pod
+            updated-files (pod/with-call-in @pod
                                 (io.perun.ttr/calculate-ttr ~files))
-            fs-with-meta (with-meta fileset {:metadata updated-metadata})]
+            fs-with-meta (with-meta fileset {:metadata updated-files})]
+       (u/dbug "Generated time-to-read:\n%s\n"
+              (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
 
 (deftask draft
