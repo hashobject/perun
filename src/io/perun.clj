@@ -196,7 +196,7 @@
   {:out-dir "public"
    :filterer identity
    :sortby (fn [file] (:date-published file))
-   :comparator (fn [i1 i2] (compare i1 i2))})
+   :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask collection
   "Render collection files"
