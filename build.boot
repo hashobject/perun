@@ -46,7 +46,7 @@
   (comp (markdown)
         (draft)
         (ttr)
-        ;(slug)
+        (slug)
         (permalink)
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html" :filter identity)

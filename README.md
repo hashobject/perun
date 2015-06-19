@@ -14,6 +14,7 @@ that suits your needs.
  - sitemap
  - rss
  - permalinks
+ - slugs
  - rendering to any format
 
 ## Plugins
@@ -38,6 +39,7 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
   (comp (markdown)
         (draft)
         (ttr)
+        (slug)
         (permalink)
         (render :renderer renderer)
         (sitemap :filename "sitemap.xml")
@@ -97,11 +99,11 @@ See documentation for each task to find all supported options for each plugin.
   :source-paths #{"src"}
   :resource-paths #{"resources"}
   :dependencies '[[org.clojure/clojure "1.6.0"]
-                 [hiccup "1.0.5"]
-                 [perun "0.1.0-SNAPSHOT"]
-                 [clj-time "0.9.0"]
-                 [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
-                 [jeluard/boot-notify "0.1.2" :scope "test"]])
+                  [hiccup "1.0.5"]
+                  [perun "0.1.0-SNAPSHOT"]
+                  [clj-time "0.9.0"]
+                  [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
+                  [jeluard/boot-notify "0.1.2" :scope "test"]])
 
 (task-options!
   pom {:project 'blog.hashobject.com
@@ -129,6 +131,7 @@ See documentation for each task to find all supported options for each plugin.
   (comp (markdown)
         (draft)
         (ttr)
+        (slug)
         (permalink)
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html")
