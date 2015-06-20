@@ -21,7 +21,6 @@
       (boot/add-resource tmp)
       boot/commit!))
 
-
 (def +perun-meta-key+ :io.perun)
 
 (defn ^:private get-perun-meta [fileset]
@@ -48,16 +47,15 @@
                                 (boot/fileset-diff @last-markdown-files)
                                 boot/user-files
                                 (boot/by-ext ["md" "markdown"])
-                                (map #(.getPath (boot/tmp-file %))))]
-            (do
-              (reset! last-markdown-files fileset)
-              (let [parsed-metadata (pod/with-call-in @pod
-                                      (io.perun.markdown/parse-markdown ~markdown-files))
-                    files (get-perun-meta fileset)
-                    initial-metadata (or files {})
-                    final-metadata (merge initial-metadata parsed-metadata)
-                    fs-with-meta (with-perun-meta fileset final-metadata)]
-          fs-with-meta))))))
+                                (map #(.getPath (boot/tmp-file %))))
+            parsed-metadata (pod/with-call-in @pod
+                              (io.perun.markdown/parse-markdown ~markdown-files))
+            files (get-perun-meta fileset)
+            initial-metadata (or files {})
+            final-metadata (merge initial-metadata parsed-metadata)
+            fs-with-meta (with-perun-meta fileset final-metadata)]
+        (reset! last-markdown-files fileset)
+        fs-with-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -69,10 +67,10 @@
     (boot/with-pre-wrap fileset
       (let [files (get-perun-meta fileset)
             updated-files (pod/with-call-in @pod
-                                (io.perun.ttr/calculate-ttr ~files))
+                            (io.perun.ttr/calculate-ttr ~files))
             fs-with-meta (with-perun-meta fileset updated-files)]
-       (u/dbug "Generated time-to-read:\n%s\n"
-              (pr-str (map :ttr (vals updated-files))))
+        (u/dbug "Generated time-to-read:\n%s\n"
+                (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
 
 (deftask draft
