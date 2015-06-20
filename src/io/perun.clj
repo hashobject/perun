@@ -107,7 +107,7 @@
       (with-perun-meta fileset updated-files))))
 
 (defn ^:private default-permalink-fn [metadata]
-  (str  "/" (:slug metadata) "/index.html"))
+  (perun/absolutize-url (str (:slug metadata) "/index.html")))
 
 (deftask permalink
   "Adds :permalink key to files metadata. Value of key will determine target path.
@@ -188,9 +188,10 @@
       (let [files (vals (get-perun-meta fileset))]
         (doseq [file files]
           (let [html          (render-fn file)
-                page-filepath (str (:out-dir options) "/"
-                                   (or (:permalink file)
-                                       (str (:filename file) ".html")))]
+                page-filepath (perun/create-filepath
+                                (:out-dir options)
+                                (or (perun/url-to-path (:permalink file))
+                                    (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
         (commit fileset tmp)))))
@@ -217,7 +218,7 @@
             filtered-files (filter (:filterer options) files)
             sorted-files   (sort-by (:sortby options) (:comparator options) filtered-files)
             html           (render-fn sorted-files)
-            page-filepath  (str (:out-dir options) "/" page)]
+            page-filepath  (perun/create-filepath (:out-dir options) page)]
         (perun/create-file tmp page-filepath html)
         (u/info (str "Render collection " page "\n"))
         (commit fileset tmp)))))

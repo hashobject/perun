@@ -1,6 +1,7 @@
 (ns io.perun.core
   "Utilies which can be used in base JVM and pods."
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 (defn write-to-file [out-file content]
   (doto out-file
@@ -10,6 +11,28 @@
 (defn create-file [tmp filepath content]
   (let [file (io/file tmp filepath)]
     (write-to-file file content)))
+
+(defn absolutize-url
+  "Makes sure the url starts with slash."
+  [url]
+  (if (.startsWith url "/")
+    url
+    (str "/" url)))
+
+(defn relativize-url
+  "Remodes slashes url start of the string."
+  [url]
+  (string/replace url #"^[\/]*" ""))
+
+(defn create-filepath
+  "Creates a filepath using system path separator."
+  [& args]
+  (.getPath (apply io/file args)))
+
+(defn url-to-path
+  "Converts a url to filepath."
+  [url]
+  (apply create-filepath (string/split (relativize-url url) #"\/")))
 
 ;;;; map for kv collections
 
