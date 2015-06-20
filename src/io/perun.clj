@@ -179,6 +179,20 @@
 (def ^:private +render-defaults+
   {:out-dir "public"})
 
+(defn- wrap-pool [pool]
+  (let [prev (atom nil)]
+    (fn [fileset]
+      ; Do not refresh on the first run
+      (let [pod (if (and @prev
+                         (seq (->> fileset
+                                   (boot/fileset-diff @prev)
+                                   boot/input-files
+                                   (boot/by-ext ["clj" "cljc"]))))
+                  (pool :refresh)
+                  (pool))]
+        (reset! prev fileset)
+        pod))))
+
 (defn- render-in-pod [pod sym file]
   {:pre [(symbol? sym) (namespace sym)]}
   (pod/with-eval-in pod
@@ -189,11 +203,11 @@
   "Render pages"
   [o out-dir  OUTDIR   str  "The output directory"
    r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
-  (let [pods    (pod/pod-pool (boot/get-env))
+  (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [pod   (pods :refresh)
+      (let [pod   (pods fileset)
             files (vals (get-perun-meta fileset))]
         (doseq [file files]
           (let [html          (render-in-pod pod renderer file)
@@ -219,11 +233,11 @@
    s sortby     SORTBY     code "Sort by function"
    c comparator COMPARATOR code "Sort by comparator function"
    p page       PAGE       str  "Collection result page path"]
-  (let [pods      (pod/pod-pool (boot/get-env))
+  (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [pod            (pods :refresh)
+      (let [pod            (pods fileset)
             files          (vals (get-perun-meta fileset))
             filtered-files (filter (:filterer options) files)
             sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
