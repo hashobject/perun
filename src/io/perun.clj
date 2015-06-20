@@ -28,7 +28,7 @@
   (-> fileset meta +perun-meta-key+))
 
 (defn ^:private with-perun-meta [fileset perun-data]
-  (with-meta fileset {+perun-meta-key+ perun-data}))
+  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
 
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
