@@ -40,8 +40,9 @@
   and add a `:content` key to their metadata containing the
   HTML resulting from processing the markdown file's content"
   []
-  (let [pod     (create-pod markdown-deps)
-        prev-fs (atom nil)]
+  (let [pod       (create-pod markdown-deps)
+        prev-meta (atom {})
+        prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
       (let [markdown-files   (->> fileset
                                   (boot/fileset-diff @prev-fs)
@@ -50,10 +51,11 @@
                                   (map #(.getPath (boot/tmp-file %))))
             parsed-metadata  (pod/with-call-in @pod
                                (io.perun.markdown/parse-markdown ~markdown-files))
-            initial-metadata (or (get-perun-meta fileset) {})
+            initial-metadata @prev-meta
             final-metadata   (merge initial-metadata parsed-metadata)
             fs-with-meta     (with-perun-meta fileset final-metadata)]
         (reset! prev-fs fileset)
+        (reset! prev-meta final-metadata)
         fs-with-meta))))
 
 (def ^:private ttr-deps
