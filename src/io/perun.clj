@@ -40,11 +40,12 @@
   This task will look for files ending with `md` or `markdown`
   and add a `:content` key to their metadata containing the
   HTML resulting from processing the markdown file's content"
-  []
+  [k metadata-key KEY kw "Keyword under which HTML content would be saved to each file meta data"]
   (let [pod (create-pod markdown-deps)
         last-markdown-files (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset
+      (let [content-key (or metadata-key :content)
+            markdown-files (->> fileset
                                 (boot/fileset-diff @last-markdown-files)
                                 boot/user-files
                                 (boot/by-ext ["md" "markdown"])
@@ -52,7 +53,7 @@
             (do
               (reset! last-markdown-files fileset)
               (let [parsed-metadata (pod/with-call-in @pod
-                                      (io.perun.markdown/parse-markdown ~markdown-files))
+                                      (io.perun.markdown/parse-markdown ~markdown-files ~content-key))
                     files (get-perun-meta fileset)
                     initial-metadata (or files {})
                     final-metadata (merge initial-metadata parsed-metadata)
@@ -64,23 +65,25 @@
 
 (deftask ttr
   "Calculate time to read for each file"
-  []
+  [k metadata-key KEY kw "Keyword under which time-to-read would be saved to each file meta data"]
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [files (get-perun-meta fileset)
+      (let [ttr-key (or metadata-key :ttr)
+            files (get-perun-meta fileset)
             updated-files (pod/with-call-in @pod
-                                (io.perun.ttr/calculate-ttr ~files))
+                                (io.perun.ttr/calculate-ttr ~files ~ttr-key))
             fs-with-meta (with-perun-meta fileset updated-files)]
        (u/dbug "Generated time-to-read:\n%s\n"
-              (pr-str (map :ttr (vals updated-files))))
+              (pr-str (map ttr-key (vals updated-files))))
         fs-with-meta))))
 
 (deftask draft
   "Exclude draft files"
-  []
+  [k metadata-key KEY kw "Keyword under which draft flag is saved in each file meta data"]
   (boot/with-pre-wrap fileset
-    (let [files         (get-perun-meta fileset)
-          updated-files (perun/filter-vals #(not (true? (:draft %))) files)
+    (let [draft-key     (or metadata-key :draft)
+          files         (get-perun-meta fileset)
+          updated-files (perun/filter-vals #(not (true? (draft-key %))) files)
           fs-with-meta  (with-perun-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
@@ -97,15 +100,17 @@
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
-  [s slug-fn SLUGFN code "Function to build slug from filename"]
+  [s slug-fn SLUGFN code "Function to build slug from filename"
+   k metadata-key KEY kw "Keyword under which slug would be saved to each file meta data"]
   (boot/with-pre-wrap fileset
-    (let [slug-fn       (or slug-fn default-slug-fn)
+    (let [slug-key      (or metadata-key :slug)
+          slug-fn       (or slug-fn default-slug-fn)
           files         (get-perun-meta fileset)
           updated-files (into {}
                               (for [[f m] files]
-                                [f (assoc m :slug (slug-fn f))]))]
+                                [f (assoc m slug-key (slug-fn f))]))]
       (u/dbug "Generated Slugs:\n%s\n"
-              (pr-str (map :slug (vals updated-files))))
+              (pr-str (map slug-key (vals updated-files))))
       (u/info "Added slugs to %s files\n" (count updated-files))
       (with-perun-meta fileset updated-files))))
 
@@ -116,14 +121,16 @@
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
-  [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
+  [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"
+   k metadata-key KEY kw "Keyword under which permalink would be saved to each file meta data"]
   (boot/with-pre-wrap fileset
-    (let [files         (get-perun-meta fileset)
+    (let [permalink-key (or metadata-key :permalink)
+          files         (get-perun-meta fileset)
           permalink-fn  (or permalink-fn default-permalink-fn)
-          assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
+          assoc-perma   (fn [f] (assoc f permalink-key (permalink-fn f)))
           updated-files (perun/map-vals assoc-perma files)]
       (u/dbug "Generated Permalinks:\n%s\n"
-              (pr-str (map :permalink (vals updated-files))))
+              (pr-str (map permalink-key (vals updated-files))))
       (u/info "Added permalinks to %s files\n" (count updated-files))
       (with-perun-meta fileset updated-files))))
 
