@@ -179,17 +179,24 @@
 (def ^:private +render-defaults+
   {:out-dir "public"})
 
+(defn- render-in-pod [pod sym file]
+  {:pre [(symbol? sym) (namespace sym)]}
+  (pod/with-eval-in pod
+    (require '~(symbol (namespace sym)))
+    ((resolve '~sym) ~file)))
+
 (deftask render
   "Render pages"
   [o out-dir  OUTDIR   str  "The output directory"
-   r renderer RENDERER code "Page renderer"]
-  (let [tmp     (boot/tmp-dir!)
-        options (merge +render-defaults+ *opts*)
-        render-fn (:renderer options)]
+   r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
+  (let [pods    (pod/pod-pool (boot/get-env))
+        tmp     (boot/tmp-dir!)
+        options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (get-perun-meta fileset))]
+      (let [pod   (pods :refresh)
+            files (vals (get-perun-meta fileset))]
         (doseq [file files]
-          (let [html          (render-fn file)
+          (let [html          (render-in-pod pod renderer file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 (or (perun/url-to-path (:permalink file))
@@ -207,19 +214,20 @@
 (deftask collection
   "Render collection files"
   [o out-dir    OUTDIR     str  "The output directory"
-   r renderer   RENDERER   code "Page renderer"
+   r renderer   RENDERER   sym  "Page renderer. Fully qualified symbol resolving to a function."
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
    c comparator COMPARATOR code "Sort by comparator function"
    p page       PAGE       str  "Collection result page path"]
-  (let [tmp       (boot/tmp-dir!)
-        options   (merge +collection-defaults+ *opts*)
-        render-fn (:renderer options)]
+  (let [pods      (pod/pod-pool (boot/get-env))
+        tmp       (boot/tmp-dir!)
+        options   (merge +collection-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files          (vals (get-perun-meta fileset))
+      (let [pod            (pods :refresh)
+            files          (vals (get-perun-meta fileset))
             filtered-files (filter (:filterer options) files)
-            sorted-files   (sort-by (:sortby options) (:comparator options) filtered-files)
-            html           (render-fn sorted-files)
+            sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
+            html           (render-in-pod pod renderer sorted-files)
             page-filepath  (perun/create-filepath (:out-dir options) page)]
         (perun/create-file tmp page-filepath html)
         (u/info (str "Render collection " page "\n"))
