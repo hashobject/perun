@@ -35,13 +35,14 @@
       endophile/to-clj
       endophile/html-string))
 
-(defn process-file [file]
+(defn process-file [file content-key]
   (let [file-content (slurp file)]
       (u/info "Processing Markdown: %s\n" (.getName file))
       [(.getName file) (merge (parse-file-metadata file-content)
-                              {:content (markdown-to-html file-content)})]))
+                              (hash-map content-key (markdown-to-html file-content)))]))
 
-(defn parse-markdown [markdown-files]
-  (let [parsed-files (into {} (map #(-> % io/file process-file) markdown-files))]
+(defn parse-markdown [markdown-files content-key]
+  (let [parsed-files (into {} (map #(-> % io/file (process-file content-key)) markdown-files))]
+    (u/dbug (pr-str parsed-files))
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))
