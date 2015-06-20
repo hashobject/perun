@@ -86,9 +86,12 @@
       fs-with-meta)))
 
 (defn ^:private default-slug-fn [filename]
+  "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
+
+  Jekyll uses the same format by default."
   (->> (string/split filename #"[-\.]")
+       (drop 3)
        drop-last
-       rest
        (string/join "-")
        string/lower-case))
 
