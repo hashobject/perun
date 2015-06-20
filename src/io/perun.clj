@@ -40,21 +40,20 @@
   and add a `:content` key to their metadata containing the
   HTML resulting from processing the markdown file's content"
   []
-  (let [pod (create-pod markdown-deps)
-        last-markdown-files (atom nil)]
+  (let [pod     (create-pod markdown-deps)
+        prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files (->> fileset
-                                (boot/fileset-diff @last-markdown-files)
-                                boot/user-files
-                                (boot/by-ext ["md" "markdown"])
-                                (map #(.getPath (boot/tmp-file %))))
-            parsed-metadata (pod/with-call-in @pod
-                              (io.perun.markdown/parse-markdown ~markdown-files))
-            files (get-perun-meta fileset)
-            initial-metadata (or files {})
-            final-metadata (merge initial-metadata parsed-metadata)
-            fs-with-meta (with-perun-meta fileset final-metadata)]
-        (reset! last-markdown-files fileset)
+      (let [markdown-files   (->> fileset
+                                  (boot/fileset-diff @prev-fs)
+                                  boot/user-files
+                                  (boot/by-ext ["md" "markdown"])
+                                  (map #(.getPath (boot/tmp-file %))))
+            parsed-metadata  (pod/with-call-in @pod
+                               (io.perun.markdown/parse-markdown ~markdown-files))
+            initial-metadata (or (get-perun-meta fileset) {})
+            final-metadata   (merge initial-metadata parsed-metadata)
+            fs-with-meta     (with-perun-meta fileset final-metadata)]
+        (reset! prev-fs fileset)
         fs-with-meta))))
 
 (def ^:private ttr-deps
@@ -68,7 +67,7 @@
       (let [files (get-perun-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.ttr/calculate-ttr ~files))
-            fs-with-meta (with-perun-meta fileset updated-files)]
+            fs-with-meta  (with-perun-meta fileset updated-files)]
         (u/dbug "Generated time-to-read:\n%s\n"
                 (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
@@ -137,8 +136,8 @@
   [f filename FILENAME str "Generated sitemap filename"
    o target   OUTDIR   str "The output directory"
    u url      URL      str "Base URL"]
-  (let [pod (create-pod sitemap-deps)
-        tmp (boot/tmp-dir!)
+  (let [pod     (create-pod sitemap-deps)
+        tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [files (vals (get-perun-meta fileset))]
@@ -163,8 +162,8 @@
    t title       TITLE       str "RSS feed title"
    p description DESCRIPTION str "RSS feed description"
    l link        LINK        str "RSS feed link"]
-  (let [pod (create-pod rss-deps)
-        tmp (boot/tmp-dir!)
+  (let [pod     (create-pod rss-deps)
+        tmp     (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [files (vals (get-perun-meta fileset))]
@@ -183,12 +182,12 @@
   [o out-dir  OUTDIR   str  "The output directory"
    r renderer RENDERER code "Page renderer"]
   (let [tmp     (boot/tmp-dir!)
-        options (merge +render-defaults+ *opts*)]
+        options (merge +render-defaults+ *opts*)
+        render-fn (:renderer options)]
     (boot/with-pre-wrap fileset
       (let [files (vals (get-perun-meta fileset))]
         (doseq [file files]
-          (let [render-fn (:renderer options)
-                html (render-fn file)
+          (let [html          (render-fn file)
                 page-filepath (str (:out-dir options) "/"
                                    (or (:permalink file)
                                        (str (:filename file) ".html")))]
@@ -210,15 +209,15 @@
    s sortby     SORTBY     code "Sort by function"
    c comparator COMPARATOR code "Sort by comparator function"
    p page       PAGE       str  "Collection result page path"]
-  (let [tmp (boot/tmp-dir!)
-        options (merge +collection-defaults+ *opts*)]
+  (let [tmp       (boot/tmp-dir!)
+        options   (merge +collection-defaults+ *opts*)
+        render-fn (:renderer options)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (get-perun-meta fileset))
+      (let [files          (vals (get-perun-meta fileset))
             filtered-files (filter (:filterer options) files)
-            sorted-files (sort-by (:sortby options) (:comparator options) filtered-files)
-            render-fn (:renderer options)
-            html (render-fn sorted-files)
-            page-filepath (str (:out-dir options) "/" page)]
+            sorted-files   (sort-by (:sortby options) (:comparator options) filtered-files)
+            html           (render-fn sorted-files)
+            page-filepath  (str (:out-dir options) "/" page)]
         (perun/create-file tmp page-filepath html)
         (u/info (str "Render collection " page "\n"))
         (commit fileset tmp)))))

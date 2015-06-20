@@ -6,9 +6,9 @@
 
 (defn calculate-ttr [files]
   (let [updated-files
-          (perun/map-vals
-            (fn [metadata]
-              (assoc metadata :ttr (time-to-read/estimate-for-text (:content metadata))))
-            files)]
+        (perun/map-vals
+          (fn [metadata]
+            (assoc metadata :ttr (time-to-read/estimate-for-text (:content metadata))))
+          files)]
     (u/info "Added TTR to %s files\n" (count updated-files))
     updated-files))

@@ -15,7 +15,7 @@
 
 (defn generate-sitemap [tgt-path files-metadata options]
   (let [sitemap-filepath (str (:target options) "/" (:filename options))
-        sitemap-xml (create-sitemap files-metadata options)
-        sitemap-string (sitemap-gen/generate-sitemap sitemap-xml)]
+        sitemap-xml      (create-sitemap files-metadata options)
+        sitemap-string   (sitemap-gen/generate-sitemap sitemap-xml)]
     (perun/create-file tgt-path sitemap-filepath sitemap-string)
     (u/info "Generate sitemap and save to %s\n" sitemap-filepath)))
