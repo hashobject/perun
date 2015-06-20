@@ -37,9 +37,10 @@
 
 (defn process-file [file]
   (let [file-content (slurp file)]
-      (u/info "Processing Markdown: %s\n" (.getName file))
-      [(.getName file) (merge (parse-file-metadata file-content)
-                              {:content (markdown-to-html file-content)})]))
+    ; .getName returns only the filename so this should work cross platform
+    (u/info "Processing Markdown: %s\n" (.getName file))
+    [(.getName file) (merge (parse-file-metadata file-content)
+                            {:content (markdown-to-html file-content)})]))
 
 (defn parse-markdown [markdown-files]
   (let [parsed-files (into {} (map #(-> % io/file process-file) markdown-files))]
