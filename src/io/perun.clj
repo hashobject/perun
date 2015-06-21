@@ -32,7 +32,8 @@
 
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
-    [circleci/clj-yaml "0.5.3"]])
+    [circleci/clj-yaml "0.5.3"]
+    [clj-hyphenate "0.1.0-SNAPSHOT"]])
 
 (deftask markdown
   "Parse markdown files

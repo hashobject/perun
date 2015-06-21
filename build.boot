@@ -9,7 +9,8 @@
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
                   [clj-rss "0.1.9" :scope "test"]
-                  [gravatar "0.1.0" :scope "test"]])
+                  [gravatar "0.1.0" :scope "test"]
+                  [clj-hyphenate "0.1.0-SNAPSHOT" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 

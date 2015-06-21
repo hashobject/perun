@@ -4,7 +4,11 @@
             [clojure.java.io :as io]
             [clojure.string  :as str]
             [endophile.core  :as endophile]
-            [clj-yaml.core   :as yaml]))
+            [clj-yaml.core   :as yaml]
+            [clojure.walk    :as walk]
+
+            [clj-hyphenate.core :refer [hyphenate-paragraph]]
+            [clj-hyphenate.patterns.en-us :as en]))
 
 (defn extract-between [s prefix suffix]
   (some-> s
@@ -28,11 +32,22 @@
       (first (drop 2 splitted))
       content)))
 
+(defn hyphenate [data]
+  (walk/postwalk (fn [node]
+                   (case (:tag node)
+                     :p (assoc node :content (map #(if (string? %)
+                                                      (hyphenate-paragraph en/rules %)
+                                                     %)
+                                                  (:content node)))
+                     node))
+                 data))
+
 (defn markdown-to-html [file-content]
   (-> file-content
       remove-metadata
       endophile/mp
       endophile/to-clj
+      hyphenate
       endophile/html-string))
 
 (defn process-file [file]
