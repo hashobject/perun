@@ -157,7 +157,7 @@ In this case it's possible to setup flow in a way that every commit to GitHub wo
 to AWS S3.
 
 Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31)in order to achieve this you need to:
- - setup [Heroku](heroku.com) application. Don't forget to specify ENVs
+ - setup [Heroku](heroku.com) application. Don't forget to specify ENVs for your tasks (e.x. `AWS_ACCESS_KEY` and `AWS_SECRET_KEY`)
  - add boot buildpack `heroku buildpacks:add https://github.com/upworthy/heroku-buildpack-boot`
  - enable GitHub integration https://devcenter.heroku.com/articles/github-integration
  - change your site in GitHub and see changes deployed to AWS
