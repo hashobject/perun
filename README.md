@@ -13,6 +13,7 @@ that suits your needs.
  - calculate time to read for each page
  - sitemap
  - rss
+ - gravatar
  - slugs
  - permalinks
  - rendering to any format
