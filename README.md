@@ -147,6 +147,18 @@ After you created `build` task simply do:
   boot build
 ```
 
+## Useful plugins
+
+There are plenty of Boot plugins that can be useful in the when you are using perun:
+
+ - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using webserver
+ - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
+ - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
+ - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
+ - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
+ - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
+ - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
+
 ## Tips
 
 ### Auto deployment
