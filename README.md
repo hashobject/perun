@@ -14,6 +14,7 @@ that suits your needs.
  - sitemap
  - rss
  - slugs
+ - build-date - add `:build-date` to global meta and each file meta
  - permalinks
  - rendering to any format
 
