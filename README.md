@@ -158,6 +158,7 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
  - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
  - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
  - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
+ - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser css, images, etc.
 
 ## Tips
 
