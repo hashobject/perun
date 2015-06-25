@@ -151,7 +151,7 @@ After you created `build` task simply do:
 
 There are plenty of Boot plugins that can be useful in the when you are using perun:
 
- - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using webserver
+ - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
  - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
  - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
  - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
@@ -161,6 +161,28 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
  - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser css, images, etc.
 
 ## Tips
+
+### Dev setup
+
+Perun is static site generator. So usually you'd use it by just running `boot build` which will generate your static site.
+This process is robust and great for production but it's slow and lacks feedback when you're developing your site.
+In order to solve this problem we recommend following setup:
+
+1. Have 2 separate tasks for building dev version and production version. E.x. `build-dev` and `build`.
+2. Include [boot-http](https://github.com/pandeiro/boot-http) into your `build.boot` file. This will enable serving your site using web server.
+3. Create task `dev` that will call `build-dev` on any change to your source files:
+
+```clojure
+  deftask dev
+    []
+    (comp (watch)
+          (build-dev)
+          (serve :resource-root "public")))
+```
+4. Run`boot dev`
+In such setup you will have http web server serving your generated content that would be regenerated every time you change
+your source files. So you'd be able to preview your changes almost immediately.
+
 
 ### Auto deployment
 
