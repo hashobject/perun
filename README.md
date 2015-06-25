@@ -147,6 +147,22 @@ After you created `build` task simply do:
   boot build
 ```
 
+## Tips
+
+### Auto deployment
+
+It's quite easy to setup automatic static site deployment.
+E.x. you have GitHub repo for your blog and you are using `boot-s3` to sync files to Amazon S3.
+In this case it's possible to setup flow in a way that every commit to GitHub would be build om Heroku using
+perun and deployed to AWS S3.
+
+Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31)in order to achieve this you need to:
+ - create [Heroku](heroku.com) application for your GitHub repo with `build.boot` file
+ - ensure that `build.boot` has `build` task that has tasks build and deploy tasks
+ - specify `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` envs. They are mandatory for the `boot-s3` plugin).
+ - add boot/perun buildpack `heroku buildpacks:add https://github.com/hashobject/heroku-buildpack-perun`
+ - enable GitHub integration https://devcenter.heroku.com/articles/github-integration
+ - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
 
 ## TODO
