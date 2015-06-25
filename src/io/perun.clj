@@ -22,12 +22,19 @@
       boot/commit!))
 
 (def +perun-meta-key+ :io.perun)
+(def +perun-global-meta-key+ :io.perun.global)
 
 (defn ^:private get-perun-meta [fileset]
   (-> fileset meta +perun-meta-key+))
 
+(defn ^:private get-perun-global-meta [fileset]
+  (-> fileset meta +perun-global-meta-key+))
+
 (defn ^:private with-perun-meta [fileset perun-data]
   (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
+
+(defn ^:private with-perun-global-meta [fileset global-meta]
+  (with-meta fileset (assoc (meta fileset) +perun-global-meta-key+ global-meta)))
 
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
@@ -82,6 +89,24 @@
           updated-files (perun/filter-vals #(not (true? (:draft %))) files)
           fs-with-meta  (with-perun-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
+      fs-with-meta)))
+
+(deftask build-date
+  "Add :build-date attribute to each file metadata and also to the global meta"
+  []
+  (boot/with-pre-wrap fileset
+    (let [files         (get-perun-meta fileset)
+          global-meta   (get-perun-global-meta fileset)
+          now           (java.util.Date.)
+          updated-files (perun/map-vals
+                          (fn [metadata]
+                            (assoc metadata :build-date now))
+                          files)
+          new-global-meta (assoc global-meta :build-date now)
+          updated-fs  (with-perun-meta fileset updated-files)
+          fs-with-meta (with-perun-global-meta fileset global-meta)]
+        (u/dbug "Added :build-date:\n%s\n"
+                (pr-str (map :build-date (vals updated-files))))
       fs-with-meta)))
 
 (defn ^:private default-slug-fn [filename]
