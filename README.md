@@ -7,15 +7,15 @@ that suits your needs.
 
 ## Plugins
 
- - markdown parser
- - collections
- - drafts
- - calculate time to read for each page
- - sitemap
- - rss
- - slugs
- - permalinks
- - rendering to any format
+ - markdown - parse mardown files with YAML metadata
+ - collections - generate page that takes all posts data as parameter
+ - drafts - exclude pages that have `:draft` flag
+ - time-to-read - calculate time to read for each page
+ - sitemap - generate sitemap for site
+ - rss - generate RSS feed
+ - slugs - generate slugs based on any property
+ - permalinks - create permalinks for each page
+ - rendering to any format - flexible rendering
 
 ## Plugins
 
