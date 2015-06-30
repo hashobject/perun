@@ -8,8 +8,9 @@
                   [circleci/clj-yaml "0.5.3" :scope "test"]
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
-                  [clj-rss "0.1.9" :scope "test"]
-                  [gravatar "0.1.0" :scope "test"]])
+                  [gravatar "0.1.0" :scope "test"]
+                  [selmer "0.8.2" :scope "test"]
+                  [clj-rss "0.1.9" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
@@ -48,9 +49,9 @@
         (ttr)
         (slug)
         (permalink)
+        ;(render :template-engine :selmer :template-name "post.html")
+        (collection :template-engine :selmer :template-name "index.html" :page "index.html")
         (gravatar :source-key :author-email :target-key :author-gravatar)
-        ;(render :renderer renderer)
-        ;(collection :renderer index-renderer :page "index.html" :filter identity)
         (sitemap :filename "sitemap.xml")
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))

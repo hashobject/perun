@@ -10,10 +10,14 @@
 (def ^:private global-deps
   '[])
 
-(defn- create-pod [deps]
+(defn- create-pod-env [deps]
   (-> (boot/get-env)
       (update-in [:dependencies] into global-deps)
-      (update-in [:dependencies] into deps)
+      (update-in [:dependencies] into deps)))
+
+(defn- create-pod [deps]
+  (-> deps
+      create-pod-env
       pod/make-pod
       future))
 
@@ -194,6 +198,9 @@
             ~options))
         (commit fileset tmp)))))
 
+(def ^:private render-deps
+  '[[selmer "0.8.2"]])
+
 (def ^:private +render-defaults+
   {:out-dir "public"})
 
@@ -219,25 +226,31 @@
 
 (deftask render
   "Render pages"
-  [o out-dir  OUTDIR   str  "The output directory"
-   r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
-  (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
+  [o out-dir         OUTDIR   str "The output directory"
+   r renderer        RENDERER sym "Page renderer. Must be fully qualified symbol which resolves to a function."
+   e template-engine ENGINE   kw  "Template engine used for rendering"
+   n template-name   NAME     str "Template filename"]
+  (let [pods    (wrap-pool (pod/pod-pool (create-pod-env render-deps)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
-  (if (not (test/function? renderer))
-    (u/fail "render task :renderer option should resolve to the function\n")
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
             files (vals (get-perun-meta fileset))]
         (doseq [file files]
-          (let [html          (render-in-pod pod renderer file)
+          (let [html (if (nil? renderer)
+                        (pod/with-call-in pod
+                            (io.perun.render-template/render ~template-engine ~template-name ~file))
+                        (render-in-pod pod renderer file))
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 (or (perun/url-to-path (:permalink file))
                                     (str (:filename file) ".html")))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
-        (commit fileset tmp))))))
+        (commit fileset tmp)))))
+
+(def ^:private collection-deps
+  '[[selmer "0.8.2"]])
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
@@ -247,31 +260,35 @@
 
 (deftask collection
   "Render collection files"
-  [o out-dir    OUTDIR     str  "The output directory"
-   r renderer   RENDERER   sym  "Page renderer. Fully qualified symbol resolving to a function."
-   f filterer   FILTER     code "Filter function"
-   s sortby     SORTBY     code "Sort by function"
-   c comparator COMPARATOR code "Sort by comparator function"
-   p page       PAGE       str  "Collection result page path"]
-  (if (not (test/function? renderer))
-    (u/fail "collection task :renderer option should resolve to the function\n")
-    (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
-          tmp       (boot/tmp-dir!)
-          options   (merge +collection-defaults+ *opts*)]
-      (cond (not (test/function? (:comparator options)))
-                (u/fail "collection task :comparator option should be a function\n")
-            (not (test/function? (:filterer options)))
-                (u/fail "collection task :filterer option should be a function\n")
-            (not (test/function? (:sortby options)))
-                (u/fail "collection task :sortby option should be a function\n")
-            :else
-              (boot/with-pre-wrap fileset
-                (let [pod            (pods fileset)
-                      files          (vals (get-perun-meta fileset))
-                      filtered-files (filter (:filterer options) files)
-                      sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
-                      html           (render-in-pod pod renderer sorted-files)
-                      page-filepath  (perun/create-filepath (:out-dir options) page)]
-                  (perun/create-file tmp page-filepath html)
-                  (u/info (str "Render collection " page "\n"))
-                  (commit fileset tmp)))))))
+  [o out-dir         OUTDIR     str  "The output directory"
+   r renderer        RENDERER   sym  "Page renderer. Fully qualified symbol resolving to a function."
+   f filterer        FILTER     code "Filter function"
+   s sortby          SORTBY     code "Sort by function"
+   c comparator      COMPARATOR code "Sort by comparator function"
+   p page            PAGE       str  "Collection result page path"
+   e template-engine ENGINE     kw  "Template engine used for rendering"
+   n template-name   NAME       str "Template filename"]
+  (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
+        tmp       (boot/tmp-dir!)
+        options   (merge +collection-defaults+ *opts*)]
+    (cond (not (test/function? (:comparator options)))
+              (u/fail "collection task :comparator option should be a function\n")
+          (not (test/function? (:filterer options)))
+              (u/fail "collection task :filterer option should be a function\n")
+          (not (test/function? (:sortby options)))
+              (u/fail "collection task :sortby option should be a function\n")
+          :else
+            (boot/with-pre-wrap fileset
+              (let [pod            (pods fileset)
+                    files          (vals (get-perun-meta fileset))
+                    filtered-files (filter (:filterer options) files)
+                    sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
+                    items          {:items sorted-files}
+                    html           (if (nil? renderer)
+                                      (pod/with-call-in pod
+                                          (io.perun.render-template/render ~template-engine ~template-name ~items))
+                                      (render-in-pod pod renderer sorted-files))
+                    page-filepath  (perun/create-filepath (:out-dir options) page)]
+                (perun/create-file tmp page-filepath html)
+                (u/info (str "Render collection " page "\n"))
+                (commit fileset tmp))))))
