@@ -74,6 +74,23 @@
                 (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
 
+(def ^:private gravatar-deps
+  '[[gravatar "0.1.0"]])
+
+(deftask gravatar
+  "Find gravatar urls using emails"
+  [s source-key SOURCE-PROP kw "Email property used to lookup gravatar url"
+   t target-key TARGET-PROP kw "Property name to store gravatar url"]
+  (let [pod (create-pod ttr-deps)]
+    (boot/with-pre-wrap fileset
+      (let [files (get-perun-meta fileset)
+            updated-files (pod/with-call-in @pod
+                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
+            fs-with-meta  (with-perun-meta fileset updated-files)]
+        (u/dbug "Find gravatars:\n%s\n"
+                (pr-str (map target-key (vals updated-files))))
+      fs-with-meta))))
+
 (deftask draft
   "Exclude draft files"
   []
