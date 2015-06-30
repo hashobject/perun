@@ -4,6 +4,7 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.string :as string]
+            [clojure.test :as test]
             [io.perun.core :as perun]))
 
 (def ^:private global-deps
@@ -77,6 +78,23 @@
         (u/dbug "Generated time-to-read:\n%s\n"
                 (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
+
+(def ^:private gravatar-deps
+  '[[gravatar "0.1.0"]])
+
+(deftask gravatar
+  "Find gravatar urls using emails"
+  [s source-key SOURCE-PROP kw "Email property used to lookup gravatar url"
+   t target-key TARGET-PROP kw "Property name to store gravatar url"]
+  (let [pod (create-pod ttr-deps)]
+    (boot/with-pre-wrap fileset
+      (let [files (get-perun-meta fileset)
+            updated-files (pod/with-call-in @pod
+                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
+            fs-with-meta  (with-perun-meta fileset updated-files)]
+        (u/dbug "Find gravatars:\n%s\n"
+                (pr-str (map target-key (vals updated-files))))
+      fs-with-meta))))
 
 (deftask draft
   "Exclude draft files"
@@ -248,22 +266,29 @@
    s sortby          SORTBY     code "Sort by function"
    c comparator      COMPARATOR code "Sort by comparator function"
    p page            PAGE       str  "Collection result page path"
-   e template-engine ENGINE   kw  "Template engine used for rendering"
-   n template-name   NAME     str "Template filename"]
-  (let [pods      (wrap-pool (pod/pod-pool (create-pod-env collection-deps)))
+   e template-engine ENGINE     kw  "Template engine used for rendering"
+   n template-name   NAME       str "Template filename"]
+  (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [pod            (pods fileset)
-            files          (vals (get-perun-meta fileset))
-            filtered-files (filter (:filterer options) files)
-            sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
-            items          {:items sorted-files}
-            html           (if (nil? renderer)
-                            (pod/with-call-in pod
-                                (io.perun.render-template/render ~template-engine ~template-name ~items))
-                            (render-in-pod pod renderer sorted-files))
-            page-filepath  (perun/create-filepath (:out-dir options) page)]
-        (perun/create-file tmp page-filepath html)
-        (u/info (str "Render collection " page "\n"))
-        (commit fileset tmp)))))
+    (cond (not (test/function? (:comparator options)))
+              (u/fail "collection task :comparator option should be a function\n")
+          (not (test/function? (:filterer options)))
+              (u/fail "collection task :filterer option should be a function\n")
+          (not (test/function? (:sortby options)))
+              (u/fail "collection task :sortby option should be a function\n")
+          :else
+            (boot/with-pre-wrap fileset
+              (let [pod            (pods fileset)
+                    files          (vals (get-perun-meta fileset))
+                    filtered-files (filter (:filterer options) files)
+                    sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
+                    items          {:items sorted-files}
+                    html           (if (nil? renderer)
+                                      (pod/with-call-in pod
+                                          (io.perun.render-template/render ~template-engine ~template-name ~items))
+                                      (render-in-pod pod renderer sorted-files))
+                    page-filepath  (perun/create-filepath (:out-dir options) page)]
+                (perun/create-file tmp page-filepath html)
+                (u/info (str "Render collection " page "\n"))
+                (commit fileset tmp))))))
