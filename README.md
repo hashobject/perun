@@ -7,15 +7,28 @@ that suits your needs.
 
 ## Plugins
 
+
  - markdown parser
  - collections
  - drafts
  - calculate time to read for each page
  - sitemap
  - rss
+
  - slugs
  - permalinks
  - rendering to any format
+
+ - markdown - parse mardown files with YAML metadata
+ - collections - generate page that takes all posts data as parameter
+ - drafts - exclude pages that have `:draft` flag
+ - time-to-read - calculate time to read for each page
+ - sitemap - generate sitemap for site
+ - rss - generate RSS feed
+ - slugs - generate slugs based on any property
+ - permalinks - create permalinks for each page
+ - gravatar - find gravatar urls using emails
+ - rendering to any format - flexible rendering
 
 ## Plugins
 
@@ -147,7 +160,42 @@ After you created `build` task simply do:
   boot build
 ```
 
+## Useful plugins
+
+There are plenty of Boot plugins that can be useful in the when you are using perun:
+
+ - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
+ - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
+ - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
+ - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
+ - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
+ - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
+ - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
+ - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser css, images, etc.
+
 ## Tips
+
+### Dev setup
+
+Perun is static site generator. So usually you'd use it by just running `boot build` which will generate your static site.
+This process is robust and great for production but it's slow and lacks feedback when you're developing your site.
+In order to solve this problem we recommend following setup:
+
+1. Have 2 separate tasks for building dev version and production version. E.x. `build-dev` and `build`.
+2. Include [boot-http](https://github.com/pandeiro/boot-http) into your `build.boot` file. This will enable serving your site using web server.
+3. Create task `dev` that will call `build-dev` on any change to your source files:
+
+```clojure
+  deftask dev
+    []
+    (comp (watch)
+          (build-dev)
+          (serve :resource-root "public")))
+```
+4. Run`boot dev`
+In such setup you will have http web server serving your generated content that would be regenerated every time you change
+your source files. So you'd be able to preview your changes almost immediately.
+
 
 ### Auto deployment
 
@@ -156,7 +204,7 @@ E.x. you have GitHub repo for your blog and you are using `boot-s3` to sync file
 In this case it's possible to setup flow in a way that every commit to GitHub would be build om Heroku using
 perun and deployed to AWS S3.
 
-Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31)in order to achieve this you need to:
+Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31) in order to achieve this you need to:
  - create [Heroku](heroku.com) application for your GitHub repo with `build.boot` file
  - ensure that `build.boot` has `build` task that has tasks build and deploy tasks
  - specify `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` envs. They are mandatory for the `boot-s3` plugin).
