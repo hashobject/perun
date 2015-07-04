@@ -224,13 +224,16 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (vals (get-perun-meta fileset))]
-        (doseq [file files]
+            files (get-perun-meta fileset)]
+        (doseq [[filename file] files]
           (let [html          (render-in-pod pod renderer file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
-                                (or (perun/url-to-path (:permalink file))
-                                    (str (:filename file) ".html")))]
+                                ; If permalink ends in slash, append index.html to filepath
+                                (or (some-> (:permalink file)
+                                            (.replaceAll "/$" "/index.html")
+                                            perun/url-to-path)
+                                    filename))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
         (commit fileset tmp)))))
