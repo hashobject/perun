@@ -5,6 +5,7 @@
             [boot.util :as u]
             [clojure.string :as string]
             [clojure.test :as test]
+            [clojure.edn :as edn]
             [io.perun.core :as perun :refer [get-perun-meta with-perun-meta]]))
 
 (def ^:private global-deps
@@ -56,6 +57,20 @@
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         fs-with-meta))))
+
+(deftask base-metadata
+  "Read global metadata from `perun.base.edn` file."
+  []
+  (boot/with-pre-wrap fileset
+    (perun/set-global-meta
+      fileset
+      (some->> fileset
+               boot/user-files
+               (boot/by-name ["perun.base.edn"])
+               first
+               boot/tmp-file
+               slurp
+               read-string))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -142,6 +157,19 @@
       (u/info "Added permalinks to %s files\n" (count updated-files))
       (with-perun-meta fileset updated-files))))
 
+(deftask canonical-url
+  "Adds :canonical-url key to files metadata.
+
+   The url is concatenation of :base-url in global metadata and files permaurl.
+   The base-url must end with '/'."
+  []
+  (boot/with-pre-wrap fileset
+    (->> fileset
+         get-perun-meta
+         (perun/map-vals (fn [{:keys [permalink] :as post}]
+                           (assoc post :canonical-url (str (:base-url (perun/get-global-meta fileset)) permalink))))
+         (with-perun-meta fileset))))
+
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
 
@@ -209,11 +237,11 @@
         (reset! prev fileset)
         pod))))
 
-(defn- render-in-pod [pod sym file]
+(defn- render-in-pod [pod sym global-meta file]
   {:pre [(symbol? sym) (namespace sym)]}
   (pod/with-eval-in pod
     (require '~(symbol (namespace sym)))
-    ((resolve '~sym) ~file)))
+    ((resolve '~sym) ~global-meta ~file)))
 
 (deftask render
   "Render pages.
@@ -230,7 +258,7 @@
       (let [pod   (pods fileset)
             files (get-perun-meta fileset)]
         (doseq [[filename file] files]
-          (let [html          (render-in-pod pod renderer file)
+          (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 ; If permalink ends in slash, append index.html as filename
@@ -271,7 +299,7 @@
                     files          (vals (get-perun-meta fileset))
                     filtered-files (filter (:filterer options) files)
                     sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
-                    html           (render-in-pod pod renderer sorted-files)
+                    html           (render-in-pod pod renderer (perun/get-global-meta fileset) sorted-files)
                     page-filepath  (perun/create-filepath (:out-dir options) page)]
                 (perun/create-file tmp page-filepath html)
                 (u/info (str "Render collection " page "\n"))

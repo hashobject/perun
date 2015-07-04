@@ -8,8 +8,16 @@
 (defn get-perun-meta [fileset]
   (-> fileset meta +perun-meta-key+))
 
-(defn with-perun-meta [fileset perun-data]
-  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
+(defn with-perun-meta [fileset data]
+  (vary-meta fileset assoc +perun-meta-key+ data))
+
+(def +global-meta-key+ :io.perun.global)
+
+(defn get-global-meta [fileset]
+  (-> fileset meta +global-meta-key+))
+
+(defn set-global-meta [fileset data]
+  (vary-meta fileset assoc +global-meta-key+ data))
 
 (defn write-to-file [out-file content]
   (doto out-file
