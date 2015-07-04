@@ -50,10 +50,16 @@
                                   boot/user-files
                                   (boot/by-ext ["md" "markdown"])
                                   (map #(.getPath (boot/tmp-file %))))
+            removed-files    (->> fileset
+                                  (boot/fileset-removed @prev-fs)
+                                  boot/user-files
+                                  (boot/by-ext ["md" "markdown"])
+                                  (map #(.getName (boot/tmp-file %))))
             parsed-metadata  (pod/with-call-in @pod
                                (io.perun.markdown/parse-markdown ~markdown-files))
             initial-metadata @prev-meta
             final-metadata   (merge initial-metadata parsed-metadata)
+            final-metadata   (apply dissoc final-metadata removed-files)
             fs-with-meta     (with-perun-meta fileset final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
