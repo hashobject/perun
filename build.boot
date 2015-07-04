@@ -4,7 +4,7 @@
   :dependencies '[[boot/core "2.1.2" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]
-                  [markdown-clj "0.9.40" :scope "test"]
+                  [endophile "0.1.2" :scope "test"]
                   [circleci/clj-yaml "0.5.3" :scope "test"]
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
