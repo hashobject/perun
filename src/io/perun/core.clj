@@ -3,6 +3,14 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]))
 
+(def +perun-meta-key+ :io.perun)
+
+(defn get-perun-meta [fileset]
+  (-> fileset meta +perun-meta-key+))
+
+(defn with-perun-meta [fileset perun-data]
+  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
+
 (defn write-to-file [out-file content]
   (doto out-file
     io/make-parents

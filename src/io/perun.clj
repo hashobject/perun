@@ -5,7 +5,7 @@
             [boot.util :as u]
             [clojure.string :as string]
             [clojure.test :as test]
-            [io.perun.core :as perun]))
+            [io.perun.core :as perun :refer [get-perun-meta with-perun-meta]]))
 
 (def ^:private global-deps
   '[])
@@ -21,14 +21,6 @@
   (-> fileset
       (boot/add-resource tmp)
       boot/commit!))
-
-(def +perun-meta-key+ :io.perun)
-
-(defn ^:private get-perun-meta [fileset]
-  (-> fileset meta +perun-meta-key+))
-
-(defn ^:private with-perun-meta [fileset perun-data]
-  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
 
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
