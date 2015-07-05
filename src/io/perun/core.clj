@@ -3,13 +3,13 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]))
 
-(def +perun-meta-key+ :io.perun)
+(def +meta-key+ :io.perun)
 
-(defn get-perun-meta [fileset]
-  (-> fileset meta +perun-meta-key+))
+(defn get-meta [fileset]
+  (-> fileset meta +meta-key+))
 
-(defn with-perun-meta [fileset data]
-  (vary-meta fileset assoc +perun-meta-key+ data))
+(defn set-meta [fileset data]
+  (vary-meta fileset assoc +meta-key+ data))
 
 (def +global-meta-key+ :io.perun.global)
 

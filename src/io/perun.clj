@@ -6,7 +6,7 @@
             [clojure.string :as string]
             [clojure.test :as test]
             [clojure.edn :as edn]
-            [io.perun.core :as perun :refer [get-perun-meta with-perun-meta]]))
+            [io.perun.core :as perun]))
 
 (def ^:private global-deps
   '[])
@@ -53,7 +53,7 @@
             initial-metadata @prev-meta
             final-metadata   (merge initial-metadata parsed-metadata)
             final-metadata   (apply dissoc final-metadata removed-files)
-            fs-with-meta     (with-perun-meta fileset final-metadata)]
+            fs-with-meta     (perun/set-meta fileset final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         fs-with-meta))))
@@ -80,10 +80,10 @@
   []
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [files (get-perun-meta fileset)
+      (let [files (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.ttr/calculate-ttr ~files))
-            fs-with-meta  (with-perun-meta fileset updated-files)]
+            fs-with-meta  (perun/set-meta fileset updated-files)]
         (u/dbug "Generated time-to-read:\n%s\n"
                 (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
@@ -97,10 +97,10 @@
    t target-key TARGET-PROP kw "Property name to store gravatar url"]
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [files (get-perun-meta fileset)
+      (let [files (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
-            fs-with-meta  (with-perun-meta fileset updated-files)]
+            fs-with-meta  (perun/set-meta fileset updated-files)]
         (u/dbug "Find gravatars:\n%s\n"
                 (pr-str (map target-key (vals updated-files))))
       fs-with-meta))))
@@ -109,9 +109,9 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files         (get-perun-meta fileset)
+    (let [files         (perun/get-meta fileset)
           updated-files (perun/filter-vals #(not (true? (:draft %))) files)
-          fs-with-meta  (with-perun-meta fileset updated-files)]
+          fs-with-meta  (perun/set-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
@@ -130,14 +130,14 @@
   [s slug-fn SLUGFN code "Function to build slug from filename"]
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
-          files         (get-perun-meta fileset)
+          files         (perun/get-meta fileset)
           updated-files (into {}
                               (for [[f m] files]
                                 [f (assoc m :slug (slug-fn f))]))]
       (u/dbug "Generated Slugs:\n%s\n"
               (pr-str (map :slug (vals updated-files))))
       (u/info "Added slugs to %s files\n" (count updated-files))
-      (with-perun-meta fileset updated-files))))
+      (perun/set-meta fileset updated-files))))
 
 (defn ^:private default-permalink-fn [metadata]
   (perun/absolutize-url (str (:slug metadata) "/index.html")))
@@ -148,14 +148,14 @@
    Make files permalinked. E.x. about.html will become about/index.html"
   [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
   (boot/with-pre-wrap fileset
-    (let [files         (get-perun-meta fileset)
+    (let [files         (perun/get-meta fileset)
           permalink-fn  (or permalink-fn default-permalink-fn)
           assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
           updated-files (perun/map-vals assoc-perma files)]
       (u/dbug "Generated Permalinks:\n%s\n"
               (pr-str (map :permalink (vals updated-files))))
       (u/info "Added permalinks to %s files\n" (count updated-files))
-      (with-perun-meta fileset updated-files))))
+      (perun/set-meta fileset updated-files))))
 
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
@@ -165,10 +165,10 @@
   []
   (boot/with-pre-wrap fileset
     (->> fileset
-         get-perun-meta
+         perun/get-meta
          (perun/map-vals (fn [{:keys [permalink] :as post}]
                            (assoc post :canonical-url (str (:base-url (perun/get-global-meta fileset)) permalink))))
-         (with-perun-meta fileset))))
+         (perun/set-meta fileset))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -186,7 +186,7 @@
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (get-perun-meta fileset))]
+      (let [files (vals (perun/get-meta fileset))]
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap
             ~(.getPath tmp)
@@ -212,7 +212,7 @@
         tmp     (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (get-perun-meta fileset))]
+      (let [files (vals (perun/get-meta fileset))]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss
             ~(.getPath tmp)
@@ -256,7 +256,7 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (get-perun-meta fileset)]
+            files (perun/get-meta fileset)]
         (doseq [[filename file] files]
           (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
                 page-filepath (perun/create-filepath
@@ -296,7 +296,7 @@
           :else
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
-                    files          (vals (get-perun-meta fileset))
+                    files          (vals (perun/get-meta fileset))
                     filtered-files (filter (:filterer options) files)
                     sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
                     html           (render-in-pod pod renderer (perun/get-global-meta fileset) sorted-files)
