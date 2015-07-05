@@ -8,13 +8,15 @@ that suits your needs.
 ## Plugins
 
  - markdown - parse mardown files with YAML metadata
+ - global-metadata - read global metadata from `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
  - time-to-read - calculate time to read for each page
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - slugs - generate slugs based on any property
- - permalinks - create permalinks for each page
+ - permalink - create permalink for each page
+ - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
@@ -124,9 +126,9 @@ See documentation for each task to find all supported options for each plugin.
 (require '[hashobject.boot-s3 :refer :all])
 (require '[jeluard.boot-notify :refer [notify]])
 
-(defn renderer [data] (:name data))
+(defn renderer [global data] (:name data))
 
-(defn index-renderer [files]
+(defn index-renderer [global files]
   (let [names (map :name files)]
     (clojure.string/join "\n" names)))
 
