@@ -58,7 +58,6 @@
 
 (defn map-keys
   "Map the keys of given associative collection using function."
-  {:added "0.2.0"}
   [f coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (xf m (f k) v)))
@@ -66,21 +65,18 @@
 
 (defn map-vals
   "Map the values of given associative collection using function."
-  {:added "0.2.0"}
   [f coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (xf m k (f v))))
               coll))
 
 (defn filter-keys
-  {:added "0.2.2"}
   [pred coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (if (pred k) (xf m k v) m)))
               coll))
 
 (defn filter-vals
-  {:added "0.2.2"}
   [pred coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (if (pred v) (xf m k v) m)))
