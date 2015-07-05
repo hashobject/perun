@@ -216,7 +216,11 @@
     ((resolve '~sym) ~file)))
 
 (deftask render
-  "Render pages"
+  "Render pages.
+
+   If permalink is set for the file, it is used as the filepath else. If permalink
+   ends in slash, index.html is used as filename. If permalink is not set, the
+   original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "The output directory"
    r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
@@ -224,13 +228,16 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (vals (get-perun-meta fileset))]
-        (doseq [file files]
+            files (get-perun-meta fileset)]
+        (doseq [[filename file] files]
           (let [html          (render-in-pod pod renderer file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
-                                (or (perun/url-to-path (:permalink file))
-                                    (str (:filename file) ".html")))]
+                                ; If permalink ends in slash, append index.html as filename
+                                (or (some-> (:permalink file)
+                                            (string/replace #"/$" "/index.html")
+                                            perun/url-to-path)
+                                    (string/replace filename #"(?i).[a-z]+$" ".html")))]
             (perun/create-file tmp page-filepath html)))
         (u/info "Render all pages\n")
         (commit fileset tmp)))))
