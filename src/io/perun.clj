@@ -58,15 +58,19 @@
         (reset! prev-meta final-metadata)
         fs-with-meta))))
 
-(deftask base-metadata
-  "Read global metadata from `perun.base.edn` file."
-  []
+(deftask global-metadata
+  "Read global metadata from `perun.base.edn` or configured file.
+
+   The global metadata will be attached to fileset where it can be
+   read and manipulated by the tasks. Render tasks will pass this
+   as the first argument to render functions."
+  [n filename NAME str "filename where to read global metadata"]
   (boot/with-pre-wrap fileset
     (perun/set-global-meta
       fileset
       (some->> fileset
                boot/user-files
-               (boot/by-name ["perun.base.edn"])
+               (boot/by-name [(or filename "perun.base.edn")])
                first
                boot/tmp-file
                slurp
@@ -160,7 +164,7 @@
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
 
-   The url is concatenation of :base-url in global metadata and files permaurl.
+   The url is concatenation of :base-url in global metadata and files' permaurl.
    The base-url must end with '/'."
   []
   (boot/with-pre-wrap fileset
