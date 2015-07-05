@@ -4,7 +4,8 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.string :as string]
-            [io.perun.core :as perun]))
+            [clojure.test :as test]
+            [io.perun.core :as perun :refer [get-perun-meta with-perun-meta]]))
 
 (def ^:private global-deps
   '[])
@@ -20,21 +21,6 @@
   (-> fileset
       (boot/add-resource tmp)
       boot/commit!))
-
-(def +perun-meta-key+ :io.perun)
-(def +perun-global-meta-key+ :io.perun.global)
-
-(defn ^:private get-perun-meta [fileset]
-  (-> fileset meta +perun-meta-key+))
-
-(defn ^:private get-perun-global-meta [fileset]
-  (-> fileset meta +perun-global-meta-key+))
-
-(defn ^:private with-perun-meta [fileset perun-data]
-  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
-
-(defn ^:private with-perun-global-meta [fileset global-meta]
-  (with-meta fileset (assoc (meta fileset) +perun-global-meta-key+ global-meta)))
 
 (def ^:private markdown-deps
   '[[endophile "0.1.2"]
@@ -56,10 +42,16 @@
                                   boot/user-files
                                   (boot/by-ext ["md" "markdown"])
                                   (map #(.getPath (boot/tmp-file %))))
+            removed-files    (->> fileset
+                                  (boot/fileset-removed @prev-fs)
+                                  boot/user-files
+                                  (boot/by-ext ["md" "markdown"])
+                                  (map #(.getName (boot/tmp-file %))))
             parsed-metadata  (pod/with-call-in @pod
                                (io.perun.markdown/parse-markdown ~markdown-files))
             initial-metadata @prev-meta
             final-metadata   (merge initial-metadata parsed-metadata)
+            final-metadata   (apply dissoc final-metadata removed-files)
             fs-with-meta     (with-perun-meta fileset final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
@@ -80,6 +72,23 @@
         (u/dbug "Generated time-to-read:\n%s\n"
                 (pr-str (map :ttr (vals updated-files))))
         fs-with-meta))))
+
+(def ^:private gravatar-deps
+  '[[gravatar "0.1.0"]])
+
+(deftask gravatar
+  "Find gravatar urls using emails"
+  [s source-key SOURCE-PROP kw "Email property used to lookup gravatar url"
+   t target-key TARGET-PROP kw "Property name to store gravatar url"]
+  (let [pod (create-pod ttr-deps)]
+    (boot/with-pre-wrap fileset
+      (let [files (get-perun-meta fileset)
+            updated-files (pod/with-call-in @pod
+                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
+            fs-with-meta  (with-perun-meta fileset updated-files)]
+        (u/dbug "Find gravatars:\n%s\n"
+                (pr-str (map target-key (vals updated-files))))
+      fs-with-meta))))
 
 (deftask draft
   "Exclude draft files"
@@ -261,13 +270,20 @@
   (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [pod            (pods fileset)
-            files          (vals (get-perun-meta fileset))
-            filtered-files (filter (:filterer options) files)
-            sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
-            html           (render-in-pod pod renderer sorted-files)
-            page-filepath  (perun/create-filepath (:out-dir options) page)]
-        (perun/create-file tmp page-filepath html)
-        (u/info (str "Render collection " page "\n"))
-        (commit fileset tmp)))))
+    (cond (not (test/function? (:comparator options)))
+              (u/fail "collection task :comparator option should be a function\n")
+          (not (test/function? (:filterer options)))
+              (u/fail "collection task :filterer option should be a function\n")
+          (not (test/function? (:sortby options)))
+              (u/fail "collection task :sortby option should be a function\n")
+          :else
+            (boot/with-pre-wrap fileset
+              (let [pod            (pods fileset)
+                    files          (vals (get-perun-meta fileset))
+                    filtered-files (filter (:filterer options) files)
+                    sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
+                    html           (render-in-pod pod renderer sorted-files)
+                    page-filepath  (perun/create-filepath (:out-dir options) page)]
+                (perun/create-file tmp page-filepath html)
+                (u/info (str "Render collection " page "\n"))
+                (commit fileset tmp))))))

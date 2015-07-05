@@ -3,6 +3,14 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]))
 
+(def +perun-meta-key+ :io.perun)
+
+(defn get-perun-meta [fileset]
+  (-> fileset meta +perun-meta-key+))
+
+(defn with-perun-meta [fileset perun-data]
+  (with-meta fileset (assoc (meta fileset) +perun-meta-key+ perun-data)))
+
 (defn write-to-file [out-file content]
   (doto out-file
     io/make-parents
@@ -50,7 +58,6 @@
 
 (defn map-keys
   "Map the keys of given associative collection using function."
-  {:added "0.2.0"}
   [f coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (xf m (f k) v)))
@@ -58,21 +65,18 @@
 
 (defn map-vals
   "Map the values of given associative collection using function."
-  {:added "0.2.0"}
   [f coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (xf m k (f v))))
               coll))
 
 (defn filter-keys
-  {:added "0.2.2"}
   [pred coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (if (pred k) (xf m k v) m)))
               coll))
 
 (defn filter-vals
-  {:added "0.2.2"}
   [pred coll]
   (reduce-map (fn [xf] (fn [m k v]
                          (if (pred v) (xf m k v) m)))

@@ -7,16 +7,17 @@ that suits your needs.
 
 ## Plugins
 
- - markdown parser
- - collections
- - drafts
- - calculate time to read for each page
- - sitemap
- - rss
- - slugs
+ - markdown - parse mardown files with YAML metadata
+ - collections - generate page that takes all posts data as parameter
+ - drafts - exclude pages that have `:draft` flag
+ - time-to-read - calculate time to read for each page
+ - sitemap - generate sitemap for site
+ - rss - generate RSS feed
+ - slugs - generate slugs based on any property
  - build-date - add `:build-date` to global meta and each file meta
- - permalinks
- - rendering to any format
+ - permalinks - create permalinks for each page
+ - gravatar - find gravatar urls using emails
+ - rendering to any format - flexible rendering
 
 ## Plugins
 
@@ -67,9 +68,13 @@ Then your code might look like this:
  - generate documentation for your open source library bases on README.md
  - any case where you'd want to use jekyll or another static site generator
 
-## Example
+## Examples
 
-See generated blog as an example [blog.hashobject.com](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot).
+Following sites were created with Perun and Boot:
+
+ - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
+ - [deraen.github.io](http://http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
+
 
 ## How does it work
 

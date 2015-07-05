@@ -6,15 +6,23 @@
             [endophile.core  :as endophile]
             [clj-yaml.core   :as yaml]))
 
-(defn extract-between [s prefix suffix]
-  (some-> s
-          (str/split prefix)
-          second
-          (str/split suffix)
-          first))
+(defn substr-between
+  "Find string that is nested in between two strings. Return first match.
+  Copied from https://github.com/funcool/cuerdas"
+  [s prefix suffix]
+  (cond
+    (nil? s) nil
+    (nil? prefix) nil
+    (nil? suffix) nil
+    :else
+    (some-> s
+            (str/split prefix)
+            second
+            (str/split suffix)
+            first)))
 
 (defn parse-file-metadata [file-content]
-  (if-let [metadata-str (extract-between file-content #"---\n" #"---\n")]
+  (if-let [metadata-str (substr-between file-content #"---\n" #"---\n")]
     (if-let [parsed-yaml (yaml/parse-string metadata-str)]
       ; we use `original` file flag to distinguish between generated files
       ; (e.x. created those by plugins)
