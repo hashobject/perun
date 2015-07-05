@@ -67,9 +67,13 @@ Then your code might look like this:
  - generate documentation for your open source library bases on README.md
  - any case where you'd want to use jekyll or another static site generator
 
-## Example
+## Examples
 
-See generated blog as an example [blog.hashobject.com](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot).
+Following sites were created with Perun and Boot:
+
+ - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
+ - [http://deraen.github.io/](http://http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
+
 
 ## How does it work
 
