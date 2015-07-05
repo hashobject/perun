@@ -205,12 +205,15 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
 
-## TODO
+## Status
+
+This project is in the active development and used to genrated several sites already.
+
+Main things todo:
 
   - [ ] improve readme
   - [ ] more plugins
   - [ ] create perun.io site using perun
-  - [ ] create section with all sites build using perun
 
 ## Contributions
 
