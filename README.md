@@ -15,6 +15,7 @@ that suits your needs.
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - slugs - generate slugs based on any property
+ - build-date - add `:build-date` to global meta and each file meta
  - permalink - create permalink for each page
  - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails

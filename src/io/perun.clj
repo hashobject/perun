@@ -119,6 +119,21 @@
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
 
+(deftask build-date
+  "Add :build-date attribute to each file metadata and also to the global meta"
+  []
+  (boot/with-pre-wrap fileset
+    (let [files           (perun/get-meta fileset)
+          global-meta     (perun/get-global-meta fileset)
+          now             (java.util.Date.)
+          updated-files   (perun/map-vals #(assoc % :build-date now) files)
+          new-global-meta (assoc global-meta :build-date now)
+          updated-fs      (perun/set-meta fileset updated-files)
+          fs-with-meta    (perun/set-global-meta updated-fs new-global-meta)]
+        (u/dbug "Added :build-date:\n%s\n"
+                (pr-str (map :build-date (vals updated-files))))
+      fs-with-meta)))
+
 (defn ^:private default-slug-fn [filename]
   "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
 
