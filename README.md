@@ -181,7 +181,7 @@ In order to solve this problem we recommend following setup:
 3. Create task `dev` that will call `build-dev` on any change to your source files:
 
 ```clojure
-  deftask dev
+  (deftask dev
     []
     (comp (watch)
           (build-dev)
