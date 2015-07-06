@@ -8,6 +8,7 @@ that suits your needs.
 ## Plugins
 
  - markdown - parse mardown files with YAML metadata
+ - global-metadata - read global metadata from `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
  - time-to-read - calculate time to read for each page
@@ -15,7 +16,8 @@ that suits your needs.
  - rss - generate RSS feed
  - slugs - generate slugs based on any property
  - build-date - add `:build-date` to global meta and each file meta
- - permalinks - create permalinks for each page
+ - permalink - create permalink for each page
+ - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
@@ -73,7 +75,7 @@ Then your code might look like this:
 Following sites were created with Perun and Boot:
 
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
- - [deraen.github.io](http://http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
+ - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
 
 
 ## How does it work
@@ -125,9 +127,9 @@ See documentation for each task to find all supported options for each plugin.
 (require '[hashobject.boot-s3 :refer :all])
 (require '[jeluard.boot-notify :refer [notify]])
 
-(defn renderer [data] (:name data))
+(defn renderer [global data] (:name data))
 
-(defn index-renderer [files]
+(defn index-renderer [global files]
   (let [names (map :name files)]
     (clojure.string/join "\n" names)))
 
@@ -206,12 +208,15 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
 
-## TODO
+## Status
+
+This project is in the active development and used to genrated several sites already.
+
+Main things todo:
 
   - [ ] improve readme
   - [ ] more plugins
   - [ ] create perun.io site using perun
-  - [ ] create section with all sites build using perun
 
 ## Contributions
 

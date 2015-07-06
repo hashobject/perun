@@ -33,10 +33,10 @@
 
 
 ; testing functions
-(defn renderer [data]
+(defn renderer [global data]
   (:content data))
 
-(defn index-renderer [files]
+(defn index-renderer [global files]
   (let [names (map :name files)]
     (clojure.string/join "\n" names)))
 

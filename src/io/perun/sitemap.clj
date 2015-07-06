@@ -8,7 +8,8 @@
   (map
     (fn [file]
       {:loc (str (:url options) (:filename file))
-       :lastmod (:date-modified file)
+       :lastmod (or (:date-modified file)
+                    (:build-date file))
        :changefreq (or (:sitemap-changefreq file) "weekly")
        :priority (or (:sitemap-priority file) 0.8)})
     files))
