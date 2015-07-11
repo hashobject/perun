@@ -8,7 +8,7 @@ that suits your needs.
 ## Plugins
 
  - markdown - parse mardown files with YAML metadata
- - global-metadata - read global metadata from `perun.base.edn`
+ - global-metadata - read global metadata from end file. Default to `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
  - time-to-read - calculate time to read for each page
