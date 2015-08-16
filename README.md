@@ -8,13 +8,13 @@ that suits your needs.
 ## Plugins
 
  - markdown - parse mardown files with YAML metadata
- - global-metadata - read global metadata from end file. Default to `perun.base.edn`
+ - global-metadata - read global metadata from edn file. Default to `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
- - time-to-read - calculate time to read for each page
+ - time-to-read - calculate time to read for each page (available under `:ttr` key)
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
- - slugs - generate slugs based on any property
+ - slugs - generate slugs based on any property (available under `:slug` key)
  - build-date - add `:build-date` to global meta and each file meta
  - permalink - create permalink for each page
  - canonical-url - create canonical-url for each page
