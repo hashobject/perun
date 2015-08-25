@@ -1,12 +1,31 @@
+;;
+;; Author:: Juho Teperi (<juho.teperi@iki.fi>)
+;; Author:: Anton Podviaznikov (<podviaznikov@gmail.com>)
+;; Author:: Martin Klepsch (<martinklepsch@googlemail.com>)
+;; Author:: Nico Rikken (<nico@nicorikken.eu>)
+;; Copyright:: Copyright (c) 2015 Individual contributors, and Mpare B.V.
+;; License:: Eclipse Public License 1.0
+;;
+;; The use and distribution terms for this software are covered by the
+;; Eclipse Public License 1.0 (http://www.eclipse.org/legal/epl-v10.html)
+;; which can be found in the file epl-v10.html at the root of this distribution.
+;; By using this software in any fashion, you are agreeing to be bound by
+;; the terms of this license.
+;; You must not remove this notice, or any other, from this software.
+;;
+
 (ns io.perun
   {:boot/export-tasks true}
-  (:require [boot.core :as boot :refer [deftask]]
-            [boot.pod :as pod]
-            [boot.util :as u]
-            [clojure.string :as string]
-            [clojure.test :as test]
-            [clojure.edn :as edn]
-            [io.perun.core :as perun]))
+  (:require [boot.core       :as boot :refer [deftask]]
+            [boot.pod        :as pod]
+            [boot.util       :as u]
+            [clojure.string  :as string]
+            [clojure.test    :as test]
+            [clojure.edn     :as edn]
+            [io.perun.core   :as perun]
+            [clojure.java.io :as io] ;for asciidoctor
+            [boot.jruby      :refer [jruby make-jruby]] ;for asciidoctor
+            [io.perun.asciidoctor]))
 
 (def ^:private global-deps
   '[])
@@ -54,6 +73,49 @@
             final-metadata   (merge initial-metadata parsed-metadata)
             final-metadata   (apply dissoc final-metadata removed-files)
             fs-with-meta     (perun/set-meta fileset final-metadata)]
+        (reset! prev-fs fileset)
+        (reset! prev-meta final-metadata)
+        fs-with-meta))))
+
+(def ^:private +asciidoctor-defaults+ {}
+;  {:transfer-mode "content"}
+  ) ;file-based transfer mode available for large texts, using file inclusion
+
+(deftask asciidoctor
+  "Parse asciidoc files using asciidoctor
+
+  This task will look for files ending with `adoc` and add a `:content` or
+  `:include` key to their metadata containing the HTML resulting from
+  processing the asciidcotor file's content. The key used for handling files
+  can be set using `method`."
+  [m method     METHOD    str "Method for handling file content, either 'include'
+                              or 'content' using strings or files for content
+                              handling respectively."
+   a attribute  ATTRIBUTE str "Attribute to use when generating files"
+   ]
+  (let [prev-meta (atom {})
+        prev-fs   (atom nil)
+        tmp       (boot/tmp-dir!)
+        options   (merge +asciidoctor-defaults+ *opts*)]
+    (boot/empty-dir! tmp) ;empty temporary directory
+    (boot/with-pre-wrap fileset
+      (let [asciidoc-files   (->> fileset
+                                  (boot/fileset-diff @prev-fs)
+                                  boot/user-files
+                                  (boot/by-ext ["adoc"])
+                                  (mapv #(.getAbsolutePath (boot/tmp-file %))))
+            removed-files    (->> fileset
+                                  (boot/fileset-removed @prev-fs)
+                                  boot/user-files
+                                  (boot/by-ext ["adoc"])
+                                  (map #(.getName (boot/tmp-file %))))
+            parsed-fileset   (io.perun.asciidoctor/parse-asciidoc
+                              fileset asciidoc-files options)
+            parsed-metadata  (perun/get-meta parsed-fileset)
+            initial-metadata @prev-meta
+            final-metadata   (merge initial-metadata parsed-metadata)
+            final-metadata   (apply dissoc final-metadata removed-files)
+            fs-with-meta     (perun/set-meta parsed-fileset final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         fs-with-meta))))

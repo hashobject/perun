@@ -1,5 +1,5 @@
 (set-env!
-  :source-paths #{"test"}
+  :source-paths #{"src" "test"}
   :resource-paths #{"src" "resources"}
   :dependencies '[[boot/core "2.1.2" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
@@ -9,7 +9,8 @@
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
                   [clj-rss "0.1.9" :scope "test"]
-                  [gravatar "0.1.0" :scope "test"]])
+                  [gravatar "0.1.0" :scope "test"]
+                  [boot-jruby "0.3.0"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
@@ -43,18 +44,23 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp (markdown)
-        (draft)
-        (ttr)
+  (comp (global-metadata)
+        ;(markdown)
+        (asciidoctor)
+        ;(draft)
+        ;(ttr)
         (slug)
-        (permalink)
-        (build-date)
-        (gravatar :source-key :author-email :target-key :author-gravatar)
+        ;(permalink)
+        ;(build-date)
+        ;(gravatar :source-key :author-email :target-key :author-gravatar)
         ;(render :renderer renderer)
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        (sitemap :filename "sitemap.xml")
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (notify)))
+        (render :render 'web.views.page/render)
+        (collection :renderer 'web.views.index/render :page "index.html")
+        ;(sitemap :filename "sitemap.xml")
+        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        ;(notify)
+        ))
 
 (deftask release-snapshot
   "Release snapshot"
