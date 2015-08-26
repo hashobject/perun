@@ -2,8 +2,7 @@
 
 (ns web.views.page
   (:use [hiccup.core :only (html)]
-        [hiccup.page :only (html5 include-css include-js)])
-  (:require [web.views.common :as common]))
+        [hiccup.page :only (html5 include-css include-js)]))
 
 (defn render [global-meta metadata]
   (html5 {:lang "en"}
@@ -17,12 +16,8 @@
            [:h1 (str (:name metadata))]
            [:div {:id "details"}
             [:p
-             [:a {:href "index.html"} "Back to overview"]]]
-           ]
+             [:a {:href "index.html"} "Back to overview"]]]]
           [:div {:id "content"} ;to align the content via the css structure
-           (str (slurp (:include metadata)))
-;           (:content metadata)
-           ]
+           (str (slurp (:include metadata)))]
           [:div {:id "footer"}
-           [:div {:id "footer-text"}
-            "Thanks for reading"]]]))
+           [:div {:id "footer-text"} "This page was generated using Perun."]]]))

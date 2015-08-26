@@ -30,8 +30,15 @@
 
 
 (require '[io.perun :refer :all]
+         '[clojure.string :as string]
          '[jeluard.boot-notify :refer [notify]])
 
+(defn page-slug-fn [filename]
+  "Parses `slug` portion of the filename in the format: slug-title.ext"
+  (->> (string/split filename #"[-\.]")
+       drop-last
+       (string/join "-")
+       string/lower-case))
 
 ; testing functions
 (defn renderer [global data]
@@ -49,13 +56,13 @@
         (asciidoctor)
         ;(draft)
         ;(ttr)
-        (slug)
+        (slug :slug-fn page-slug-fn)
         ;(permalink)
         ;(build-date)
         ;(gravatar :source-key :author-email :target-key :author-gravatar)
         ;(render :renderer renderer)
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        (render :render 'web.views.page/render)
+        (render :renderer 'web.views.page/render)
         (collection :renderer 'web.views.index/render :page "index.html")
         ;(sitemap :filename "sitemap.xml")
         ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")

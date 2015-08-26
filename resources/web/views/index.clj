@@ -3,8 +3,7 @@
 (ns web.views.index
   (:use [hiccup.core :only (html)]
         [hiccup.page :only (html5 include-css include-js)])
-  (:require [clojure.string   :as str]
-            [web.views.common :as common]))
+  (:require [clojure.string   :as str]))
 
 ;; This page adheres to the asciidoc hooks for applying css markup
 
@@ -18,19 +17,17 @@
          [:head
           [:meta {:charset "utf-8"}]
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0, user-scalable=no"}]
-          [:title "Endax developer documentation"]
+          [:title "Generated documents"]
           (include-css "css/asciidoc.css")]
-         [:body
-          [:div {:class "pt-develop"}
-           [:section {:class "wrapper"}
-            [:div {:class "content-container"}
-             [:div {:id "header"}
-              [:h1 "Genenrated documents"]
-              [:div {:id "content"}; .row.content
-               [:div {:class "paragraph"}
-                [:div {:class "ulist compact"}
-                 [:div {:class "title"} "Pages"]
-                 [:ul
-                  (for [page pages] (render-page page))]]]]]]]]
-          (common/footer)
-          ]))
+         [:body {:class "article"}
+          [:div {:id "header"}
+           [:h1 "Generated documents"]
+           [:div {:id "content"}
+            [:div {:class "paragraph"}
+             [:div {:class "ulist compact"}
+              [:div {:class "title"} "Pages"]
+              [:ul
+               (for [page pages] (render-page page))]]]]
+           [:div {:id "footer"}
+            [:div {:id "footer-text"} "This page was generated using Perun."]]
+           ]]))
