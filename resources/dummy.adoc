@@ -1,0 +1,45 @@
+////
+name: Dummy page
+description: Dummy page showing off the asciidoc function
+author: Nico Rikken
+author-email: nico@nicorikken.eu
+author-url: http://nicorikken.eu
+date-created: 2015-07-15
+date-modified: 2015-07-15
+date-published: 2015-07-15
+headline: Test-headline
+in-language: en
+keywords: clojure, amazon beanstalk, https, ssl, aws, heroku, deploy, web app, amazon route 53, naked domain
+discussion-url: https://github.com/hashobject/perun/issues/49
+////
+
+= Test =
+This is a test to see how well the rendering is done.
+
+== Example code ==
+
+=== Subsection ===
+This is an example of a paragraph.
+
+.Code example JSON (Javascript)
+[source,javascript]
+----
+{"amazing":["value"]}
+----
+
+.Code example HTTP
+[source,http]
+----
+<!DOCTYPE html>
+<title>Page Title</title>
+<h1>This is a heading</h1>
+<p>This is a paragraph.</p>
+----
+
+== PlanUML demo ==
+
+.PlantUML diagram
+["plantuml", "plantuml-example"]
+----
+Bob->Alice : hello
+----

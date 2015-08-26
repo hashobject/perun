@@ -9,7 +9,8 @@
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
                   [clj-rss "0.1.9" :scope "test"]
-                  [gravatar "0.1.0" :scope "test"]])
+                  [gravatar "0.1.0" :scope "test"]
+                  [boot-jruby "0.3.0"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
@@ -29,8 +30,15 @@
 
 
 (require '[io.perun :refer :all]
+         '[clojure.string :as string]
          '[jeluard.boot-notify :refer [notify]])
 
+(defn page-slug-fn [filename]
+  "Parses `slug` portion of the filename in the format: slug-title.ext"
+  (->> (string/split filename #"[-\.]")
+       drop-last
+       (string/join "-")
+       string/lower-case))
 
 ; testing functions
 (defn renderer [global data]
@@ -43,18 +51,23 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp (markdown)
-        (draft)
-        (ttr)
-        (slug)
-        (permalink)
-        (build-date)
-        (gravatar :source-key :author-email :target-key :author-gravatar)
+  (comp (global-metadata)
+        ;(markdown)
+        (asciidoctor)
+        ;(draft)
+        ;(ttr)
+        (slug :slug-fn page-slug-fn)
+        ;(permalink)
+        ;(build-date)
+        ;(gravatar :source-key :author-email :target-key :author-gravatar)
         ;(render :renderer renderer)
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        (sitemap :filename "sitemap.xml")
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (notify)))
+        (render :renderer 'web.views.page/render)
+        (collection :renderer 'web.views.index/render :page "index.html")
+        ;(sitemap :filename "sitemap.xml")
+        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        ;(notify)
+        ))
 
 (deftask release-snapshot
   "Release snapshot"
