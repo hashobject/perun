@@ -239,6 +239,33 @@
             ~options))
         (commit fileset tmp)))))
 
+(def ^:private atom-deps
+  '[[org.clojure/data.xml "0.0.8"]
+    [clj-time "0.9.0"]])
+
+(def ^:private +atom-defaults+
+  {:filename "atom.xml"
+   :target "public"})
+
+(deftask atom-feed
+  "Generate Atom feed"
+  [f filename    FILENAME    str "Generated Atom feed filename"
+   o target      OUTDIR      str "The output directory"
+   t title       TITLE       str "Atom feed title"
+   p description DESCRIPTION str "Atom feed description"
+   l link        LINK        str "Atom feed link"]
+  (let [pod     (create-pod atom-deps)
+        tmp     (boot/tmp-dir!)
+        options (merge +atom-defaults+ *opts*)]
+    (boot/with-pre-wrap fileset
+      (let [files (vals (perun/get-meta fileset))]
+        (pod/with-call-in @pod
+          (io.perun.atom/generate-atom
+            ~(.getPath tmp)
+            ~files
+            ~options))
+        (commit fileset tmp)))))
+
 (def ^:private +render-defaults+
   {:out-dir "public"})
 

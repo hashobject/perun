@@ -54,6 +54,7 @@
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
         (sitemap :filename "sitemap.xml")
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask release-snapshot

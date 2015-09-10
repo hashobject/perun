@@ -1,7 +1,7 @@
 (ns io.perun.core
   "Utilies which can be used in base JVM and pods."
   (:require [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string  :as string]))
 
 (def +meta-key+ :io.perun)
 
