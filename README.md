@@ -8,14 +8,14 @@ that suits your needs.
 ## Plugins
 
  - markdown - parse mardown files with YAML metadata
- - global-metadata - read global metadata from `perun.base.edn`
+ - global-metadata - read global metadata from edn file. Default to `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
- - time-to-read - calculate time to read for each page
+ - time-to-read - calculate time to read for each page (available under `:ttr` key)
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - atom-feed - generate Atom feed
- - slugs - generate slugs based on any property
+ - slugs - generate slugs based on any property (available under `:slug` key)
  - build-date - add `:build-date` to global meta and each file meta
  - permalink - create permalink for each page
  - canonical-url - create canonical-url for each page
@@ -86,7 +86,7 @@ Perun works in the following steps:
 
   1. read all the files from the source directory and create fileset metadata `(:metadata (meta fileset)` with all meta information available for all tasks/plugins
   2. call each perun task/plugin to manipulate the fileset metadata
-  3. write the results to the destination directory
+  3. write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
 When you use Perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
@@ -175,7 +175,7 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
 ### Dev setup
 
 Perun is static site generator. So usually you'd use it by just running `boot build` which will generate your static site.
-This process is robust and great for production but it's slow and lacks feedback when you're developing your site.
+This process is robust and great for production but it's slow and lacks fast feedback when you're developing your site locally.
 In order to solve this problem we recommend following setup:
 
 1. Have 2 separate tasks for building dev version and production version. E.x. `build-dev` and `build`.
@@ -208,6 +208,8 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - add boot/perun buildpack `heroku buildpacks:add https://github.com/hashobject/heroku-buildpack-perun`
  - enable GitHub integration https://devcenter.heroku.com/articles/github-integration
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
+
+Similar autodeployment can be configured using for [CircleCI](http://circleci.com).
 
 
 ## Status
