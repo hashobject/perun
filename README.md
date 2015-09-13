@@ -14,6 +14,7 @@ that suits your needs.
  - time-to-read - calculate time to read for each page (available under `:ttr` key)
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
+ - atom-feed - generate Atom feed
  - slugs - generate slugs based on any property (available under `:slug` key)
  - build-date - add `:build-date` to global meta and each file meta
  - permalink - create permalink for each page
@@ -48,6 +49,7 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
         (render :renderer renderer)
         (sitemap :filename "sitemap.xml")
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (atom-feed :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 ```
 You can also chain this with standard boot tasks. E.x. if you want to upload generated files to Amazon S3 you might use
