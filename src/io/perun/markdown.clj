@@ -1,10 +1,12 @@
 (ns io.perun.markdown
-  (:require [boot.util       :as u]
-            [io.perun.core   :as perun]
-            [clojure.java.io :as io]
-            [clojure.string  :as str]
-            [endophile.core  :as endophile]
-            [clj-yaml.core   :as yaml]))
+  (:require [boot.util              :as u]
+            [io.perun.core          :as perun]
+            [clojure.java.io        :as io]
+            [clojure.string         :as str]
+            [endophile.core         :as endophile]
+            [clj-yaml.core          :as yaml]
+            [camel-snake-kebab.core :as kebab]
+            [net.cgrand.enlive-html :as enlive]))
 
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
@@ -36,11 +38,31 @@
       (first (drop 2 splitted))
       content)))
 
+
+(defn id-from-node [h-node]
+  (some-> h-node
+          :content
+          first
+          kebab/->kebab-case))
+
+(defn transform [enl]
+  (let [new-enl
+    (enlive/transform enl
+      [#{:h1 :h2 :h3 :h4 :h5 :h6}]
+      (fn [h-node]
+        (let [id (id-from-node h-node)
+              href (str "#" id)
+              orig-header (first (:content h-node))
+              new-content [{:tag :a, :attrs {:href href}, :content '({:tag :span})} orig-header]]
+              (assoc h-node :content new-content))))]
+  new-enl))
+
 (defn markdown-to-html [file-content]
   (-> file-content
       remove-metadata
       endophile/mp
       endophile/to-clj
+      transform
       endophile/html-string))
 
 (defn process-file [file]
