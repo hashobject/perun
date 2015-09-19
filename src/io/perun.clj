@@ -4,7 +4,6 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.string :as string]
-            [clojure.test :as test]
             [clojure.edn :as edn]
             [io.perun.core :as perun]))
 
@@ -336,16 +335,16 @@
         tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
-    (cond (not (test/function? (:comparator options)))
+    (cond (not (fn? (:comparator options)))
               (u/fail "collection task :comparator option should be a function\n")
-          (not (test/function? (:filterer options)))
-              (u/fail "collection task :filterer option should be a function\n")
+          (not (ifn? (:filterer options)))
+              (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
-              (u/warn "using the :page option will render any :groupby option setting effectless\n")
+              (u/fail "using the :page option will render any :groupby option setting effectless\n")
           (not (ifn? (:groupby options)))
-              (u/fail "collection task :groupby option should implement IFn\n")
-          (not (test/function? (:sortby options)))
-              (u/fail "collection task :sortby option should be a function\n")
+              (u/fail "collection task :groupby option value should implement IFn\n")
+          (not (ifn? (:sortby options)))
+              (u/fail "collection task :sortby option value should implement IFn\n")
           :else
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
