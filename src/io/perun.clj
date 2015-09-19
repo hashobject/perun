@@ -252,6 +252,7 @@
   [f filename    FILENAME    str "Generated Atom feed filename"
    o target      OUTDIR      str "The output directory"
    t title       TITLE       str "Atom feed title"
+   s subtitle    SUBTITLE    str "Atom feed subtitle"
    p description DESCRIPTION str "Atom feed description"
    l link        LINK        str "Atom feed link"]
   (let [pod     (create-pod atom-deps)
