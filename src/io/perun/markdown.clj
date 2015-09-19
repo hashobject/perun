@@ -36,21 +36,21 @@
       (first (drop 2 splitted))
       content)))
 
-(defn markdown-to-html [file-content]
+(defn markdown-to-html [file-content options]
   (-> file-content
       remove-metadata
-      endophile/mp
+      (endophile/mp options)
       endophile/to-clj
       endophile/html-string))
 
-(defn process-file [file]
+(defn process-file [file options]
   (let [file-content (slurp file)]
     ; .getName returns only the filename so this should work cross platform
     (u/info "Processing Markdown: %s\n" (.getName file))
     [(.getName file) (merge (parse-file-metadata file-content)
-                            {:content (markdown-to-html file-content)})]))
+                            {:content (markdown-to-html file-content options)})]))
 
-(defn parse-markdown [markdown-files]
-  (let [parsed-files (into {} (map #(-> % io/file process-file) markdown-files))]
+(defn parse-markdown [markdown-files options]
+  (let [parsed-files (into {} (map #(-> % io/file (process-file options)) markdown-files))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))

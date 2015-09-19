@@ -32,7 +32,7 @@
   This task will look for files ending with `md` or `markdown`
   and add a `:content` key to their metadata containing the
   HTML resulting from processing the markdown file's content"
-  []
+  [o options OPTS edn "options to be passed to endophile"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
@@ -48,7 +48,8 @@
                                   (boot/by-ext ["md" "markdown"])
                                   (map #(.getName (boot/tmp-file %))))
             parsed-metadata  (pod/with-call-in @pod
-                               (io.perun.markdown/parse-markdown ~markdown-files))
+                               (io.perun.markdown/parse-markdown ~markdown-files
+                                                                 ~options))
             initial-metadata @prev-meta
             final-metadata   (merge initial-metadata parsed-metadata)
             final-metadata   (apply dissoc final-metadata removed-files)
