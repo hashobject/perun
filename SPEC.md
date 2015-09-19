@@ -13,6 +13,7 @@ set for the tasks using task options.
     - Required by: *atom-feed*
     - Required by: *rss*
 - **:author**
+    - Required by: *atom-feed* if posts don't have author metadata
     - **:name**
     - **:email**
 - **:base-url**
@@ -30,21 +31,21 @@ All posts have a filename which is used as a key to identify the post.
 
 - **:name**
     - Required by: *atom-feed*
-    - Used by: *rss*
+    - Used by: *rss* either this or description is required
 - **:content** The post content
     - Set by: *markdown*
     - Used by: *atom-feed*
 - **:description**
-    - Used by: *rss*
+    - Used by: *rss* either this or name is required
 - **:slug**
     - Set by: slug
     - Required by: *permalink* default fn
-- **:permalink**
+- **:permalink** relative url for the post
     - Set by: *permalink*
     - Used by: *render* as first option for output file name
     - Required by: *atom-feed*
     - Required by: *canonical-url*
-- **:canonical-url** base-url and permalink concatenated
+- **:canonical-url** full url for the post
     - Set by: *canonical-url*
     - Used by: *atom-feed*
     - Used by: *rss*
@@ -55,7 +56,7 @@ All posts have a filename which is used as a key to identify the post.
     - Used by: *rss*
 - **:draft**
     - Used by: *draft*
-- **:build-date**
+- **:build-date** date when the site was generated
     - Set by: *build-date*
     - Used by: *sitemap*
 - **:date-created**
