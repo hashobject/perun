@@ -4,7 +4,6 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.string :as string]
-            [clojure.test :as test]
             [clojure.edn :as edn]
             [io.perun.core :as perun]))
 
@@ -319,6 +318,7 @@
 (def ^:private +collection-defaults+
   {:out-dir "public"
    :filterer identity
+   :groupby (fn [x] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -328,25 +328,33 @@
    r renderer   RENDERER   sym  "Page renderer. Fully qualified symbol resolving to a function."
    f filterer   FILTER     code "Filter function"
    s sortby     SORTBY     code "Sort by function"
+   g groupby    GROUPBY    code "Group posts by function, keys will be used as filenames where posts (values) will be rendered"
    c comparator COMPARATOR code "Sort by comparator function"
    p page       PAGE       str  "Collection result page path"]
   (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp       (boot/tmp-dir!)
-        options   (merge +collection-defaults+ *opts*)]
-    (cond (not (test/function? (:comparator options)))
+        options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
+                                                        {:groupby (fn [_] p)}))]
+    (cond (not (fn? (:comparator options)))
               (u/fail "collection task :comparator option should be a function\n")
-          (not (test/function? (:filterer options)))
-              (u/fail "collection task :filterer option should be a function\n")
-          (not (test/function? (:sortby options)))
-              (u/fail "collection task :sortby option should be a function\n")
+          (not (ifn? (:filterer options)))
+              (u/fail "collection task :filterer option value should implement IFn\n")
+          (and (:page options) (:groupby *opts*))
+              (u/fail "using the :page option will render any :groupby option setting effectless\n")
+          (not (ifn? (:groupby options)))
+              (u/fail "collection task :groupby option value should implement IFn\n")
+          (not (ifn? (:sortby options)))
+              (u/fail "collection task :sortby option value should implement IFn\n")
           :else
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
                     files          (vals (perun/get-meta fileset))
                     filtered-files (filter (:filterer options) files)
-                    sorted-files   (vec (sort-by (:sortby options) (:comparator options) filtered-files))
-                    html           (render-in-pod pod renderer (perun/get-global-meta fileset) sorted-files)
-                    page-filepath  (perun/create-filepath (:out-dir options) page)]
-                (perun/create-file tmp page-filepath html)
-                (u/info (str "Render collection " page "\n"))
+                    grouped-files  (group-by (:groupby options) filtered-files)]
+                (doseq [[page files] grouped-files]
+                  (let [sorted-files  (vec (sort-by (:sortby options) (:comparator options) files))
+                        html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted-files)
+                        page-filepath (perun/create-filepath (:out-dir options) page)]
+                    (perun/create-file tmp page-filepath html)
+                    (u/info (str "Render collection " page "\n"))))
                 (commit fileset tmp))))))
