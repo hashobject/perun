@@ -78,7 +78,7 @@ Following sites were created with Perun and Boot:
 
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
- - [www.martinklepsch.org](http://www.martinklepsch.org/). See [buil.boot](https://github.com/martinklepsch/martinklepsch.org/blob/boot-perun/build.boot)
+ - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/boot-perun/build.boot)
 
 
 ## How does it work
