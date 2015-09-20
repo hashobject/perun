@@ -37,7 +37,8 @@
   (->> opts
        (merge {:autolinks true
                :strikethrough true
-               :fenced-code-blocks true})
+               :fenced-code-blocks true
+               :extanchorlinks true})
        (filter val)
        keys
        (map extensions)
