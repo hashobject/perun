@@ -33,13 +33,6 @@
    :all-optionals        Extensions/ALL_OPTIONALS
    :all-with-optionals   Extensions/ALL_WITH_OPTIONALS})
 
-(defn- bit-or'
-  "Bit-or which works if only one argument is given."
-  [& xs]
-  (if (seq (rest xs))
-    (apply bit-or xs)
-    (first xs)))
-
 (defn extensions-map->int [opts]
   (->> opts
        (merge {:autolinks true
@@ -48,7 +41,7 @@
        (filter val)
        keys
        (map extensions)
-       (apply bit-or')
+       (apply bit-or 0)
        int))
 
 ;; end of extension handling from endophile.core
