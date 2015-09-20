@@ -79,7 +79,7 @@
 
 (defn markdown-to-html [file-content options]
   (let [processor (PegDownProcessor. (extensions-map->int (:extensions options)))]
-    (->> file-conent
+    (->> file-content
          remove-metadata
          char-array
          (.markdownToHtml processor))))
