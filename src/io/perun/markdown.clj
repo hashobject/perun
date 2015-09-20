@@ -3,8 +3,55 @@
             [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [clojure.string  :as str]
-            [endophile.core  :as endophile]
-            [clj-yaml.core   :as yaml]))
+            [clj-yaml.core   :as yaml])
+    (:import [org.pegdown PegDownProcessor Extensions]))
+
+;; Extension handling has been copied from endophile.core
+;; See https://github.com/sirthias/pegdown/blob/master/src/main/java/org/pegdown/Extensions.java
+;; for descriptions
+(def extensions
+  {:smarts               Extensions/SMARTS
+   :quotes               Extensions/QUOTES
+   :smartypants          Extensions/SMARTYPANTS
+   :abbreviations        Extensions/ABBREVIATIONS
+   :hardwraps            Extensions/HARDWRAPS
+   :autolinks            Extensions/AUTOLINKS
+   :tables               Extensions/TABLES
+   :definitions          Extensions/DEFINITIONS
+   :fenced-code-blocks   Extensions/FENCED_CODE_BLOCKS
+   :wikilinks            Extensions/WIKILINKS
+   :strikethrough        Extensions/STRIKETHROUGH
+   :anchorlinks          Extensions/ANCHORLINKS
+   :all                  Extensions/ALL
+   :suppress-html-blocks Extensions/SUPPRESS_HTML_BLOCKS
+   :supress-all-html     Extensions/SUPPRESS_ALL_HTML
+   :atxheaderspace       Extensions/ATXHEADERSPACE
+   :forcelistitempara    Extensions/FORCELISTITEMPARA
+   :relaxedhrules        Extensions/RELAXEDHRULES
+   :tasklistitems        Extensions/TASKLISTITEMS
+   :extanchorlinks       Extensions/EXTANCHORLINKS
+   :all-optionals        Extensions/ALL_OPTIONALS
+   :all-with-optionals   Extensions/ALL_WITH_OPTIONALS})
+
+(defn- bit-or'
+  "Bit-or which works if only one argument is given."
+  [& xs]
+  (if (seq (rest xs))
+    (apply bit-or xs)
+    (first xs)))
+
+(defn extensions-map->int [opts]
+  (->> opts
+       (merge {:autolinks true
+               :strikethrough true
+               :fenced-code-blocks true})
+       (filter val)
+       keys
+       (map extensions)
+       (apply bit-or')
+       int))
+
+;; end of extension handling from endophile.core
 
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
@@ -37,11 +84,11 @@
       content)))
 
 (defn markdown-to-html [file-content options]
-  (-> file-content
-      remove-metadata
-      (endophile/mp options)
-      endophile/to-clj
-      endophile/html-string))
+  (let [processor (PegDownProcessor. (extensions-map->int (:extensions options)))]
+    (->> file-conent
+         remove-metadata
+         char-array
+         (.markdownToHtml processor))))
 
 (defn process-file [file options]
   (let [file-content (slurp file)]
