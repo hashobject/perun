@@ -23,7 +23,7 @@
       boot/commit!))
 
 (def ^:private markdown-deps
-  '[[endophile "0.1.2"]
+  '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.3"]])
 
 (deftask markdown
