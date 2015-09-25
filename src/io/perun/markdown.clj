@@ -88,10 +88,13 @@
   (let [file-content (slurp file)]
     ; .getName returns only the filename so this should work cross platform
     (u/info "Processing Markdown: %s\n" (.getName file))
-    [(.getName file) (merge (parse-file-metadata file-content)
-                            {:content (markdown-to-html file-content options)})]))
+    (merge (parse-file-metadata file-content)
+           {:content (markdown-to-html file-content options)})))
 
 (defn parse-markdown [markdown-files options]
-  (let [parsed-files (into {} (map #(-> % io/file (process-file options)) markdown-files))]
+  (let [->file       #(io/file (:dir %) (:path %))
+        parsed-files (into [] (for [f markdown-files]
+                                (merge {:path (:path f)}
+                                       (-> f ->file (process-file options)))))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))

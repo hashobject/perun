@@ -26,6 +26,27 @@
   '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.3"]])
 
+(deftask dump-meta
+  "Utility task to dump perun metadata via boot.util/info"
+  [r to-remove REMOVE [kw] "Keys to remove from metadata map values"]
+  (boot/with-pre-wrap fileset
+    (prn (pr-str (map #(apply dissoc % to-remove) (perun/get-meta fileset))))
+    fileset))
+
+(deftask base
+  "Adds some basic information to the perun metadata and
+   establishes metadata structure."
+  []
+  (boot/with-pre-wrap fileset
+    (let [files         (perun/get-meta fileset)
+          updated-files (map (fn [f] {:filename (.getName (boot/tmp-file f))
+                                      :path     (boot/tmp-path f)})
+                             (boot/user-files fileset))]
+      (perun/set-meta fileset updated-files))))
+
+;; See https://github.com/boot-clj/boot/issues/250
+(defn marshall-tmpfile [tmpfile] (update tmpfile :dir #(.getPath %)))
+
 (deftask markdown
   "Parse markdown files
 
@@ -37,22 +58,22 @@
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [markdown-files   (->> fileset
-                                  (boot/fileset-diff @prev-fs)
-                                  boot/user-files
-                                  (boot/by-ext ["md" "markdown"])
-                                  (map #(.getPath (boot/tmp-file %))))
-            removed-files    (->> fileset
-                                  (boot/fileset-removed @prev-fs)
-                                  boot/user-files
-                                  (boot/by-ext ["md" "markdown"])
-                                  (map #(.getName (boot/tmp-file %))))
-            parsed-metadata  (pod/with-call-in @pod
-                               (io.perun.markdown/parse-markdown ~markdown-files
-                                                                 ~options))
-            initial-metadata @prev-meta
-            final-metadata   (merge initial-metadata parsed-metadata)
-            final-metadata   (apply dissoc final-metadata removed-files)
+      (let [md-files (->> fileset
+                          (boot/fileset-diff @prev-fs)
+                          boot/user-files
+                          (boot/by-ext ["md" "markdown"])
+                          (map marshall-tmpfile))
+            removed? (->> fileset
+                          (boot/fileset-removed @prev-fs)
+                          boot/user-files
+                          (boot/by-ext ["md" "markdown"])
+                          (map #(:path (boot/tmp-file %)))
+                          set)
+            md-meta  (pod/with-call-in @pod
+                       (io.perun.markdown/parse-markdown ~md-files ~options))
+            initial-metadata (perun/merge-meta (perun/get-meta fileset) @prev-meta)
+            final-metadata   (perun/merge-meta initial-metadata md-meta)
+            final-metadata   (remove #(-> % :path removed?) final-metadata)
             fs-with-meta     (perun/set-meta fileset final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
@@ -84,12 +105,12 @@
   []
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)
+      (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.ttr/calculate-ttr ~files))
             fs-with-meta  (perun/set-meta fileset updated-files)]
         (u/dbug "Generated time-to-read:\n%s\n"
-                (pr-str (map :ttr (vals updated-files))))
+                (pr-str (map :ttr updated-files)))
         fs-with-meta))))
 
 (def ^:private gravatar-deps
@@ -101,20 +122,21 @@
    t target-key TARGET-PROP kw "Property name to store gravatar url"]
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)
+      (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
             fs-with-meta  (perun/set-meta fileset updated-files)]
         (u/dbug "Find gravatars:\n%s\n"
-                (pr-str (map target-key (vals updated-files))))
+                (pr-str (map target-key updated-files)))
       fs-with-meta))))
 
+;; Should be handled by more generic filterer options to other tasks
 (deftask draft
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (perun/filter-vals #(not (true? (:draft %))) files)
+          updated-files (filter #(not (true? (:draft %))) files)
           fs-with-meta  (perun/set-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
@@ -126,12 +148,12 @@
     (let [files           (perun/get-meta fileset)
           global-meta     (perun/get-global-meta fileset)
           now             (java.util.Date.)
-          updated-files   (perun/map-vals #(assoc % :build-date now) files)
+          updated-files   (map #(assoc % :build-date now) files)
           new-global-meta (assoc global-meta :build-date now)
           updated-fs      (perun/set-meta fileset updated-files)
           fs-with-meta    (perun/set-global-meta updated-fs new-global-meta)]
         (u/dbug "Added :build-date:\n%s\n"
-                (pr-str (map :build-date (vals updated-files))))
+                (pr-str (map :build-date updated-files)))
       fs-with-meta)))
 
 (defn ^:private default-slug-fn [filename]
@@ -150,29 +172,31 @@
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
-          updated-files (into {}
-                              (for [[f m] files]
-                                [f (assoc m :slug (slug-fn f))]))]
+          updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
       (u/dbug "Generated Slugs:\n%s\n"
-              (pr-str (map :slug (vals updated-files))))
+              (pr-str (map :slug updated-files)))
       (u/info "Added slugs to %s files\n" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
-(defn ^:private default-permalink-fn [metadata]
-  (perun/absolutize-url (str (:slug metadata) "/index.html")))
+
+(def ^:private +permalink-defaults+
+  {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
+   :filterer     identity})
 
 (deftask permalink
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
-  [f permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"]
+  [p permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"
+   f filterer     FILTER   code "Filter function"]
+
   (boot/with-pre-wrap fileset
-    (let [files         (perun/get-meta fileset)
-          permalink-fn  (or permalink-fn default-permalink-fn)
-          assoc-perma   (fn [f] (assoc f :permalink (permalink-fn f)))
-          updated-files (perun/map-vals assoc-perma files)]
+    (let [options       (merge +permalink-defaults+ *opts*)
+          files         (filter (:filterer options) (perun/get-meta fileset))
+          assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
+          updated-files (map assoc-perma files)]
       (u/dbug "Generated Permalinks:\n%s\n"
-              (pr-str (map :permalink (vals updated-files))))
+              (pr-str (map :permalink updated-files)))
       (u/info "Added permalinks to %s files\n" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
@@ -183,11 +207,10 @@
    The base-url must end with '/'."
   []
   (boot/with-pre-wrap fileset
-    (->> fileset
-         perun/get-meta
-         (perun/map-vals (fn [{:keys [permalink] :as post}]
-                           (assoc post :canonical-url (str (:base-url (perun/get-global-meta fileset)) permalink))))
-         (perun/set-meta fileset))))
+    (let [files    (perun/get-meta fileset)
+          base-url (:base-url (perun/get-global-meta fileset))
+          updated  (map #(assoc % :canonical-url (str base-url (:permalink %))))]
+      (perun/set-meta fileset updated))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]])
@@ -205,12 +228,9 @@
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (perun/get-meta fileset))]
+      (let [files (perun/get-meta fileset)]
         (pod/with-call-in @pod
-          (io.perun.sitemap/generate-sitemap
-            ~(.getPath tmp)
-            ~files
-            ~options))
+          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
@@ -231,12 +251,9 @@
         tmp     (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (perun/get-meta fileset))]
+      (let [files (perun/get-meta fileset)]
         (pod/with-call-in @pod
-          (io.perun.rss/generate-rss
-            ~(.getPath tmp)
-            ~files
-            ~options))
+          (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
 
 (def ^:private atom-deps
@@ -259,16 +276,10 @@
         tmp     (boot/tmp-dir!)
         options (merge +atom-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (vals (perun/get-meta fileset))]
+      (let [files (perun/get-meta fileset)]
         (pod/with-call-in @pod
-          (io.perun.atom/generate-atom
-            ~(.getPath tmp)
-            ~files
-            ~options))
+          (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
-
-(def ^:private +render-defaults+
-  {:out-dir "public"})
 
 (defn- wrap-pool [pool]
   (let [prev (atom nil)]
@@ -284,11 +295,18 @@
         (reset! prev fileset)
         pod))))
 
-(defn- render-in-pod [pod sym global-meta file]
+(defn- render-in-pod [pod sym global-meta file-meta]
   {:pre [(symbol? sym) (namespace sym)]}
-  (pod/with-eval-in pod
-    (require '~(symbol (namespace sym)))
-    ((resolve '~sym) ~global-meta ~file)))
+  ;; Ensure passed seqs are vectors, otherwise lists/array-seqs etc
+  ;; wrapped in parentheses will be interpreted as function calls
+  (let [m (if (sequential? file-meta) (vec file-meta) file-meta)]
+    (pod/with-eval-in pod
+      (require '~(symbol (namespace sym)))
+      ((resolve '~sym) ~global-meta ~m))))
+
+(def ^:private +render-defaults+
+  {:out-dir  "public"
+   :filterer identity})
 
 (deftask render
   "Render pages.
@@ -297,14 +315,17 @@
    ends in slash, index.html is used as filename. If permalink is not set, the
    original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "The output directory"
+   f filterer FILTER   code "Filter function"
    r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (perun/get-meta fileset)]
-        (doseq [[filename file] files]
+            files (filter (:filterer options) (perun/get-meta fileset))]
+        (u/info "Render pages\n")
+        (doseq [{:keys [path] :as file} files]
+          (u/dbug " - %s" path)
           (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
@@ -312,15 +333,15 @@
                                 (or (some-> (:permalink file)
                                             (string/replace #"/$" "/index.html")
                                             perun/url-to-path)
-                                    (string/replace filename #"(?i).[a-z]+$" ".html")))]
+                                    (string/replace path #"(?i).[a-z]+$" ".html")))]
+            (u/dbug " -> %s\n" page-filepath)
             (perun/create-file tmp page-filepath html)))
-        (u/info "Render all pages\n")
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
    :filterer identity
-   :groupby (fn [x] "index.html")
+   :groupby (fn [data] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -350,12 +371,12 @@
           :else
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
-                    files          (vals (perun/get-meta fileset))
+                    files          (perun/get-meta fileset)
                     filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)]
                 (doseq [[page files] grouped-files]
-                  (let [sorted-files  (vec (sort-by (:sortby options) (:comparator options) files))
-                        html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted-files)
+                  (let [sorted        (sort-by (:sortby options) (:comparator options) files)
+                        html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted)
                         page-filepath (perun/create-filepath (:out-dir options) page)]
                     (perun/create-file tmp page-filepath html)
                     (u/info (str "Render collection " page "\n"))))
