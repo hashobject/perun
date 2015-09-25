@@ -14,8 +14,11 @@
 (defn set-meta [fileset data]
   (vary-meta fileset assoc +meta-key+ (key-meta data)))
 
-(defn merge-meta [m1 m2]
+(defn merge-meta* [m1 m2]
   (vals (merge-with merge (key-meta m1) (key-meta m2))))
+
+(defn merge-meta [fileset data]
+  (set-meta fileset (merge-meta* (get-meta fileset) data)))
 
 (def +global-meta-key+ :io.perun.global)
 

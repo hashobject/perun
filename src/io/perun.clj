@@ -71,8 +71,8 @@
                           set)
             md-meta  (pod/with-call-in @pod
                        (io.perun.markdown/parse-markdown ~md-files ~options))
-            initial-metadata (perun/merge-meta (perun/get-meta fileset) @prev-meta)
-            final-metadata   (perun/merge-meta initial-metadata md-meta)
+            initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
+            final-metadata   (perun/merge-meta* initial-metadata md-meta)
             final-metadata   (remove #(-> % :path removed?) final-metadata)
             fs-with-meta     (perun/set-meta fileset final-metadata)]
         (reset! prev-fs fileset)
@@ -198,7 +198,7 @@
       (u/dbug "Generated Permalinks:\n%s\n"
               (pr-str (map :permalink updated-files)))
       (u/info "Added permalinks to %s files\n" (count updated-files))
-      (perun/set-meta fileset updated-files))))
+      (perun/merge-meta fileset updated-files))))
 
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
