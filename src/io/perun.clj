@@ -28,8 +28,7 @@
 
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
-  [r to-remove REMOVE [kw] "Keys to remove from metadata map values"
-   m map-fn    MAPFN  code "function to map over metadata items before printing"]
+  [m map-fn    MAPFN  code "function to map over metadata items before printing"]
   (boot/with-pre-wrap fileset
     (let [map-fn (or map-fn identity)]
       (prn (pr-str (map map-fn (perun/get-meta fileset)))))
