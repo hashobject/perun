@@ -376,10 +376,10 @@
                     files          (perun/get-meta fileset)
                     filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)]
-                (doseq [[page files] grouped-files]
-                  (let [sorted        (sort-by (:sortby options) (:comparator options) files)
+                (doseq [[page page-files] grouped-files]
+                  (u/info (str "Render collection " page "\n"))
+                  (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
                         html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted)
                         page-filepath (perun/create-filepath (:out-dir options) page)]
-                    (perun/create-file tmp page-filepath html)
-                    (u/info (str "Render collection " page "\n"))))
+                    (perun/create-file tmp page-filepath html)))
                 (commit fileset tmp))))))
