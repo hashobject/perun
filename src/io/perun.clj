@@ -86,7 +86,7 @@
    The global metadata will be attached to fileset where it can be
    read and manipulated by the tasks. Render tasks will pass this
    as the first argument to render functions."
-  [n filename NAME str "filename where to read global metadata"]
+  [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
     (perun/set-global-meta
       fileset
@@ -119,8 +119,8 @@
 
 (deftask gravatar
   "Find gravatar urls using emails"
-  [s source-key SOURCE-PROP kw "Email property used to lookup gravatar url"
-   t target-key TARGET-PROP kw "Property name to store gravatar url"]
+  [s source-key SOURCE-PROP kw "email property used to lookup gravatar url"
+   t target-key TARGET-PROP kw "property name to store gravatar url"]
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
@@ -169,7 +169,7 @@
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
-  [s slug-fn SLUGFN code "Function to build slug from filename"]
+  [s slug-fn SLUGFN code "function to build slug from filename"]
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
@@ -188,8 +188,8 @@
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
-  [p permalink-fn PERMALINKFN code "Function to build permalink from TmpFile metadata"
-   f filterer     FILTER   code "Filter function"]
+  [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
+   f filterer     FILTER   code "filter function"]
 
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
@@ -222,9 +222,9 @@
 
 (deftask sitemap
   "Generate sitemap"
-  [f filename FILENAME str "Generated sitemap filename"
-   o target   OUTDIR   str "The output directory"
-   u url      URL      str "Base URL"]
+  [f filename FILENAME str "generated sitemap filename"
+   o target   OUTDIR   str "the output directory"
+   u url      URL      str "base URL"]
   (let [pod     (create-pod sitemap-deps)
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
@@ -243,11 +243,11 @@
 
 (deftask rss
   "Generate RSS feed"
-  [f filename    FILENAME    str "Generated RSS feed filename"
-   o target      OUTDIR      str "The output directory"
-   t title       TITLE       str "RSS feed title"
-   p description DESCRIPTION str "RSS feed description"
-   l link        LINK        str "RSS feed link"]
+  [f filename    FILENAME    str "generated RSS feed filename"
+   o target      OUTDIR      str "the output directory"
+   t title       TITLE       str "feed title"
+   p description DESCRIPTION str "feed description"
+   l link        LINK        str "feed link"]
   (let [pod     (create-pod rss-deps)
         tmp     (boot/tmp-dir!)
         options (merge +rss-defaults+ *opts*)]
@@ -267,12 +267,12 @@
 
 (deftask atom-feed
   "Generate Atom feed"
-  [f filename    FILENAME    str "Generated Atom feed filename"
-   o target      OUTDIR      str "The output directory"
-   t title       TITLE       str "Atom feed title"
-   s subtitle    SUBTITLE    str "Atom feed subtitle"
-   p description DESCRIPTION str "Atom feed description"
-   l link        LINK        str "Atom feed link"]
+  [f filename    FILENAME    str "generated Atom feed filename"
+   o target      OUTDIR      str "the output directory"
+   t title       TITLE       str "feed title"
+   s subtitle    SUBTITLE    str "feed subtitle"
+   p description DESCRIPTION str "feed description"
+   l link        LINK        str "feed link"]
   (let [pod     (create-pod atom-deps)
         tmp     (boot/tmp-dir!)
         options (merge +atom-defaults+ *opts*)]
@@ -315,9 +315,9 @@
    If permalink is set for the file, it is used as the filepath else. If permalink
    ends in slash, index.html is used as filename. If permalink is not set, the
    original filename is used with file extension set to html."
-  [o out-dir  OUTDIR   str  "The output directory"
-   f filterer FILTER   code "Filter function"
-   r renderer RENDERER sym  "Page renderer. Must be fully qualified symbol which resolves to a function."]
+  [o out-dir  OUTDIR   str  "the output directory"
+   f filterer FILTER   code "filter function"
+   r renderer RENDERER sym  "page renderer(fully qualified symbol which resolves to a function)"]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
@@ -348,13 +348,13 @@
 
 (deftask collection
   "Render collection files"
-  [o out-dir    OUTDIR     str  "The output directory"
-   r renderer   RENDERER   sym  "Page renderer. Fully qualified symbol resolving to a function."
-   f filterer   FILTER     code "Filter function"
-   s sortby     SORTBY     code "Sort by function"
-   g groupby    GROUPBY    code "Group posts by function, keys will be used as filenames where posts (values) will be rendered"
-   c comparator COMPARATOR code "Sort by comparator function"
-   p page       PAGE       str  "Collection result page path"]
+  [o out-dir    OUTDIR     str  "the output directory"
+   r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
+   f filterer   FILTER     code "filter function"
+   s sortby     SORTBY     code "sort by function"
+   g groupby    GROUPBY    code "group posts by function, keys will be used as filenames where posts (values) will be rendered"
+   c comparator COMPARATOR code "sort by comparator function"
+   p page       PAGE       str  "collection result page path"]
   (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
