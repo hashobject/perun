@@ -97,7 +97,8 @@
 
 (defn parse-markdown [markdown-files options]
   (let [->file       #(io/file (:dir %) (:path %))
-        parsed-files (into [] (for [f markdown-files]
-                                    (-> f ->file (process-file options))))]
+        parsed-files (into []
+                      (for [f markdown-files]
+                        (-> f ->file (process-file options))))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))
