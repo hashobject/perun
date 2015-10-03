@@ -64,6 +64,7 @@
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           (map marshall-tmpfile))
+            ; process all removed markdown files
             removed? (->> fileset
                           (boot/fileset-removed @prev-fs)
                           boot/user-files

@@ -43,20 +43,19 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp (base)
-        (markdown)
+  (comp (markdown)
         (draft)
         (dump-meta)
-        ;(ttr)
+        (ttr)
         (slug)
-        (permalink)
+        ;(permalink)
         (build-date)
-        ;(gravatar :source-key :author-email :target-key :author-gravatar)
+        (gravatar :source-key :author-email :target-key :author-gravatar)
         ;(render :renderer renderer)
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        ;(sitemap :filename "sitemap.xml")
-        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        ;(atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
+        (sitemap :filename "sitemap.xml")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask release-snapshot
