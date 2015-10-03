@@ -1,7 +1,7 @@
 (set-env!
   :source-paths #{"test"}
   :resource-paths #{"src" "resources"}
-  :dependencies '[[boot/core "2.1.2" :scope "provided"]
+  :dependencies '[[boot/core "2.3.0" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]
                   [org.pegdown/pegdown "1.6.0" :scope "test"]
@@ -43,18 +43,20 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp (markdown)
+  (comp (base)
+        (markdown)
         (draft)
-        (ttr)
+        (dump-meta)
+        ;(ttr)
         (slug)
         (permalink)
         (build-date)
-        (gravatar :source-key :author-email :target-key :author-gravatar)
+        ;(gravatar :source-key :author-email :target-key :author-gravatar)
         ;(render :renderer renderer)
         ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        (sitemap :filename "sitemap.xml")
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
+        ;(sitemap :filename "sitemap.xml")
+        ;(rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        ;(atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask release-snapshot

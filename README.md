@@ -22,7 +22,11 @@ that suits your needs.
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
-## Plugins
+## Version
+
+We use Clojure 1.7.0 and Boot 2.3.0. You should have those versions in order to use Perun.
+
+## Plugins system
 
 Everything in Perun is build like independent task. The simplest blog engine will look like:
 
