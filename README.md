@@ -214,7 +214,7 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - enable GitHub integration https://devcenter.heroku.com/articles/github-integration
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
-Similar autodeployment can be configured using for [CircleCI](http://circleci.com).
+Similar autodeployment can be configured using [CircleCI](http://circleci.com) too.
 
 
 ## Status
