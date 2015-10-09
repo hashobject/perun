@@ -231,7 +231,7 @@ Main things todo:
 
 We love contributions. Please submit your pull requests.
 
-## Contributor list
+## Contributors
 
 - [Martin Klepsch](https://github.com/martinklepsch)
 - [Juho Teperi](https://github.com/Deraen)
