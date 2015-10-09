@@ -35,13 +35,3 @@
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
-
-(deftask dev
-  "Dev process"
-  []
-  (comp
-    (watch)
-    (repl :server true)
-    (pom)
-    (jar)
-    (install)))
