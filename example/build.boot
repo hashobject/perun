@@ -23,7 +23,7 @@
   []
   (comp (markdown)
         (draft)
-        ;(dump-meta)
+        (dump-meta)
         (ttr)
         (slug)
         ;(permalink)
