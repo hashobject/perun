@@ -3,7 +3,6 @@
   :resource-paths #{"src" "resources"}
   :dependencies '[[boot/core "2.3.0" :scope "provided"]
                   [adzerk/bootlaces "0.1.9" :scope "test"]
-                  [jeluard/boot-notify "0.1.2" :scope "test"]
                   [org.pegdown/pegdown "1.6.0" :scope "test"]
                   [circleci/clj-yaml "0.5.3" :scope "test"]
                   [time-to-read "0.1.0" :scope "test"]
@@ -26,37 +25,6 @@
        :scm         {:url "https://github.com/hashobject/perun"}
        :license     {"name" "Eclipse Public License"
                      "url"  "http://www.eclipse.org/legal/epl-v10.html"}})
-
-
-(require '[io.perun :refer :all]
-         '[jeluard.boot-notify :refer [notify]])
-
-
-; testing functions
-(defn renderer [global data]
-  (:content data))
-
-(defn index-renderer [global files]
-  (let [names (map :name files)]
-    (clojure.string/join "\n" names)))
-
-(deftask build
-  "Build test blog. This task is just for testing different plugins together."
-  []
-  (comp (markdown)
-        (draft)
-        (dump-meta)
-        (ttr)
-        (slug)
-        ;(permalink)
-        (build-date)
-        (gravatar :source-key :author-email :target-key :author-gravatar)
-        ;(render :renderer renderer)
-        ;(collection :renderer index-renderer :page "index.html" :filter identity)
-        (sitemap :filename "sitemap.xml")
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
-        (notify)))
 
 (deftask release-snapshot
   "Release snapshot"
