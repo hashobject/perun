@@ -12,6 +12,7 @@ that suits your needs.
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
  - time-to-read - calculate time to read for each page (available under `:ttr` key)
+ - word-count - count words for each page (available under `:word-count` key)
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - atom-feed - generate Atom feed
@@ -113,7 +114,7 @@ See documentation for each task to find all supported options for each plugin.
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[org.clojure/clojure "1.7.0"]
+  :dependencies '[[org.clojure/clojure "1.7fi.0"]
                   [hiccup "1.0.5"]
                   [perun "0.1.0-SNAPSHOT"]
                   [clj-time "0.9.0"]
