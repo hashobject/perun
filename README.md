@@ -39,7 +39,7 @@ Everything in Perun is build like independent task. The simplest blog engine wil
 
 ```
 
-But if you want to make permalinks, generate sitemap and rss feed, hide unfinished post, add time to read to each post then you will do:
+But if you want to make permalinks, generate sitemap and rss feed, hide unfinished posts, add time to read to each post then you will do:
 
 ```clojure
 (deftask build
