@@ -47,6 +47,7 @@
         (draft)
         (dump-meta)
         (ttr)
+        (word-count)
         (slug)
         ;(permalink)
         (build-date)
