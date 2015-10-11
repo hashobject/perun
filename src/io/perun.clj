@@ -137,7 +137,7 @@
   "Find gravatar urls using emails"
   [s source-key SOURCE-PROP kw "email property used to lookup gravatar url"
    t target-key TARGET-PROP kw "property name to store gravatar url"]
-  (let [pod (create-pod ttr-deps)]
+  (let [pod (create-pod gravatar-deps)]
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
