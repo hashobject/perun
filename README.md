@@ -34,9 +34,9 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
  - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
  - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
  - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
- - [boot-reload](https://github.com/adzerk-oss/boot-reload) - Live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
- - [boot-livereload](https://github.com/deraen/boot-livereload) - Live-reload of browser Js, HTML, CSS and images.
- - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - Hyphenate HTML files with soft-hyphens.
+ - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
+ - [boot-livereload](https://github.com/deraen/boot-livereload) - live-reload of browser Js, HTML, CSS and images.
+ - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - hyphenate HTML files with soft-hyphens.
 
 ## Version
 
