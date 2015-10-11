@@ -115,6 +115,21 @@
                 (pr-str (map :ttr updated-files)))
         fs-with-meta))))
 
+(deftask word-count
+  "Count words in each file"
+  []
+  (let [pod (create-pod ttr-deps)]
+    (boot/with-pre-wrap fileset
+      (let [files         (perun/get-meta fileset)
+            updated-files (pod/with-call-in @pod
+                            (io.perun.word-count/count-words ~files))
+            fs-with-meta  (perun/set-meta fileset updated-files)]
+        (u/dbug "Counted words:\n%s\n"
+                (pr-str (map :word-count updated-files)))
+        fs-with-meta))))
+
+
+
 (def ^:private gravatar-deps
   '[[gravatar "0.1.0"]])
 
