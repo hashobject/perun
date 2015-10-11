@@ -22,6 +22,21 @@ that suits your needs.
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
+## 3d party useful plugins
+
+There are plenty of Boot plugins that can be useful in the when you are using perun:
+
+ - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
+ - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
+ - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
+ - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
+ - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
+ - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
+ - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
+ - [boot-reload](https://github.com/adzerk-oss/boot-reload) - Live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
+ - [boot-livereload](https://github.com/deraen/boot-livereload) - Live-reload of browser Js, HTML, CSS and images.
+ - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - Hyphenate HTML files with soft-hyphens.
+
 ## Version
 
 We use Clojure 1.7.0 and Boot 2.3.0. You should have those versions in order to use Perun.
@@ -74,7 +89,7 @@ Then your code might look like this:
 
  - generate blog from markdown files
  - generate documentation for your open source library bases on README.md
- - any case where you'd want to use jekyll or another static site generator
+ - any case where you'd want to use Jekyll or another static site generator
 
 ## Examples
 
@@ -83,6 +98,8 @@ Following sites were created with Perun and Boot:
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
  - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
+
+Also check out [example](https://github.com/hashobject/perun/tree/master/example) folder.
 
 
 ## How does it work
@@ -161,21 +178,6 @@ After you created `build` task simply do:
 ```
   boot build
 ```
-
-## Useful plugins
-
-There are plenty of Boot plugins that can be useful in the when you are using perun:
-
- - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
- - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
- - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
- - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
- - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
- - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
- - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
- - [boot-reload](https://github.com/adzerk-oss/boot-reload) - Live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
- - [boot-livereload](https://github.com/deraen/boot-livereload) - Live-reload of browser Js, HTML, CSS and images.
- - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - Hyphenate HTML files with soft-hyphens.
 
 ## Tips
 
