@@ -40,11 +40,11 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
 
 ## Version
 
-We use Clojure 1.7.0 and Boot 2.3.0. You should have those versions in order to use Perun.
+We use Clojure 1.7.0 and Boot 2.3.0. You should have those versions in order to use perun.
 
 ## Plugins system
 
-Everything in Perun is build like independent task. The simplest blog engine will look like:
+Everything in perun is build like independent task. The simplest blog engine will look like:
 
 ```clojure
 (deftask build
@@ -94,7 +94,7 @@ Then your code might look like this:
 
 ## Examples
 
-Following sites were created with Perun and Boot:
+Following sites were created with perun and Boot:
 
  - [perun.io](https://perun.io.). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
@@ -113,7 +113,7 @@ Perun works in the following steps:
   3. write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
-When you use Perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
+When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
 
 Fileset passed to every task has metadata `(:metadata (meta fileset)`. This metadata contains accumulated information from each task. More info about structure of this metadata is coming.
 
@@ -225,7 +225,7 @@ Similar autodeployment can be configured using [CircleCI](http://circleci.com) t
 
 ## Status
 
-This project is in the active development and used to genrated several sites already.
+This project is in the active development and used to generate several sites already.
 
 Main things todo:
 
