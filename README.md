@@ -23,7 +23,7 @@ that suits your needs.
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
-## 3d party useful plugins
+## 3rd party useful plugins
 
 There are plenty of Boot plugins that can be useful in the when you are using perun:
 
