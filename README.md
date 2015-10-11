@@ -131,7 +131,7 @@ See documentation for each task to find all supported options for each plugin.
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[org.clojure/clojure "1.7fi.0"]
+  :dependencies '[[org.clojure/clojure "1.7.0"]
                   [hiccup "1.0.5"]
                   [perun "0.1.0-SNAPSHOT"]
                   [clj-time "0.9.0"]
