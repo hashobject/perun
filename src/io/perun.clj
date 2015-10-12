@@ -24,7 +24,7 @@
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.3"]])
+    [circleci/clj-yaml "0.5.4"]])
 
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
@@ -197,7 +197,7 @@
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
           updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
-      (u/dbug "Generated Slugs:\n%s\n"
+      (u/dbug "Generated slugs:\n%s\n"
               (pr-str (map :slug updated-files)))
       (u/info "Added slugs to %s files\n" (count updated-files))
       (perun/set-meta fileset updated-files))))
@@ -219,7 +219,7 @@
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
           updated-files (map assoc-perma files)]
-      (u/dbug "Generated Permalinks:\n%s\n"
+      (u/dbug "Generated permalinks:\n%s\n"
               (pr-str (map :permalink updated-files)))
       (u/info "Added permalinks to %s files\n" (count updated-files))
       (perun/merge-meta fileset updated-files))))
@@ -258,7 +258,7 @@
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
-  '[[clj-rss "0.1.9"]])
+  '[[clj-rss "0.2.3"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
