@@ -88,10 +88,10 @@
         md-metadata (parse-file-metadata file-content)
         html (markdown-to-html file-content options)]
         ; .getName returns only the filename so this should work cross platform
-        (u/info "Processing Markdown: %s\n" (:filename file))
+        (u/info "Processing markdown: %s\n" (:filename file))
         (merge md-metadata {:content html} file)))
 
 (defn parse-markdown [markdown-files options]
-  (let [parsed-files (map #(process-file % options) markdown-files)]
+  (let [updated-files (doall (map #(process-file % options) markdown-files))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
-    parsed-files))
+    updated-files))

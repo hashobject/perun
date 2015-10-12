@@ -7,7 +7,7 @@
 (defn create-sitemap [files options]
   (map
     (fn [file]
-      {:loc (str (:url options) (:filename file))
+      {:loc (str (:url options) (:slug file))
        :lastmod (or (:date-modified file)
                     (:build-date file))
        :changefreq (or (:sitemap-changefreq file) "weekly")
