@@ -34,14 +34,17 @@
       (prn (pr-str (map map-fn (perun/get-meta fileset)))))
     fileset))
 
+(defn add-filedata [f]
+  {:filename (.getName (boot/tmp-file f))
+   :path     (boot/tmp-path f)})
+
 (deftask base
   "Adds some basic information to the perun metadata and
    establishes metadata structure."
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (map (fn [f] {:filename (.getName (boot/tmp-file f))
-                                      :path     (boot/tmp-path f)})
+          updated-files (map add-filedata
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
@@ -153,7 +156,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (filter #(not (true? (:draft %))) files)
+          updated-files (remove #(true? (:draft %)) files)
           fs-with-meta  (perun/set-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))
