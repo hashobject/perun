@@ -43,8 +43,7 @@
    establishes metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [files         (perun/get-meta fileset)
-          updated-files (map add-filedata
+    (let [updated-files (map add-filedata
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
