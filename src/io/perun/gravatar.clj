@@ -4,7 +4,10 @@
             [gravatar      :as gr]))
 
 (defn find-gravatar [files source-prop target-prop]
-  (let [add-gravatar #(assoc % target-prop (gr/avatar-url (get % source-prop)))
+  (let [add-gravatar (fn [file]
+                      (if-let [email (get file source-prop)]
+                        (assoc file target-prop (gr/avatar-url email))
+                        file))
         updated-files (map add-gravatar files)]
     (u/info "Added gravatar to %s files\n" (count updated-files))
     updated-files))
