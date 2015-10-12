@@ -34,14 +34,21 @@
       (prn (pr-str (map map-fn (perun/get-meta fileset)))))
     fileset))
 
+(defn add-filedata [f]
+  (let [tmpfile (boot/tmp-file f)]
+    {:filename  (some-> tmpfile
+                        .getName
+                        ; remove extension from the filename
+                        (clojure.string/replace #"[.][^.]+$" ""))
+     :path      (boot/tmp-path f)
+     :full-path (.getPath tmpfile)}))
+
 (deftask base
   "Adds some basic information to the perun metadata and
    establishes metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [files         (perun/get-meta fileset)
-          updated-files (map (fn [f] {:filename (.getName (boot/tmp-file f))
-                                      :path     (boot/tmp-path f)})
+    (let [updated-files (map add-filedata
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
@@ -63,7 +70,7 @@
                           (boot/fileset-diff @prev-fs)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
-                          (map marshall-tmpfile))
+                          (map add-filedata))
             ; process all removed markdown files
             removed? (->> fileset
                           (boot/fileset-removed @prev-fs)
@@ -153,7 +160,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (filter #(not (true? (:draft %))) files)
+          updated-files (remove #(true? (:draft %)) files)
           fs-with-meta  (perun/set-meta fileset updated-files)]
       (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
       fs-with-meta)))

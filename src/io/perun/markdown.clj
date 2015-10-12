@@ -45,8 +45,6 @@
        (apply bit-or 0)
        int))
 
-;; end of extension handling from endophile.core
-
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
   Copied from https://github.com/funcool/cuerdas"
@@ -85,20 +83,15 @@
          (.markdownToHtml processor))))
 
 (defn process-file [file options]
-  (let [file-content (slurp file)]
-    ; .getName returns only the filename so this should work cross platform
-    (u/info "Processing Markdown: %s\n" (.getName file))
-    (merge (parse-file-metadata file-content)
-           {:content (markdown-to-html file-content options)
-            ; todo: we will need to remove this from task
-            ; it's duplication of what base task is doing now
-            :path (:path file)
-            :filename (.getName file)})))
+  (let [iofile (io/file (:full-path file))
+        file-content (slurp iofile)
+        md-metadata (parse-file-metadata file-content)
+        html (markdown-to-html file-content options)]
+        ; .getName returns only the filename so this should work cross platform
+        (u/info "Processing Markdown: %s\n" (:filename file))
+        (merge md-metadata {:content html} file)))
 
 (defn parse-markdown [markdown-files options]
-  (let [->file       #(io/file (:dir %) (:path %))
-        parsed-files (into []
-                      (for [f markdown-files]
-                        (-> f ->file (process-file options))))]
+  (let [parsed-files (map #(process-file % options) markdown-files)]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
     parsed-files))
