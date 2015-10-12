@@ -83,12 +83,10 @@
          (.markdownToHtml processor))))
 
 (defn process-file [file options]
-  (let [iofile (io/file (:full-path file))
-        file-content (slurp iofile)
+  (u/info "Processing markdown: %s\n" (:filename file))
+  (let [file-content (-> file :full-path io/file slurp)
         md-metadata (parse-file-metadata file-content)
         html (markdown-to-html file-content options)]
-        ; .getName returns only the filename so this should work cross platform
-        (u/info "Processing markdown: %s\n" (:filename file))
         (merge md-metadata {:content html} file)))
 
 (defn parse-markdown [markdown-files options]

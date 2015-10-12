@@ -15,7 +15,7 @@
 
 (defn generate-rss-str [files options]
   (let [opts    (select-keys options [:title :description :link])
-        items   (rss-definitions (remove #(nil? (:name %)) files))
+        items   (rss-definitions (filter :name files))
         rss-str (apply rss-gen/channel-xml opts items)]
     rss-str))
 

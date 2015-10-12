@@ -52,8 +52,6 @@
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
-;; See https://github.com/boot-clj/boot/issues/250
-(defn marshall-tmpfile [tmpfile] (update tmpfile :dir #(.getPath %)))
 
 (deftask markdown
   "Parse markdown files
@@ -78,10 +76,10 @@
                           (boot/by-ext ["md" "markdown"])
                           (map #(:path (boot/tmp-file %)))
                           set)
-            md-meta  (pod/with-call-in @pod
-                       (io.perun.markdown/parse-markdown ~md-files ~options))
+            updated-files (pod/with-call-in @pod
+                             (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
-            final-metadata   (perun/merge-meta* initial-metadata md-meta)
+            final-metadata   (perun/merge-meta* initial-metadata updated-files)
             final-metadata   (remove #(-> % :path removed?) final-metadata)
             fs-with-meta     (perun/set-meta fileset final-metadata)]
         (reset! prev-fs fileset)
