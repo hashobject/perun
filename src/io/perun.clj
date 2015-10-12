@@ -24,7 +24,7 @@
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.4"]])
+    [circleci/clj-yaml "0.5.3"]])
 
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
