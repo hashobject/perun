@@ -35,8 +35,9 @@
     fileset))
 
 (defn add-filedata [f]
-  {:filename (.getName (boot/tmp-file f))
-   :path     (boot/tmp-path f)})
+  {:filename  (.getName (boot/tmp-file f))
+   :path      (boot/tmp-path f)
+   :full-path (.getPath (boot/tmp-file f))})
 
 (deftask base
   "Adds some basic information to the perun metadata and
@@ -65,7 +66,7 @@
                           (boot/fileset-diff @prev-fs)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
-                          (map marshall-tmpfile))
+                          (map add-filedata))
             ; process all removed markdown files
             removed? (->> fileset
                           (boot/fileset-removed @prev-fs)
