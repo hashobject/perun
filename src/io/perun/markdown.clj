@@ -45,8 +45,6 @@
        (apply bit-or 0)
        int))
 
-;; end of extension handling from endophile.core
-
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
   Copied from https://github.com/funcool/cuerdas"
@@ -88,6 +86,7 @@
   (let [file-content (slurp file)]
     ; .getName returns only the filename so this should work cross platform
     (u/info "Processing Markdown: %s\n" (.getName file))
+    (u/info "Processing Markdown2: %s\n" (:path file))
     (merge (parse-file-metadata file-content)
            {:content (markdown-to-html file-content options)
             ; todo: we will need to remove this from task
@@ -101,4 +100,5 @@
                       (for [f markdown-files]
                         (-> f ->file (process-file options))))]
     (u/info "Parsed %s markdown files\n" (count markdown-files))
+    (u/info "Parsed2 %s markdown files\n" (count parsed-files))
     parsed-files))
