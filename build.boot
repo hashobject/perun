@@ -18,9 +18,12 @@
 
 (task-options!
   aot {:all true}
+  push {:ensure-branch  "master"
+        :ensure-clean   false
+        :ensure-version +version+}
   pom {:project 'perun
        :version +version+
-       :description "Static site generation build with Clojure and Boot"
+       :description "Static site generator build with Clojure and Boot"
        :url         "https://github.com/hashobject/perun"
        :scm         {:url "https://github.com/hashobject/perun"}
        :license     {"name" "Eclipse Public License"
