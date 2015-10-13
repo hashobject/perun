@@ -35,13 +35,9 @@
     fileset))
 
 (defn add-filedata [f]
-  (let [tmpfile (boot/tmp-file f)]
-    {:filename  (some-> tmpfile
-                        .getName
-                        ; remove extension from the filename
-                        (clojure.string/replace #"[.][^.]+$" ""))
-     :path      (boot/tmp-path f)
-     :full-path (.getPath tmpfile)}))
+  {:filename  (.getName (boot/tmp-file f))
+   :path      (boot/tmp-path f)
+   :full-path (.getPath (boot/tmp-file f))})
 
 (deftask base
   "Adds some basic information to the perun metadata and
