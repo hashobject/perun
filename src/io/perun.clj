@@ -334,7 +334,7 @@
    If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory"
    f filterer FILTER   code "filter function"
-   r renderer RENDERER sym  "page renderer(fully qualified symbol which resolves to a function)"]
+   r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
