@@ -329,9 +329,9 @@
 (deftask render
   "Render pages.
 
-   If permalink is set for the file, it is used as the filepath else. If permalink
-   ends in slash, index.html is used as filename. If permalink is not set, the
-   original filename is used with file extension set to html."
+   If permalink is set for the file, it is used as the filepath.
+   If permalink ends in slash, index.html is used as filename.
+   If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory"
    f filterer FILTER   code "filter function"
    r renderer RENDERER sym  "page renderer(fully qualified symbol which resolves to a function)"]
