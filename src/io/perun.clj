@@ -49,6 +49,24 @@
       (perun/set-meta fileset updated-files))))
 
 
+(deftask images-meta
+  "Adds metadata information about images:
+   - common colors
+   - width
+   - height
+   - filetype
+   Task uses ImageMagick that should be installed on the system."
+  []
+  (boot/with-pre-wrap fileset
+    (let [pod (create-pod [])
+          files (->> fileset
+                     boot/user-files
+                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (map add-filedata))
+          updated-files (pod/with-call-in @pod
+                         (io.perun.images-meta/images-meta ~files {}))]
+      (perun/set-meta fileset updated-files))))
+
 (deftask markdown
   "Parse markdown files
 
@@ -340,9 +358,10 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))]
-        (u/info "Render pages\n")
-        (doseq [{:keys [path] :as file} files]
+            files (filter (:filterer options) (perun/get-meta fileset))
+            content-files (filter :content files)]
+        (u/info "Render pages %s\n" (count content-files))
+        (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
           (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
                 page-filepath (perun/create-filepath
@@ -377,7 +396,7 @@
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
     (cond (not (fn? (:comparator options)))
-              (u/fail "collection task :comparator option should be a function\n")
+              (u/fail "collection task :comparator option should implement IFn\n")
           (not (ifn? (:filterer options)))
               (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
@@ -390,10 +409,11 @@
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
                     files          (perun/get-meta fileset)
-                    filtered-files (filter (:filterer options) files)
+                    content-files  (filter :content files)
+                    filtered-files (filter (:filterer options) content-files)
                     grouped-files  (group-by (:groupby options) filtered-files)]
                 (doseq [[page page-files] grouped-files]
-                  (u/info (str "Render collection " page "\n"))
+                  (u/info "Render collection %s\n" page)
                   (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
                         html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted)
                         page-filepath (perun/create-filepath (:out-dir options) page)]
