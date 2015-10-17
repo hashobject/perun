@@ -21,7 +21,6 @@
         ;(draft)
         (dump-meta)
         (slug)
-
         (ttr)
         (word-count)
         (permalink)

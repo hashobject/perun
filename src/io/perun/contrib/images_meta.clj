@@ -1,4 +1,4 @@
-(ns io.perun.images-meta
+(ns io.perun.contrib.images-meta
   (:require [boot.util                 :as u]
             [io.perun.core             :as perun]
             [clojure.java.io           :as io]

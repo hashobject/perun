@@ -64,7 +64,7 @@
                      (boot/by-ext ["png" "jpeg" "jpg"])
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
-                         (io.perun.images-meta/images-meta ~files {}))]
+                         (io.perun.contrib.images-meta/images-meta ~files {}))]
       (perun/set-meta fileset updated-files))))
 
 (deftask markdown
