@@ -26,7 +26,7 @@
         image-filepath (perun/create-filepath (:out-dir options) filepath-with-resolution)
         new-file (io/file tmp image-filepath)]
     (io/make-parents new-file)
-    (ImageIO/write buffered-file (perun/extension filepath) new-file)))
+    (ImageIO/write buffered-file (:extension file) new-file)))
 
 (defn resize-to [tgt-path file options resolution]
   (let [io-file (-> file :full-path io/file)
