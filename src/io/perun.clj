@@ -408,8 +408,6 @@
    [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
      f filter  RE         #{regex} "Regexes to filter HTML files"
      r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
-  ;  (assert (or (and filter (not remove)) (and remove (not filter)))
-  ;          "Use either filter or remove.")
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)

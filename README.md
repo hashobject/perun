@@ -22,6 +22,7 @@ that suits your needs.
  - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
+ - inject-scripts - inject js scripts into html pages
 
 ## 3rd party useful plugins
 
