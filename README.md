@@ -1,6 +1,6 @@
 # perun
 
-Simple, composable static site generator using [Boot](http://boot-clj.com/).
+Simple, composable static site generator built on top of the [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
 Perun is a collection of boot tasks/plugins that you can chain together and build something custom
 that suits your needs.
@@ -12,6 +12,7 @@ that suits your needs.
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
  - time-to-read - calculate time to read for each page (available under `:ttr` key)
+ - word-count - count words for each page (available under `:word-count` key)
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - atom-feed - generate Atom feed
@@ -22,9 +23,28 @@ that suits your needs.
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
 
-## Plugins
+## 3rd party useful plugins
 
-Everything in Perun is build like independent task. The simplest blog engine will look like:
+There are plenty of Boot plugins that can be useful in the when you are using perun:
+
+ - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
+ - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
+ - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
+ - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
+ - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
+ - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
+ - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
+ - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
+ - [boot-livereload](https://github.com/deraen/boot-livereload) - live-reload of browser Js, HTML, CSS and images.
+ - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - hyphenate HTML files with soft-hyphens.
+
+## Version
+
+We use Clojure 1.7.0 and Boot 2.3.0. You should have those versions in order to use perun.
+
+## Plugins system
+
+Everything in perun is build like independent task. The simplest blog engine will look like:
 
 ```clojure
 (deftask build
@@ -35,7 +55,7 @@ Everything in Perun is build like independent task. The simplest blog engine wil
 
 ```
 
-But if you want to make permalinks, generate sitemap and rss feed, hide unfinished post, add time to read to each post then you will do:
+But if you want to make permalinks, generate sitemap and rss feed, hide unfinished posts, add time to read to each post then you will do:
 
 ```clojure
 (deftask build
@@ -70,15 +90,18 @@ Then your code might look like this:
 
  - generate blog from markdown files
  - generate documentation for your open source library bases on README.md
- - any case where you'd want to use jekyll or another static site generator
+ - any case where you'd want to use Jekyll or another static site generator
 
 ## Examples
 
-Following sites were created with Perun and Boot:
+Following sites were created with perun and Boot:
 
+ - [perun.io](https://perun.io.). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
- - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/boot-perun/build.boot)
+ - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
+
+Also check out [example](https://github.com/hashobject/perun/tree/master/example) folder.
 
 
 ## How does it work
@@ -90,7 +113,7 @@ Perun works in the following steps:
   3. write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
-When you use Perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
+When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
 
 Fileset passed to every task has metadata `(:metadata (meta fileset)`. This metadata contains accumulated information from each task. More info about structure of this metadata is coming.
 
@@ -109,7 +132,7 @@ See documentation for each task to find all supported options for each plugin.
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[org.clojure/clojure "1.6.0"]
+  :dependencies '[[org.clojure/clojure "1.7.0"]
                   [hiccup "1.0.5"]
                   [perun "0.1.0-SNAPSHOT"]
                   [clj-time "0.9.0"]
@@ -158,19 +181,6 @@ After you created `build` task simply do:
   boot build
 ```
 
-## Useful plugins
-
-There are plenty of Boot plugins that can be useful in the when you are using perun:
-
- - [boot-http](https://github.com/pandeiro/boot-http) - serve generated site locally using web server
- - [boot-gzip](https://github.com/martinklepsch/boot-gzip) - gzip files
- - [boot-s3](https://github.com/hashobject/boot-s3) - sync generated site to the Amazon S3
- - [boot-less](https://github.com/Deraen/boot-less) - task to compile Less to CSS
- - [boot-sassc](https://github.com/mathias/boot-sassc) - task to compile Sass to CSS
- - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
- - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
- - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser css, images, etc.
-
 ## Tips
 
 ### Dev setup
@@ -210,24 +220,23 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - enable GitHub integration https://devcenter.heroku.com/articles/github-integration
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
-Similar autodeployment can be configured using for [CircleCI](http://circleci.com).
+Similar autodeployment can be configured using [CircleCI](http://circleci.com) too.
 
 
 ## Status
 
-This project is in the active development and used to genrated several sites already.
+This project is in the active development and used to generate several sites already.
 
 Main things todo:
 
   - [ ] improve readme
   - [ ] more plugins
-  - [ ] create perun.io site using perun
 
 ## Contributions
 
 We love contributions. Please submit your pull requests.
 
-## Contributor list
+## Contributors
 
 - [Martin Klepsch](https://github.com/martinklepsch)
 - [Juho Teperi](https://github.com/Deraen)

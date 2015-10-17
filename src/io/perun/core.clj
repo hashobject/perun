@@ -6,10 +6,19 @@
 (def +meta-key+ :io.perun)
 
 (defn get-meta [fileset]
-  (-> fileset meta +meta-key+))
+  (-> fileset meta +meta-key+ vals))
+
+(defn key-meta [data]
+  (into {} (for [d data] [(:path d) d])))
 
 (defn set-meta [fileset data]
-  (vary-meta fileset assoc +meta-key+ data))
+  (vary-meta fileset assoc +meta-key+ (key-meta data)))
+
+(defn merge-meta* [m1 m2]
+  (vals (merge-with merge (key-meta m1) (key-meta m2))))
+
+(defn merge-meta [fileset data]
+  (set-meta fileset (merge-meta* (get-meta fileset) data)))
 
 (def +global-meta-key+ :io.perun.global)
 
@@ -49,43 +58,3 @@
   "Converts a url to filepath."
   [url]
   (apply create-filepath (string/split (relativize-url url) #"\/")))
-
-;;;; map for kv collections
-
-;; These are like ones in medley
-
-;; borrowed from https://github.com/metosin/potpuri/blob/master/src/potpuri/core.cljx#L203-L240
-
-(defn- editable? [coll]
-  (instance? clojure.lang.IEditableCollection coll))
-
-(defn- reduce-map [f coll]
-  (if (editable? coll)
-    (persistent! (reduce-kv (f assoc!) (transient (empty coll)) coll))
-    (reduce-kv (f assoc) (empty coll) coll)))
-
-(defn map-keys
-  "Map the keys of given associative collection using function."
-  [f coll]
-  (reduce-map (fn [xf] (fn [m k v]
-                         (xf m (f k) v)))
-              coll))
-
-(defn map-vals
-  "Map the values of given associative collection using function."
-  [f coll]
-  (reduce-map (fn [xf] (fn [m k v]
-                         (xf m k (f v))))
-              coll))
-
-(defn filter-keys
-  [pred coll]
-  (reduce-map (fn [xf] (fn [m k v]
-                         (if (pred k) (xf m k v) m)))
-              coll))
-
-(defn filter-vals
-  [pred coll]
-  (reduce-map (fn [xf] (fn [m k v]
-                         (if (pred v) (xf m k v) m)))
-              coll))
