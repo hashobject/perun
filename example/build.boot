@@ -17,6 +17,7 @@
   []
   (comp ;(base)
         (images-meta)
+        (images-resize)
         (markdown)
         ;(draft)
         (dump-meta)

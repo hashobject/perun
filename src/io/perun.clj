@@ -31,9 +31,12 @@
     fileset))
 
 (defn add-filedata [f]
-  {:filename  (.getName (boot/tmp-file f))
-   :path      (boot/tmp-path f)
-   :full-path (.getPath (boot/tmp-file f))})
+  (let [tmpfile  (boot/tmp-file f)
+        filename (.getName tmpfile)]
+    {:filename  filename
+     :path      (boot/tmp-path f)
+     :full-path (.getPath tmpfile)
+     :extension (perun/extension filename)}))
 
 (deftask base
   "Adds some basic information to the perun metadata and
@@ -64,6 +67,30 @@
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-meta/images-meta ~files {}))]
       (perun/set-meta fileset updated-files))))
+
+(def ^:private images-resize-deps
+  '[[image-resizer "0.1.8"]])
+
+(def ^:private +images-resize-defaults+
+  {:out-dir "public"
+   :resolutions #{3840 2560 1920 1280 1024 640}})
+
+(deftask images-resize
+  "Resize images"
+  [o out-dir     OUTDIR       str   "the output directory"
+   r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
+  (boot/with-pre-wrap fileset
+    (let [options (merge +images-resize-defaults+ *opts*)
+          tmp (boot/tmp-dir!)
+          pod (create-pod images-resize-deps)
+          files (->> fileset
+                     boot/user-files
+                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (map add-filedata))
+          updated-files (pod/with-call-in @pod
+                         (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
+      (perun/set-meta fileset updated-files)
+      (commit fileset tmp))))
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]

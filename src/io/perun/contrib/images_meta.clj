@@ -4,9 +4,7 @@
             [clojure.java.io           :as io]
             [clojure.string            :as str]
             [boot.from.me.raynes.conch :as sh]
-            [image-resizer.util        :as iu])
-  (:import
-     [javax.imageio ImageIO]))
+            [image-resizer.util        :as iu]))
 
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
@@ -33,7 +31,7 @@
     dimensions))
 
 (defn process-file [file options]
-  (u/info "Processing %s" (:path file))
+  (u/info "Processing image %s\n" (:path file))
   (let [colors-output (colors-sh file)
         lines (clojure.string/split colors-output #"\n")
         color-lines (rest lines)

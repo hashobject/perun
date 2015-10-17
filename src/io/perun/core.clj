@@ -58,3 +58,15 @@
   "Converts a url to filepath."
   [url]
   (apply create-filepath (string/split (relativize-url url) #"\/")))
+
+(defn filename [name]
+  (second (re-find #"(.+?)(\.[^.]*$|$)" (last (string/split name #"/")))))
+
+(defn parent-path [filepath filename-with-extension]
+  (if (.endsWith filepath filename-with-extension)
+       (.substring filepath 0 (- (count filepath)
+                          (count filename-with-extension)))
+     filepath))
+
+(defn ^String extension [name]
+  (last (seq (string/split name #"\."))))
