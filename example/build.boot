@@ -28,6 +28,7 @@
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filter identity)
+        (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
