@@ -30,8 +30,8 @@
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filter identity)
         (sitemap)
-        (rss :description "Hashobject blog")
-        (atom-feed  :site-title "Hashobject" :subtitle "Hashobject blog" :base-url "http://blog.hashobject.com")
+        (rss :site-description "Hashobject blog")
+        (atom-feed  :site-title "Hashobject" :base-url "http://blog.hashobject.com")
         (notify)))
 
 (deftask dev

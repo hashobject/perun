@@ -14,10 +14,11 @@
      :author      (:author-email file)}))
 
 (defn generate-rss-str [files options]
-  (let [opts         (select-keys options [:site-title :description :base-url])
+  (let [opts         (select-keys options [:site-title :site-description :base-url])
         channel-opts (clojure.set/rename-keys
                       opts
                       {:site-title :title
+                       :site-description :description
                        :base-url :link})
         items        (rss-definitions (filter :name files))
         rss-str      (apply rss-gen/channel-xml channel-opts items)]

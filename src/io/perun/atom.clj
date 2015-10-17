@@ -13,13 +13,13 @@
 (defn iso-datetime [date]
   (tf/unparse (tf/formatters :date-time-no-ms) (tc/from-date date)))
 
-(defn generate-atom-str [posts {:keys [site-title subtitle base-url filename]}]
+(defn generate-atom-str [posts {:keys [site-title site-description base-url filename]}]
   ; FIXME: title and link are required, Schema validation?
   (xml/emit-str
     (xml/sexp-as-element
       [:feed {:xmlns "http://www.w3.org/2005/Atom"}
        [:title site-title]
-       (if subtitle [:subtitle subtitle])
+       (if  site-description [:subtitle  site-description])
        [:link {:href (str base-url "/" filename) :rel "self"}]
        [:link {:href base-url}]
        [:updated (->> (take 10 posts)
