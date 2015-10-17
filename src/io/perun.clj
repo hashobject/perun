@@ -22,10 +22,6 @@
       (boot/add-resource tmp)
       boot/commit!))
 
-(def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.3"]])
-
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
   [m map-fn    MAPFN  code "function to map over metadata items before printing"]
@@ -48,6 +44,8 @@
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
+(def ^:private images-meta-deps
+  '[[image-resizer "0.1.8"]])
 
 (deftask images-meta
   "Adds metadata information about images:
@@ -58,7 +56,7 @@
    Task uses ImageMagick that should be installed on the system."
   []
   (boot/with-pre-wrap fileset
-    (let [pod (create-pod [])
+    (let [pod (create-pod images-meta-deps)
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
@@ -66,6 +64,10 @@
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-meta/images-meta ~files {}))]
       (perun/set-meta fileset updated-files))))
+
+(def ^:private markdown-deps
+  '[[org.pegdown/pegdown "1.6.0"]
+    [circleci/clj-yaml "0.5.3"]])
 
 (deftask markdown
   "Parse markdown files

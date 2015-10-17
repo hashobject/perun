@@ -4,8 +4,9 @@
             [clojure.java.io           :as io]
             [clojure.string            :as str]
             [boot.from.me.raynes.conch :as sh]
-            ;[boot.from.me.raynes.conch.low-level :as sh]
-            ))
+            [image-resizer.util        :as iu])
+  (:import
+     [javax.imageio ImageIO]))
 
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
@@ -25,8 +26,11 @@
 (defn colors-sh [file]
   (sh/stream-to-string (sh/proc "convert" (:full-path file) "-depth" "4" "+dither" "-colors" "7" "-unique-colors" "txt:-") :out))
 
-(defn meta-sh [file]
-  (sh/stream-to-string (sh/proc "identify" "-format" "%w:%h:%m" (:full-path file)) :out))
+(defn get-dimensions [file]
+  (let [io-file (-> file :full-path io/file)
+        buffered-image (iu/buffered-image io-file)
+        dimensions (iu/dimensions buffered-image)]
+    dimensions))
 
 (defn process-file [file options]
   (u/info "Processing %s" (:path file))
@@ -39,18 +43,14 @@
                   (str "#"
                     (substr-between line #" #" #" "))
                 ) color-lines)
-        meta-output (meta-sh file)
-        image-meta (clojure.string/split meta-output #":")
-        width (some-> image-meta first read-string)
-        height (some-> image-meta second read-string)
-        type (last image-meta)]
+        dimensions (get-dimensions file)
+        width (first dimensions)
+        height (second dimensions)]
       (u/dbug "\ncolors : %s" (prn-str colors))
       (u/dbug "\nwidth : %s" width)
       (u/dbug "\nheight : %s" height)
-      (u/dbug "\ntype : %s" type)
       (assoc file :width width
                   :height height
-                  :type type
                   :colors colors)))
 
 
