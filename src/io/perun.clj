@@ -265,11 +265,12 @@
    t title       TITLE       str "feed title"
    p description DESCRIPTION str "feed description"
    l link        LINK        str "feed link"]
-  (let [pod     (create-pod rss-deps)
-        tmp     (boot/tmp-dir!)
-        options (merge +rss-defaults+ *opts*)]
+  (let [pod (create-pod rss-deps)
+        tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)]
+      (let [global-meta (perun/get-global-meta fileset)
+            options     (merge +rss-defaults+ global-meta *opts*)
+            files       (perun/get-meta fileset)]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
@@ -290,11 +291,12 @@
    s subtitle    SUBTITLE    str "feed subtitle"
    p description DESCRIPTION str "feed description"
    l link        LINK        str "feed link"]
-  (let [pod     (create-pod atom-deps)
-        tmp     (boot/tmp-dir!)
-        options (merge +atom-defaults+ *opts*)]
+  (let [pod (create-pod atom-deps)
+        tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)]
+      (let [global-meta (perun/get-global-meta fileset)
+            options     (merge +atom-defaults+ global-meta *opts*)
+            files       (perun/get-meta fileset)]
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))

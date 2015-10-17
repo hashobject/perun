@@ -15,7 +15,8 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp ;(base)
+  (comp (global-metadata)
+        ;(base)
         (markdown)
         ;(draft)
         (dump-meta)
@@ -29,8 +30,8 @@
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filter identity)
         (sitemap)
-        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
-        (atom-feed  :title "Hashobject" :subtitle "Hashobject blog" :link "http://blog.hashobject.com")
+        (rss :description "Hashobject blog")
+        (atom-feed  :site-title "Hashobject" :subtitle "Hashobject blog" :base-url "http://blog.hashobject.com")
         (notify)))
 
 (deftask dev
