@@ -3,6 +3,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.pod :as pod]
             [boot.util :as u]
+            [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]))
@@ -24,7 +25,7 @@
 
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
-  [m map-fn    MAPFN  code "function to map over metadata items before printing"]
+  [m map-fn MAPFN  code "function to map over metadata items before printing"]
   (boot/with-pre-wrap fileset
     (let [map-fn (or map-fn identity)]
       (prn (pr-str (map map-fn (perun/get-meta fileset)))))
@@ -253,7 +254,7 @@
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   f filterer     FILTER   code "filter function"]
+   f filterer     FILTER      code "filter function"]
 
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
@@ -312,11 +313,12 @@
    t title       TITLE       str "feed title"
    p description DESCRIPTION str "feed description"
    l link        LINK        str "feed link"]
-  (let [pod     (create-pod rss-deps)
-        tmp     (boot/tmp-dir!)
-        options (merge +rss-defaults+ *opts*)]
+  (let [pod (create-pod rss-deps)
+        tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)]
+      (let [global-meta (perun/get-global-meta fileset)
+            options     (merge +rss-defaults+ global-meta *opts*)
+            files       (perun/get-meta fileset)]
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
@@ -337,11 +339,12 @@
    s subtitle    SUBTITLE    str "feed subtitle"
    p description DESCRIPTION str "feed description"
    l link        LINK        str "feed link"]
-  (let [pod     (create-pod atom-deps)
-        tmp     (boot/tmp-dir!)
-        options (merge +atom-defaults+ *opts*)]
+  (let [pod (create-pod atom-deps)
+        tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [files (perun/get-meta fileset)]
+      (let [global-meta (perun/get-global-meta fileset)
+            options     (merge +atom-defaults+ global-meta *opts*)
+            files       (perun/get-meta fileset)]
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
@@ -448,3 +451,41 @@
                         page-filepath (perun/create-filepath (:out-dir options) page)]
                     (perun/create-file tmp page-filepath html)))
                 (commit fileset tmp))))))
+
+(deftask inject-scripts
+  "Inject JavaScript scripts into html files.
+   Use either filter to include only files matching or remove to
+   include only files not matching regex."
+   [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
+     f filter  RE         #{regex} "Regexes to filter HTML files"
+     r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
+   (let [pod  (create-pod [])
+         prev (atom nil)
+         out  (boot/tmp-dir!)
+         filter (cond
+                  filter #(boot/by-re filter %)
+                  remove #(boot/by-re remove % true)
+                  :else identity)]
+     (fn [next-task]
+       (fn [fileset]
+         (let [files (->> fileset
+                          (boot/fileset-diff @prev)
+                          boot/input-files
+                          filter
+                          (boot/by-ext [".html"]))
+                scripts-contents (->> fileset
+                                      boot/input-files
+                                      (boot/by-path scripts)
+                                      (map (comp slurp boot/tmp-file)))]
+           (u/info "Injecting %s scripts into %s HTML files...\n" (count scripts-contents) (count files))
+           (doseq [file files
+                   :let [new-file (io/file out (boot/tmp-path file))]]
+             (u/dbug "Injecting %s scripts %s\n" scripts (boot/tmp-path file))
+             (io/make-parents new-file)
+             (pod/with-call-in @pod
+               (io.perun.contrib.inject-scripts/inject-scripts
+                 ~scripts-contents
+                 ~(.getPath (boot/tmp-file file))
+                 ~(.getPath new-file)))))
+         (reset! prev fileset)
+         (next-task (-> fileset (boot/add-resource out) boot/commit!))))))

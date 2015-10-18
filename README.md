@@ -7,7 +7,7 @@ that suits your needs.
 
 ## Plugins
 
- - markdown - parse mardown files with YAML metadata
+ - markdown - parse markdown files with YAML metadata
  - global-metadata - read global metadata from edn file. Default to `perun.base.edn`
  - collections - generate page that takes all posts data as parameter
  - drafts - exclude pages that have `:draft` flag
@@ -22,6 +22,7 @@ that suits your needs.
  - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
+ - inject-scripts - inject JS scripts into html pages. Can be used e.x. to add Google Analytics script to all pages
 
 ## 3rd party useful plugins
 
