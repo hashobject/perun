@@ -432,7 +432,7 @@
              (u/dbug "Injecting %s scripts %s\n" scripts (boot/tmp-path file))
              (io/make-parents new-file)
              (pod/with-call-in @pod
-               (io.perun.inject-scripts/inject-scripts
+               (io.perun.contrib.inject-scripts/inject-scripts
                  ~scripts-contents
                  ~(.getPath (boot/tmp-file file))
                  ~(.getPath new-file)))))

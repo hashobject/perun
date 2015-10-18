@@ -1,4 +1,4 @@
-(ns io.perun.inject-scripts
+(ns io.perun.contrib.inject-scripts
   (:require [boot.util     :as u]
             [clojure.java.io :as io]
             [io.perun.core :as perun]))
