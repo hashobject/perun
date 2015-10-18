@@ -16,7 +16,7 @@
   "Build test blog. This task is just for testing different plugins together."
   []
   (comp (global-metadata)
-        (images-meta)
+        (images-dimensions)
         (images-resize)
         ;(base)
 

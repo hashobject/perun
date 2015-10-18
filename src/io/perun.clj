@@ -48,25 +48,22 @@
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
-(def ^:private images-meta-deps
+(def ^:private images-dimensions-deps
   '[[image-resizer "0.1.8"]])
 
-(deftask images-meta
-  "Adds metadata information about images:
-   - common colors
+(deftask images-dimensions
+  "Adds images' dimensions to the file metadata:
    - width
-   - height
-   - filetype
-   Task uses ImageMagick that should be installed on the system."
+   - height"
   []
   (boot/with-pre-wrap fileset
-    (let [pod (create-pod images-meta-deps)
+    (let [pod (create-pod images-dimensions-deps)
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
-                         (io.perun.contrib.images-meta/images-meta ~files {}))]
+                         (io.perun.contrib.images-dimensions/images-dimensions ~files {}))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-resize-deps
@@ -77,7 +74,9 @@
    :resolutions #{3840 2560 1920 1280 1024 640}})
 
 (deftask images-resize
-  "Resize images"
+  "Resize images to the provided resolutions.
+  Each image file would have resolution appended to it's name:
+  e.x. san-francisco.jpg would become san-francisco-3840.jpg"
   [o out-dir     OUTDIR       str   "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
