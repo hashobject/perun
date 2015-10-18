@@ -1,7 +1,7 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[perun "0.1.3-SNAPSHOT"]
+  :dependencies '[[perun "0.2.0-SNAPSHOT"]
                   [hiccup "1.0.5"]
                   [pandeiro/boot-http "0.6.3-SNAPSHOT"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]])
@@ -29,6 +29,7 @@
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filter identity)
+        (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :site-description "Hashobject blog")
         (atom-feed  :site-title "Hashobject" :base-url "http://blog.hashobject.com")
