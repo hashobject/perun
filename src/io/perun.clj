@@ -23,10 +23,6 @@
       (boot/add-resource tmp)
       boot/commit!))
 
-(def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.3"]])
-
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
   [m map-fn MAPFN  code "function to map over metadata items before printing"]
@@ -36,9 +32,12 @@
     fileset))
 
 (defn add-filedata [f]
-  {:filename  (.getName (boot/tmp-file f))
-   :path      (boot/tmp-path f)
-   :full-path (.getPath (boot/tmp-file f))})
+  (let [tmpfile  (boot/tmp-file f)
+        filename (.getName tmpfile)]
+    {:filename  filename
+     :path      (boot/tmp-path f)
+     :full-path (.getPath tmpfile)
+     :extension (perun/extension filename)}))
 
 (deftask base
   "Adds some basic information to the perun metadata and
@@ -49,6 +48,53 @@
                              (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
+(def ^:private images-dimensions-deps
+  '[[image-resizer "0.1.8"]])
+
+(deftask images-dimensions
+  "Adds images' dimensions to the file metadata:
+   - width
+   - height"
+  []
+  (boot/with-pre-wrap fileset
+    (let [pod (create-pod images-dimensions-deps)
+          files (->> fileset
+                     boot/user-files
+                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (map add-filedata))
+          updated-files (pod/with-call-in @pod
+                         (io.perun.contrib.images-dimensions/images-dimensions ~files {}))]
+      (perun/set-meta fileset updated-files))))
+
+(def ^:private images-resize-deps
+  '[[image-resizer "0.1.8"]])
+
+(def ^:private +images-resize-defaults+
+  {:out-dir "public"
+   :resolutions #{3840 2560 1920 1280 1024 640}})
+
+(deftask images-resize
+  "Resize images to the provided resolutions.
+  Each image file would have resolution appended to it's name:
+  e.x. san-francisco.jpg would become san-francisco-3840.jpg"
+  [o out-dir     OUTDIR       str   "the output directory"
+   r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
+  (boot/with-pre-wrap fileset
+    (let [options (merge +images-resize-defaults+ *opts*)
+          tmp (boot/tmp-dir!)
+          pod (create-pod images-resize-deps)
+          files (->> fileset
+                     boot/user-files
+                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (map add-filedata))
+          updated-files (pod/with-call-in @pod
+                         (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
+      (perun/set-meta fileset updated-files)
+      (commit fileset tmp))))
+
+(def ^:private markdown-deps
+  '[[org.pegdown/pegdown "1.6.0"]
+    [circleci/clj-yaml "0.5.3"]])
 
 (deftask markdown
   "Parse markdown files
@@ -343,9 +389,10 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))]
-        (u/info "Render pages\n")
-        (doseq [{:keys [path] :as file} files]
+            files (filter (:filterer options) (perun/get-meta fileset))
+            content-files (filter :content files)]
+        (u/info "Render pages %s\n" (count content-files))
+        (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
           (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
                 page-filepath (perun/create-filepath
@@ -380,7 +427,7 @@
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
     (cond (not (fn? (:comparator options)))
-              (u/fail "collection task :comparator option should be a function\n")
+              (u/fail "collection task :comparator option should implement IFn\n")
           (not (ifn? (:filterer options)))
               (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
@@ -393,10 +440,11 @@
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
                     files          (perun/get-meta fileset)
-                    filtered-files (filter (:filterer options) files)
+                    content-files  (filter :content files)
+                    filtered-files (filter (:filterer options) content-files)
                     grouped-files  (group-by (:groupby options) filtered-files)]
                 (doseq [[page page-files] grouped-files]
-                  (u/info (str "Render collection " page "\n"))
+                  (u/info "Render collection %s\n" page)
                   (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
                         html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted)
                         page-filepath (perun/create-filepath (:out-dir options) page)]

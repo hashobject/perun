@@ -16,12 +16,14 @@
   "Build test blog. This task is just for testing different plugins together."
   []
   (comp (global-metadata)
+        (images-dimensions)
+        (images-resize)
         ;(base)
+
         (markdown)
         ;(draft)
         (dump-meta)
         (slug)
-
         (ttr)
         (word-count)
         (permalink)
