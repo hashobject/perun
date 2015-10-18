@@ -121,7 +121,7 @@ Fileset passed to every task has metadata `(:metadata (meta fileset)`. This meta
 ## Install
 
 ```clojure
-[perun "0.1.3-SNAPSHOT"]
+[perun "0.2.0-SNAPSHOT"]
 ```
 
 ## Usage
@@ -135,9 +135,9 @@ See documentation for each task to find all supported options for each plugin.
   :resource-paths #{"resources"}
   :dependencies '[[org.clojure/clojure "1.7.0"]
                   [hiccup "1.0.5"]
-                  [perun "0.1.0-SNAPSHOT"]
+                  [perun "0.2.0-SNAPSHOT"]
                   [clj-time "0.9.0"]
-                  [hashobject/boot-s3 "0.1.0-SNAPSHOT"]
+                  [hashobject/boot-s3 "0.1.2-SNAPSHOT"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]])
 
 (task-options!
