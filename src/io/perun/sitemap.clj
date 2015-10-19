@@ -9,7 +9,7 @@
     (fn [file]
       {:loc (str (:url options) (:slug file))
        :lastmod (or (:date-modified file)
-                    (:build-date file))
+                    (:date-build file))
        :changefreq (or (:sitemap-changefreq file) "weekly")
        :priority (or (:sitemap-priority file) 0.8)})
     files))

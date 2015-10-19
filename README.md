@@ -17,7 +17,7 @@ that suits your needs.
  - rss - generate RSS feed
  - atom-feed - generate Atom feed
  - slugs - generate slugs based on any property (available under `:slug` key)
- - build-date - add `:build-date` to global meta and each file meta
+ - build-date - add `:data-build` to global meta and each file meta
  - permalink - create permalink for each page
  - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails

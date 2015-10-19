@@ -56,7 +56,7 @@ All posts have a filename which is used as a key to identify the post.
     - Used by: *rss*
 - **:draft**
     - Used by: *draft*
-- **:build-date** date when the site was generated
+- **:date-build** date when the site was generated
     - Set by: *build-date*
     - Used by: *sitemap*
 - **:date-created**
