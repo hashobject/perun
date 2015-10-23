@@ -278,7 +278,8 @@
       (perun/set-meta fileset updated))))
 
 (def ^:private sitemap-deps
-  '[[sitemap "0.2.4"]])
+  '[[sitemap "0.2.4"]
+    [clj-time "0.11.0"]])
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
@@ -300,7 +301,8 @@
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
-  '[[clj-rss "0.2.3"]])
+  '[[clj-rss "0.2.3"]
+    [clj-time "0.11.0"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
@@ -326,7 +328,7 @@
 
 (def ^:private atom-deps
   '[[org.clojure/data.xml "0.0.8"]
-    [clj-time "0.9.0"]])
+    [clj-time "0.11.0"]])
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
