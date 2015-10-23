@@ -77,7 +77,7 @@
   "Resize images to the provided resolutions.
   Each image file would have resolution appended to it's name:
   e.x. san-francisco.jpg would become san-francisco-3840.jpg"
-  [o out-dir     OUTDIR       str   "the output directory"
+  [o out-dir     OUTDIR       str    "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
     (let [options (merge +images-resize-defaults+ *opts*)
@@ -175,7 +175,6 @@
         (u/dbug "Counted words:\n%s\n"
                 (pr-str (map :word-count updated-files)))
         fs-with-meta))))
-
 
 
 (def ^:private gravatar-deps
