@@ -1,7 +1,6 @@
 (ns io.perun.atom
   (:require [boot.util        :as u]
             [io.perun.core    :as perun]
-            [clojure.java.io  :as io]
             [clojure.data.xml :as xml]
             [clj-time.core    :as t]
             [clj-time.coerce  :as tc]

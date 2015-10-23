@@ -1,7 +1,6 @@
 (ns io.perun.sitemap
   (:require [boot.util       :as u]
             [io.perun.core   :as perun]
-            [clojure.java.io :as io]
             [sitemap.core    :as sitemap-gen]))
 
 (defn create-sitemap [files options]

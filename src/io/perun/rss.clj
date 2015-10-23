@@ -1,7 +1,6 @@
 (ns io.perun.rss
   (:require [boot.util       :as u]
             [io.perun.core   :as perun]
-            [clojure.java.io :as io]
             [clj-rss.core    :as rss-gen]))
 
 (defn rss-definitions [files]
