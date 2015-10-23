@@ -295,6 +295,7 @@
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             content-files (filter :content files)]
+        (u/info "Generating sitemap for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -321,6 +322,7 @@
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (perun/get-meta fileset)
             content-files (filter :content files)]
+        (u/info "Generating RSS for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -348,6 +350,7 @@
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (perun/get-meta fileset)
             content-files (filter :content files)]
+        (u/info "Generating Atom feed for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -446,14 +449,27 @@
                     files          (perun/get-meta fileset)
                     content-files  (filter :content files)
                     filtered-files (filter (:filterer options) content-files)
-                    grouped-files  (group-by (:groupby options) filtered-files)]
-                (doseq [[page page-files] grouped-files]
-                  (u/info "Render collection %s\n" page)
-                  (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
-                        html          (render-in-pod pod renderer (perun/get-global-meta fileset) sorted)
-                        page-filepath (perun/create-filepath (:out-dir options) page)]
-                    (perun/create-file tmp page-filepath html)))
-                (commit fileset tmp))))))
+                    grouped-files  (group-by (:groupby options) filtered-files)
+                    global-meta    (perun/get-global-meta fileset)
+                    new-files      (doall
+                                    (map
+                                      (fn [[page page-files]]
+                                        (do
+                                          (u/info "Render collection %s\n" page)
+                                          (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
+                                                html          (render-in-pod pod renderer global-meta sorted)
+                                                page-filepath (perun/create-filepath (:out-dir options) page)
+                                                new-entry     {
+                                                  :path page-filepath
+                                                  :canonical-url (str (:base-url global-meta) "/" page)
+                                                  :content html
+                                                  :date-build (:date-build global-meta)}]
+                                            (perun/create-file tmp page-filepath html)
+                                            new-entry)))
+                                      grouped-files))
+                    updated-files (apply conj files new-files)
+                    fs-with-meta  (perun/set-meta fileset updated-files)]
+                  (commit fs-with-meta tmp))))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
