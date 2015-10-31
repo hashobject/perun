@@ -1,14 +1,14 @@
 (set-env!
   :source-paths #{"test"}
   :resource-paths #{"src" "resources"}
-  :dependencies '[[boot/core "2.3.0" :scope "provided"]
-                  [adzerk/bootlaces "0.1.12" :scope "test"]
+  :dependencies '[[boot/core "2.4.2" :scope "provided"]
+                  [adzerk/bootlaces "0.1.13" :scope "test"]
                   [org.pegdown/pegdown "1.6.0" :scope "test"]
-                  [circleci/clj-yaml "0.5.3" :scope "test"]
+                  [circleci/clj-yaml "0.5.4" :scope "test"]
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.4" :scope "test"]
                   [clj-rss "0.2.3" :scope "test"]
-                  [gravatar "0.1.0" :scope "test"]
+                  [gravatar "1.1.1" :scope "test"]
                   [clj-time "0.11.0"]])
 
 (require '[adzerk.bootlaces :refer :all])
