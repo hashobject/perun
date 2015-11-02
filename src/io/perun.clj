@@ -25,7 +25,7 @@
 
 (deftask dump-meta
   "Utility task to dump perun metadata via boot.util/info"
-  [m map-fn MAPFN  code "function to map over metadata items before printing"]
+  [m map-fn MAPFN code "function to map over metadata items before printing"]
   (boot/with-pre-wrap fileset
     (let [map-fn (or map-fn identity)]
       (prn (pr-str (map map-fn (perun/get-meta fileset)))))
@@ -36,14 +36,14 @@
         filename (.getName tmpfile)
         tmp-path (boot/tmp-path f)]
     {; filename with extension
-      :filename    filename
+     :filename        filename
      ; filename without extension
-     :name        (perun/filename filename)
-     :path        tmp-path
+     :short-filename (perun/filename filename)
+     :path           tmp-path
      ; parent folder path
-     :parent-path (perun/parent-path tmp-path filename)
-     :full-path   (.getPath tmpfile)
-     :extension   (perun/extension filename)}))
+     :parent-path    (perun/parent-path tmp-path filename)
+     :full-path      (.getPath tmpfile)
+     :extension      (perun/extension filename)}))
 
 (deftask base
   "Adds some basic information to the perun metadata and
@@ -95,6 +95,7 @@
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
+      (u/info "New resized images:\n%s\n" (pr-str updated-files))
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
@@ -107,7 +108,7 @@
 
   This task will look for files ending with `md` or `markdown`
   and add a `:content` key to their metadata containing the
-  HTML resulting from processing the markdown file's content"
+  HTML resulting from processing markdown file's content"
   [o options OPTS edn "options to be passed to endophile"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})

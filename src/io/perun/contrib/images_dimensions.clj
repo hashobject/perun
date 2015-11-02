@@ -1,8 +1,8 @@
 (ns io.perun.contrib.images-dimensions
-  (:require [boot.util                 :as u]
-            [io.perun.core             :as perun]
-            [clojure.java.io           :as io]
-            [image-resizer.util        :as iu]))
+  (:require [boot.util          :as u]
+            [io.perun.core      :as perun]
+            [clojure.java.io    :as io]
+            [image-resizer.util :as iu]))
 
 
 (defn get-dimensions [file]
