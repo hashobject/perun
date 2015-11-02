@@ -18,7 +18,7 @@
       (perun/extension file-path)))
 
 (defn ^String new-image-filepath [file-path filename new-filename]
-  (str (perun/parent-path file-path new-filename)
+  (str (perun/parent-path file-path filename)
        "/"
        new-filename))
 
