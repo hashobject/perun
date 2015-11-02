@@ -271,10 +271,12 @@
    The base-url must end with '/'."
   []
   (boot/with-pre-wrap fileset
-    (let [files    (perun/get-meta fileset)
-          base-url (:base-url (perun/get-global-meta fileset))
-          updated  (map #(assoc % :canonical-url (str base-url (:permalink %))))]
-      (perun/set-meta fileset updated))))
+    (let [files         (perun/get-meta fileset)
+          base-url      (:base-url (perun/get-global-meta fileset))
+          assoc-can-url #(assoc % :canonical-url (str base-url (:permalink %)))
+          updated-files (map assoc-can-url files)]
+        (u/info "Added canonical urls to %s files\n" (count updated-files))
+        (perun/merge-meta fileset updated-files))))
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]

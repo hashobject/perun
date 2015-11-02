@@ -27,6 +27,7 @@
         (ttr)
         (word-count)
         (permalink)
+        (canonical-url)
         (build-date)
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
