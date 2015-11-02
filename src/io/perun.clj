@@ -35,11 +35,15 @@
   (let [tmpfile  (boot/tmp-file f)
         filename (.getName tmpfile)
         tmp-path (boot/tmp-path f)]
-    {:filename  filename
-     :path      tmp-path
+    {; filename with extension
+      :filename    filename
+     ; filename without extension
+     :name        (perun/filename filename)
+     :path        tmp-path
+     ; parent folder path
      :parent-path (perun/parent-path tmp-path filename)
-     :full-path (.getPath tmpfile)
-     :extension (perun/extension filename)}))
+     :full-path   (.getPath tmpfile)
+     :extension   (perun/extension filename)}))
 
 (deftask base
   "Adds some basic information to the perun metadata and
