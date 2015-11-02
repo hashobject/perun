@@ -33,9 +33,11 @@
 
 (defn add-filedata [f]
   (let [tmpfile  (boot/tmp-file f)
-        filename (.getName tmpfile)]
+        filename (.getName tmpfile)
+        tmp-path (boot/tmp-path f)]
     {:filename  filename
-     :path      (boot/tmp-path f)
+     :path      tmp-path
+     :parent-path (perun/parent-path tmp-path filename)
      :full-path (.getPath tmpfile)
      :extension (perun/extension filename)}))
 
