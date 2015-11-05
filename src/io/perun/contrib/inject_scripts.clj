@@ -9,7 +9,6 @@
     html
     scripts))
 
-
 (defn inject-scripts [scripts in-path out-path]
   (let [html (-> in-path io/file slurp)
         updated-html (inject html scripts)]

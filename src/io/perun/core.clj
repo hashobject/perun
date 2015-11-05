@@ -14,7 +14,9 @@
 (defn key-meta [data]
   (into {} (for [d data] [(:path d) d])))
 
-(defn set-meta [fileset data]
+(defn set-meta
+  "Update `+meta-key+` metadata for the fileset and return updates fileset"
+  [fileset data]
   (vary-meta fileset assoc +meta-key+ (key-meta data)))
 
 (defn merge-meta* [m1 m2]
