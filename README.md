@@ -213,7 +213,7 @@ your source files. So you'd be able to preview your changes almost immediately.
 
 It's quite easy to setup automatic static site deployment.
 E.x. you have GitHub repo for your blog and you are using `boot-s3` to sync files to Amazon S3.
-In this case it's possible to setup flow in a way that every commit to GitHub would be build om Heroku using
+In this case it's possible to setup flow in a way that every commit to GitHub would be built on Heroku using
 perun and deployed to AWS S3.
 
 Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31) in order to achieve this you need to:
