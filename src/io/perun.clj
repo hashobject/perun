@@ -370,14 +370,23 @@
         (reset! prev fileset)
         pod))))
 
-(defn- render-in-pod [pod sym global-meta file-meta]
+(defn- render-in-pod [pod sym global-meta files-meta file-meta]
   {:pre [(symbol? sym) (namespace sym)]}
   ;; Ensure passed seqs are vectors, otherwise lists/array-seqs etc
   ;; wrapped in parentheses will be interpreted as function calls
-  (let [m (if (sequential? file-meta) (vec file-meta) file-meta)]
+  (let [files-vector (if (sequential? files-meta) (vec files-meta) files-meta)]
     (pod/with-eval-in pod
       (require '~(symbol (namespace sym)))
-      ((resolve '~sym) ~global-meta ~m))))
+      ((resolve '~sym) ~global-meta ~files-vector ~file-meta))))
+
+(defn- collection-in-pod [pod sym global-meta files-meta]
+  {:pre [(symbol? sym) (namespace sym)]}
+  ;; Ensure passed seqs are vectors, otherwise lists/array-seqs etc
+  ;; wrapped in parentheses will be interpreted as function calls
+  (let [files-vector (if (sequential? files-meta) (vec files-meta) files-meta)]
+    (pod/with-eval-in pod
+      (require '~(symbol (namespace sym)))
+      ((resolve '~sym) ~global-meta ~files-vector))))
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
@@ -402,7 +411,7 @@
         (u/info "Render pages %s\n" (count content-files))
         (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
-          (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
+          (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) content-files file)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 ; If permalink ends in slash, append index.html as filename
@@ -458,7 +467,7 @@
                                         (do
                                           (u/info "Render collection %s\n" page)
                                           (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
-                                                html          (render-in-pod pod renderer global-meta sorted)
+                                                html          (collection-in-pod pod renderer global-meta sorted)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {
                                                   :path page-filepath
