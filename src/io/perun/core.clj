@@ -5,7 +5,10 @@
 
 (def +meta-key+ :io.perun)
 
-(defn get-meta [fileset]
+(defn get-meta
+  "Return metadata on files. Files metadata is a list.
+   Internally it's stored as a map indexed by `:path`"
+  [fileset]
   (-> fileset meta +meta-key+ vals))
 
 (defn key-meta [data]
@@ -22,7 +25,10 @@
 
 (def +global-meta-key+ :io.perun.global)
 
-(defn get-global-meta [fileset]
+(defn get-global-meta
+  "Return global metadata that is related to the whole project
+   and all files. Global metadata is a map"
+  [fileset]
   (-> fileset meta +global-meta-key+))
 
 (defn set-global-meta [fileset data]
@@ -45,7 +51,7 @@
     (str "/" url)))
 
 (defn relativize-url
-  "Remodes slashes url start of the string."
+  "Removes slashes url start of the string."
   [url]
   (string/replace url #"^[\/]*" ""))
 
