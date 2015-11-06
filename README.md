@@ -157,9 +157,9 @@ See documentation for each task to find all supported options for each plugin.
 (require '[hashobject.boot-s3 :refer :all])
 (require '[jeluard.boot-notify :refer [notify]])
 
-(defn renderer [global data] (:name data))
+(defn renderer [{global :meta posts :entries post :entry}] (:name post))
 
-(defn index-renderer [global files]
+(defn index-renderer [{global :meta files :entries}]
   (let [names (map :name files)]
     (clojure.string/join "\n" names)))
 
