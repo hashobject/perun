@@ -372,9 +372,10 @@
 
 (defn- render-in-pod [pod sym render-data]
   {:pre [(symbol? sym) (namespace sym)]}
+  (u/info "size %s" (count (prn-str render-data)))
   (pod/with-eval-in pod
     (require '~(symbol (namespace sym)))
-    ((resolve '~sym) ~render-data)))
+    ((resolve '~sym) ~(pod/send! render-data))))
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
