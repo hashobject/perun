@@ -1,7 +1,7 @@
 (set-env!
   :source-paths #{"test"}
   :resource-paths #{"src" "resources"}
-  :dependencies '[[boot/core "2.4.2" :scope "provided"]
+  :dependencies '[[boot/core "2.5.0-SNAPSHOT" :scope "provided"]
                   [adzerk/bootlaces "0.1.13" :scope "test"]
                   [org.pegdown/pegdown "1.6.0" :scope "test"]
                   [circleci/clj-yaml "0.5.4" :scope "test"]
@@ -14,7 +14,7 @@
 (require '[adzerk.bootlaces :refer :all])
 
 
-(def +version+ "0.2.0-SNAPSHOT")
+(def +version+ "0.2.1-SNAPSHOT")
 (bootlaces! +version+)
 
 (task-options!

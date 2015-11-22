@@ -9,9 +9,8 @@
     html
     scripts))
 
-
 (defn inject-scripts [scripts in-path out-path]
   (let [html (-> in-path io/file slurp)
         updated-html (inject html scripts)]
-    (u/info "Injecting JS scripts %s into %s\n" scripts in-path)
+    (u/info "Injected JS scripts %s into %s\n" scripts in-path)
     (spit (io/file out-path) updated-html)))

@@ -130,11 +130,10 @@
                              (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
             final-metadata   (perun/merge-meta* initial-metadata updated-files)
-            final-metadata   (remove #(-> % :path removed?) final-metadata)
-            fs-with-meta     (perun/set-meta fileset final-metadata)]
+            final-metadata   (remove #(-> % :path removed?) final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
-        fs-with-meta))))
+        (perun/set-meta fileset final-metadata)))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
@@ -144,15 +143,15 @@
    as the first argument to render functions."
   [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
-    (perun/set-global-meta
-      fileset
-      (some->> fileset
-               boot/user-files
-               (boot/by-name [(or filename "perun.base.edn")])
-               first
-               boot/tmp-file
-               slurp
-               read-string))))
+    (let [global-meta
+            (some->> fileset
+                     boot/user-files
+                     (boot/by-name [(or filename "perun.base.edn")])
+                     first
+                     boot/tmp-file
+                     slurp
+                     read-string)]
+             (perun/set-global-meta fileset global-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -164,11 +163,10 @@
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
-                            (io.perun.ttr/calculate-ttr ~files))
-            fs-with-meta  (perun/set-meta fileset updated-files)]
+                            (io.perun.ttr/calculate-ttr ~files))]
         (u/dbug "Generated time-to-read:\n%s\n"
                 (pr-str (map :ttr updated-files)))
-        fs-with-meta))))
+        (perun/set-meta fileset updated-files)))))
 
 (deftask word-count
   "Count words in each file"
@@ -177,11 +175,10 @@
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
-                            (io.perun.word-count/count-words ~files))
-            fs-with-meta  (perun/set-meta fileset updated-files)]
+                            (io.perun.word-count/count-words ~files))]
         (u/dbug "Counted words:\n%s\n"
                 (pr-str (map :word-count updated-files)))
-        fs-with-meta))))
+        (perun/set-meta fileset updated-files)))))
 
 
 (def ^:private gravatar-deps
@@ -195,11 +192,10 @@
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
-                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))
-            fs-with-meta  (perun/set-meta fileset updated-files)]
-        (u/dbug "Find gravatars:\n%s\n"
+                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
+        (u/dbug "Found gravatars:\n%s\n"
                 (pr-str (map target-key updated-files)))
-      fs-with-meta))))
+      (perun/set-meta fileset updated-files)))))
 
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
@@ -207,10 +203,9 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (remove #(true? (:draft %)) files)
-          fs-with-meta  (perun/set-meta fileset updated-files)]
-      (u/info "Remove draft files. Remaining %s files\n" (count updated-files))
-      fs-with-meta)))
+          updated-files (remove #(true? (:draft %)) files)]
+      (u/info "Removed draft files. Remaining %s files\n" (count updated-files))
+      (perun/set-meta fileset updated-files))))
 
 (deftask build-date
   "Add :date-build attribute to each file metadata and also to the global meta"
@@ -221,11 +216,10 @@
           now             (java.util.Date.)
           updated-files   (map #(assoc % :date-build now) files)
           new-global-meta (assoc global-meta :date-build now)
-          updated-fs      (perun/set-meta fileset updated-files)
-          fs-with-meta    (perun/set-global-meta updated-fs new-global-meta)]
+          updated-fs      (perun/set-meta fileset updated-files)]
         (u/dbug "Added :date-build:\n%s\n"
                 (pr-str (map :date-build updated-files)))
-      fs-with-meta)))
+      (perun/set-global-meta updated-fs new-global-meta))))
 
 (defn ^:private default-slug-fn [filename]
   "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
@@ -244,8 +238,7 @@
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
           updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
-      (u/dbug "Generated slugs:\n%s\n"
-              (pr-str (map :slug updated-files)))
+      (u/dbug "Generated slugs:\n%s\n" (pr-str (map :slug updated-files)))
       (u/info "Added slugs to %s files\n" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
@@ -266,8 +259,7 @@
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
           updated-files (map assoc-perma files)]
-      (u/dbug "Generated permalinks:\n%s\n"
-              (pr-str (map :permalink updated-files)))
+      (u/dbug "Generated permalinks:\n%s\n" (pr-str (map :permalink updated-files)))
       (u/info "Added permalinks to %s files\n" (count updated-files))
       (perun/merge-meta fileset updated-files))))
 
@@ -378,14 +370,12 @@
         (reset! prev fileset)
         pod))))
 
-(defn- render-in-pod [pod sym global-meta file-meta]
+(defn- render-in-pod [pod sym render-data]
   {:pre [(symbol? sym) (namespace sym)]}
-  ;; Ensure passed seqs are vectors, otherwise lists/array-seqs etc
-  ;; wrapped in parentheses will be interpreted as function calls
-  (let [m (if (sequential? file-meta) (vec file-meta) file-meta)]
-    (pod/with-eval-in pod
-      (require '~(symbol (namespace sym)))
-      ((resolve '~sym) ~global-meta ~m))))
+  (u/info "size %s" (count (prn-str render-data)))
+  (pod/with-eval-in pod
+    (require '~(symbol (namespace sym)))
+    ((resolve '~sym) ~(pod/send! render-data))))
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
@@ -410,7 +400,10 @@
         (u/info "Render pages %s\n" (count content-files))
         (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
-          (let [html          (render-in-pod pod renderer (perun/get-global-meta fileset) file)
+          (let [render-data   {:meta    (perun/get-global-meta fileset)
+                               :entries (vec content-files)
+                               :entry   file}
+                html          (render-in-pod pod renderer render-data)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 ; If permalink ends in slash, append index.html as filename
@@ -466,7 +459,9 @@
                                         (do
                                           (u/info "Render collection %s\n" page)
                                           (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
-                                                html          (render-in-pod pod renderer global-meta sorted)
+                                                render-data   {:meta    global-meta
+                                                               :entries (vec sorted)}
+                                                html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {
                                                   :path page-filepath
@@ -476,9 +471,9 @@
                                             (perun/create-file tmp page-filepath html)
                                             new-entry)))
                                       grouped-files))
-                    updated-files (apply conj files new-files)
-                    fs-with-meta  (perun/set-meta fileset updated-files)]
-                  (commit fs-with-meta tmp))))))
+                    updated-files    (apply conj files new-files)
+                    updated-fileset  (perun/set-meta fileset updated-files)]
+                  (commit updated-fileset tmp))))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
