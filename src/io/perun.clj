@@ -372,7 +372,6 @@
 
 (defn- render-in-pod [pod sym render-data]
   {:pre [(symbol? sym) (namespace sym)]}
-  (u/info "size %s" (count (prn-str render-data)))
   (pod/with-eval-in pod
     (require '~(symbol (namespace sym)))
     ((resolve '~sym) ~(pod/send! render-data))))
