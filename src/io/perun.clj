@@ -101,7 +101,7 @@
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.3"]])
+    [circleci/clj-yaml "0.5.5"]])
 
 (deftask markdown
   "Parse markdown files
