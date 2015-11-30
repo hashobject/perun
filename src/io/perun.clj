@@ -142,14 +142,16 @@
    as the first argument to render functions."
   [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
-    (let [global-meta
+    (let [meta-file (or filename "perun.base.edn")
+          global-meta
             (some->> fileset
                      boot/user-files
-                     (boot/by-name [(or filename "perun.base.edn")])
+                     (boot/by-name [meta-file])
                      first
                      boot/tmp-file
                      slurp
                      read-string)]
+             (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
              (perun/set-global-meta fileset global-meta))))
 
 (def ^:private ttr-deps
