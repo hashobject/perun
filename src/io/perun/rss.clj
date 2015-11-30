@@ -26,4 +26,4 @@
   (let [rss-filepath (str (:target options) "/" (:filename options))
         rss-string   (generate-rss-str files options)]
     (perun/create-file tgt-path rss-filepath rss-string)
-    (perun/report-info "rss" "generated RSS feed and saved to%s" rss-filepath)))
+    (perun/report-info "rss" "generated RSS feed and saved to %s" rss-filepath)))

@@ -392,7 +392,6 @@
       (let [pod   (pods fileset)
             files (filter (:filterer options) (perun/get-meta fileset))
             content-files (filter :content files)]
-        (perun/report-info "render" "render pages %s" (count content-files))
         (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
           (let [render-data   {:meta    (perun/get-global-meta fileset)
@@ -408,6 +407,7 @@
                                     (string/replace path #"(?i).[a-z]+$" ".html")))]
             (u/dbug " -> %s\n" page-filepath)
             (perun/create-file tmp page-filepath html)))
+        (perun/report-info "render" "rendered %s pages" (count content-files))
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
@@ -463,7 +463,7 @@
                                                   :content html
                                                   :date-build (:date-build global-meta)}]
                                             (perun/create-file tmp page-filepath html)
-                                            (perun/report-info "collection" "render collection %s" page)
+                                            (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
                                       grouped-files))
                     updated-files    (apply conj files new-files)
@@ -504,6 +504,6 @@
                  ~scripts-contents
                  ~(.getPath (boot/tmp-file file))
                  ~(.getPath new-file))))
-           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files..." (count scripts-contents) (count files)))
+           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files" (count scripts-contents) (count files)))
          (reset! prev fileset)
          (next-task (-> fileset (boot/add-resource out) boot/commit!))))))
