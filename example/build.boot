@@ -15,14 +15,15 @@
 (deftask build
   "Build test blog. This task is just for testing different plugins together."
   []
-  (comp (global-metadata)
+  (comp
+        (global-metadata)
         (images-dimensions)
         (images-resize)
-        ;(base)
+        (base)
 
         (markdown)
-        ;(draft)
-        (dump-meta)
+        (draft)
+        ;(dump-meta)
         (slug)
         (ttr)
         (word-count)

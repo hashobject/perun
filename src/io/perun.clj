@@ -50,8 +50,7 @@
    establishes metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [updated-files (map add-filedata
-                             (boot/user-files fileset))]
+    (let [updated-files (map add-filedata (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
@@ -95,7 +94,7 @@
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
-      (u/info "New resized images:\n%s\n" (pr-str updated-files))
+      (u/dbug "New resized images:\n%s\n" (pr-str updated-files))
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
@@ -204,7 +203,7 @@
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
           updated-files (remove #(true? (:draft %)) files)]
-      (u/info "Removed draft files. Remaining %s files\n" (count updated-files))
+      (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
 (deftask build-date
@@ -219,6 +218,7 @@
           updated-fs      (perun/set-meta fileset updated-files)]
         (u/dbug "Added :date-build:\n%s\n"
                 (pr-str (map :date-build updated-files)))
+        (perun/report-info "build-date" "added date-build to %s files" (count updated-files))
       (perun/set-global-meta updated-fs new-global-meta))))
 
 (defn ^:private default-slug-fn [filename]
@@ -239,7 +239,7 @@
           files         (perun/get-meta fileset)
           updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
       (u/dbug "Generated slugs:\n%s\n" (pr-str (map :slug updated-files)))
-      (u/info "Added slugs to %s files\n" (count updated-files))
+      (perun/report-info "slug" "added slugs to %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
 
@@ -253,14 +253,13 @@
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
    f filterer     FILTER      code "filter function"]
-
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
           updated-files (map assoc-perma files)]
       (u/dbug "Generated permalinks:\n%s\n" (pr-str (map :permalink updated-files)))
-      (u/info "Added permalinks to %s files\n" (count updated-files))
+      (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
 
 (deftask canonical-url
@@ -274,7 +273,7 @@
           base-url      (:base-url (perun/get-global-meta fileset))
           assoc-can-url #(assoc % :canonical-url (str base-url (:permalink %)))
           updated-files (map assoc-can-url files)]
-        (u/info "Added canonical urls to %s files\n" (count updated-files))
+        (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
         (perun/merge-meta fileset updated-files))))
 
 (def ^:private sitemap-deps
@@ -296,7 +295,6 @@
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
             content-files (filter :content files)]
-        (u/info "Generating sitemap for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -323,7 +321,6 @@
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (perun/get-meta fileset)
             content-files (filter :content files)]
-        (u/info "Generating RSS for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -351,7 +348,6 @@
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (perun/get-meta fileset)
             content-files (filter :content files)]
-        (u/info "Generating Atom feed for %s files\n" (count content-files))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~content-files ~options))
         (commit fileset tmp)))))
@@ -396,7 +392,7 @@
       (let [pod   (pods fileset)
             files (filter (:filterer options) (perun/get-meta fileset))
             content-files (filter :content files)]
-        (u/info "Render pages %s\n" (count content-files))
+        (perun/report-info "render" "render pages %s" (count content-files))
         (doseq [{:keys [path] :as file} content-files]
           (u/dbug " - %s" path)
           (let [render-data   {:meta    (perun/get-global-meta fileset)
@@ -456,7 +452,6 @@
                                     (map
                                       (fn [[page page-files]]
                                         (do
-                                          (u/info "Render collection %s\n" page)
                                           (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
                                                 render-data   {:meta    global-meta
                                                                :entries (vec sorted)}
@@ -468,6 +463,7 @@
                                                   :content html
                                                   :date-build (:date-build global-meta)}]
                                             (perun/create-file tmp page-filepath html)
+                                            (perun/report-info "collection" "render collection %s" page)
                                             new-entry)))
                                       grouped-files))
                     updated-files    (apply conj files new-files)
@@ -479,8 +475,8 @@
    Use either filter to include only files matching or remove to
    include only files not matching regex."
    [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-     f filter  RE         #{regex} "Regexes to filter HTML files"
-     r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
+     f filter  RE        #{regex} "Regexes to filter HTML files"
+     r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
@@ -499,7 +495,6 @@
                                       boot/input-files
                                       (boot/by-path scripts)
                                       (map (comp slurp boot/tmp-file)))]
-           (u/info "Injecting %s scripts into %s HTML files...\n" (count scripts-contents) (count files))
            (doseq [file files
                    :let [new-file (io/file out (boot/tmp-path file))]]
              (u/dbug "Injecting %s scripts %s\n" scripts (boot/tmp-path file))
@@ -508,6 +503,7 @@
                (io.perun.contrib.inject-scripts/inject-scripts
                  ~scripts-contents
                  ~(.getPath (boot/tmp-file file))
-                 ~(.getPath new-file)))))
+                 ~(.getPath new-file))))
+           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files..." (count scripts-contents) (count files)))
          (reset! prev fileset)
          (next-task (-> fileset (boot/add-resource out) boot/commit!))))))

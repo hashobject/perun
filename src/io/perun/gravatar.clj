@@ -1,6 +1,5 @@
 (ns io.perun.gravatar
-  (:require [boot.util     :as u]
-            [io.perun.core :as perun]
+  (:require [io.perun.core :as perun]
             [gravatar      :as gr]))
 
 (defn add-gravatar [file source-prop target-prop]
@@ -10,5 +9,5 @@
 
 (defn find-gravatar [files source-prop target-prop]
   (let [updated-files (map #(add-gravatar % source-prop target-prop) files)]
-    (u/info "Added gravatar to %s files\n" (count updated-files))
+    (perun/report-info "gravatar" "added gravatar to %s files" (count updated-files))
     updated-files))

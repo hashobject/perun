@@ -46,7 +46,7 @@
       (merge file new-meta dimensions)))
 
 (defn process-image [tgt-path file options]
-  (u/info "Resizing %s\n" (:path file))
+  (u/dbug "Resizing %s\n" (:path file))
   (let [resolutions (:resolutions options)]
     (doall
       (clojure.core/pmap
@@ -56,5 +56,5 @@
 
 (defn images-resize [tgt-path files options]
   (let [updated-files (flatten (doall (map #(process-image tgt-path % options) files)))]
-    (u/info "Processed %s image files\n" (count files))
+    (perun/report-info "image-resize" "processed %s image files" (count files))
     updated-files))

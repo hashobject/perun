@@ -1,7 +1,9 @@
 (ns io.perun.core
   "Utilies which can be used in base JVM and pods."
-  (:require [clojure.java.io :as io]
-            [clojure.string  :as string]))
+  (:require [clojure.java.io         :as io]
+            [clojure.string          :as string]
+            [boot.from.io.aviso.ansi :as ansi]
+            [boot.util               :as u]))
 
 (def +meta-key+ :io.perun)
 
@@ -35,6 +37,15 @@
 
 (defn set-global-meta [fileset data]
   (vary-meta fileset assoc +global-meta-key+ data))
+
+(defn report-info [task msg & args]
+  (apply u/info
+        (str
+          (ansi/yellow (str "[" task "]"))
+          " - "
+          (ansi/green (str "[" msg "]\n")))
+        args))
+
 
 (defn write-to-file [out-file content]
   (doto out-file

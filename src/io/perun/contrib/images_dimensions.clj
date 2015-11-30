@@ -12,7 +12,7 @@
     dimensions))
 
 (defn process-file [file options]
-  (u/info "Processing image %s\n" (:path file))
+  (u/dbug "Processing image %s\n" (:path file))
   (let [dimensions (get-dimensions file)
         width (first dimensions)
         height (second dimensions)]
@@ -24,5 +24,5 @@
 
 (defn images-dimensions [files options]
   (let [updated-files (doall (map #(process-file % options) files))]
-    (u/info "Processed %s image files\n" (count files))
+    (perun/report-info "images-dimensions" "processed %s image files" (count files))
     updated-files))

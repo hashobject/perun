@@ -1,6 +1,5 @@
 (ns io.perun.word-count
-  (:require [boot.util         :as u]
-            [io.perun.core     :as perun]))
+  (:require [io.perun.core     :as perun]))
 
 (defn add-word-count [file]
   (if-let [content (:content file)]
@@ -9,5 +8,5 @@
 
 (defn count-words [files]
   (let [updated-files (map add-word-count files)]
-    (u/info "Added word-count to %s files\n" (count updated-files))
+    (perun/report-info "word-count" "added word-count to %s files" (count updated-files))
     updated-files))

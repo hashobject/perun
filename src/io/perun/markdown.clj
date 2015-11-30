@@ -83,7 +83,7 @@
          (.markdownToHtml processor))))
 
 (defn process-file [file options]
-  (u/info "Processing markdown: %s\n" (:filename file))
+  (u/dbug "Processing markdown: %s\n" (:filename file))
   (let [file-content (-> file :full-path io/file slurp)
         md-metadata (parse-file-metadata file-content)
         html (markdown-to-html file-content options)]
@@ -91,5 +91,5 @@
 
 (defn parse-markdown [markdown-files options]
   (let [updated-files (doall (map #(process-file % options) markdown-files))]
-    (u/info "Parsed %s markdown files\n" (count markdown-files))
+    (perun/report-info "markdown" "parsed %s markdown files" (count markdown-files))
     updated-files))

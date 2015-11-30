@@ -1,6 +1,5 @@
 (ns io.perun.rss
-  (:require [boot.util       :as u]
-            [io.perun.core   :as perun]
+  (:require [io.perun.core   :as perun]
             [clj-rss.core    :as rss-gen]))
 
 (defn rss-definitions [files]
@@ -27,4 +26,4 @@
   (let [rss-filepath (str (:target options) "/" (:filename options))
         rss-string   (generate-rss-str files options)]
     (perun/create-file tgt-path rss-filepath rss-string)
-    (u/info "Generated RSS feed and saved to %s\n" rss-filepath)))
+    (perun/report-info "rss" "generated RSS feed and saved to%s" rss-filepath)))
