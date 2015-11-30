@@ -100,7 +100,7 @@
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.5"]])
+    [circleci/clj-yaml "0.5.3"]])
 
 (deftask markdown
   "Parse markdown files
@@ -254,7 +254,7 @@
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
           updated-files (map assoc-perma files)]
-      (perun/report-info "permalink"  "generated permalinks" (map :permalink updated-files))
+      (perun/report-debug "permalink"  "generated permalinks" (map :permalink updated-files))
       (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
 
@@ -492,7 +492,7 @@
                                       (map (comp slurp boot/tmp-file)))]
            (doseq [file files
                    :let [new-file (io/file out (boot/tmp-path file))]]
-             (perun/report-info "inject-scripts" "injecting scripts" (boot/tmp-path file))
+             (perun/report-debug "inject-scripts" "injecting scripts" (boot/tmp-path file))
              (io/make-parents new-file)
              (pod/with-call-in @pod
                (io.perun.contrib.inject-scripts/inject-scripts

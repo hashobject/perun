@@ -23,7 +23,7 @@
 
         (markdown)
         (draft)
-        ;(dump-meta)
+        (dump-meta)
         (slug)
         (ttr)
         (word-count)
