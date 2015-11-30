@@ -1,4 +1,4 @@
-# perun
+![perun-small](https://github.com/hashobject/perun/blob/master/resources/logo.png)
 
 [![Dependencies Status](http://jarkeeper.com/hashobject/perun/status.svg)](http://jarkeeper.com/hashobject/perun)
 [![Downloads](https://jarkeeper.com/hashobject/perun/downloads.svg)](https://jarkeeper.com/hashobject/perun)
