@@ -188,6 +188,11 @@ After you created `build` task simply do:
 
 ## Tips
 
+## Debug
+
+To see more detailed output from each task (useful for debugging) please use
+`--verbose` boot flag. E.x. `boot --verbose dev`
+
 ### Dev setup
 
 Perun is static site generator. So usually you'd use it by just running `boot build` which will generate your static site.

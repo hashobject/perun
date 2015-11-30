@@ -1,6 +1,5 @@
 (ns io.perun.sitemap
-  (:require [boot.util       :as u]
-            [io.perun.core   :as perun]
+  (:require [io.perun.core   :as perun]
             [sitemap.core    :as sitemap-gen]
             [clj-time.coerce :as tc]
             [clj-time.format :as tf]))
@@ -27,4 +26,4 @@
         sitemap-xml      (create-sitemap files)
         sitemap-string   (sitemap-gen/generate-sitemap sitemap-xml)]
     (perun/create-file tgt-path sitemap-filepath sitemap-string)
-    (u/info "Generated sitemap and saved to %s\n" sitemap-filepath)))
+    (perun/report-info "sitemap" "generated sitemap and saved to %s" sitemap-filepath)))
