@@ -1,6 +1,5 @@
 (ns io.perun.markdown
-  (:require [boot.util       :as u]
-            [io.perun.core   :as perun]
+  (:require [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [clojure.string  :as str]
             [clj-yaml.core   :as yaml])
@@ -83,7 +82,7 @@
          (.markdownToHtml processor))))
 
 (defn process-file [file options]
-  (u/dbug "Processing markdown: %s\n" (:filename file))
+  (perun/report-debug "markdown" "processing markdown" (:filename file))
   (let [file-content (-> file :full-path io/file slurp)
         md-metadata (parse-file-metadata file-content)
         html (markdown-to-html file-content options)]

@@ -46,6 +46,15 @@
           (ansi/green (str "[" msg "]\n")))
         args))
 
+(defn report-debug [task msg datastructure]
+  (u/dbug
+    (str
+      (ansi/yellow (str "[" task "]"))
+      " - "
+      (ansi/blue (str "[" msg "]\n"))
+      "%s\n")
+    (pr-str datastructure)))
+
 
 (defn write-to-file [out-file content]
   (doto out-file

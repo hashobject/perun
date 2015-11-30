@@ -1,6 +1,5 @@
 (ns io.perun.contrib.images-dimensions
-  (:require [boot.util          :as u]
-            [io.perun.core      :as perun]
+  (:require [io.perun.core      :as perun]
             [clojure.java.io    :as io]
             [image-resizer.util :as iu]))
 
@@ -12,14 +11,13 @@
     dimensions))
 
 (defn process-file [file options]
-  (u/dbug "Processing image %s\n" (:path file))
+  (perun/report-debug "images-dimensions" "processing image" (:path file))
   (let [dimensions (get-dimensions file)
         width (first dimensions)
-        height (second dimensions)]
-      (u/dbug "\nwidth : %s" width)
-      (u/dbug "\nheight : %s" height)
-      (assoc file :width width
-                  :height height)))
+        height (second dimensions)
+        dims {:width width :height height}]
+      (perun/report-debug "images-dimensions" "dimensions" dims)
+      (merge file dims)))
 
 
 (defn images-dimensions [files options]

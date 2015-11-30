@@ -1,6 +1,5 @@
 (ns io.perun.contrib.images-resize
-  (:require [boot.util                   :as u]
-            [io.perun.core               :as perun]
+  (:require [io.perun.core               :as perun]
             [clojure.java.io             :as io]
             [clojure.string              :as str]
             [image-resizer.core          :as resize]
@@ -46,7 +45,7 @@
       (merge file new-meta dimensions)))
 
 (defn process-image [tgt-path file options]
-  (u/dbug "Resizing %s\n" (:path file))
+  (perun/report-debug "image-resize" "resizing" (:path file))
   (let [resolutions (:resolutions options)]
     (doall
       (clojure.core/pmap

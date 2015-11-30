@@ -94,7 +94,7 @@
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
-      (u/dbug "New resized images:\n%s\n" (pr-str updated-files))
+      (perun/report-debug "images-resize" "new resized images" updated-files)
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
@@ -163,8 +163,7 @@
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.ttr/calculate-ttr ~files))]
-        (u/dbug "Generated time-to-read:\n%s\n"
-                (pr-str (map :ttr updated-files)))
+        (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-files))
         (perun/set-meta fileset updated-files)))))
 
 (deftask word-count
@@ -175,8 +174,7 @@
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.word-count/count-words ~files))]
-        (u/dbug "Counted words:\n%s\n"
-                (pr-str (map :word-count updated-files)))
+        (perun/report-debug "word-count" "counted words" (map :word-count updated-files))
         (perun/set-meta fileset updated-files)))))
 
 
@@ -192,8 +190,7 @@
       (let [files         (perun/get-meta fileset)
             updated-files (pod/with-call-in @pod
                             (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
-        (u/dbug "Found gravatars:\n%s\n"
-                (pr-str (map target-key updated-files)))
+        (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
       (perun/set-meta fileset updated-files)))))
 
 ;; Should be handled by more generic filterer options to other tasks
@@ -216,8 +213,7 @@
           updated-files   (map #(assoc % :date-build now) files)
           new-global-meta (assoc global-meta :date-build now)
           updated-fs      (perun/set-meta fileset updated-files)]
-        (u/dbug "Added :date-build:\n%s\n"
-                (pr-str (map :date-build updated-files)))
+        (perun/report-debug "build-date" "added :date-build" (map :date-build updated-files))
         (perun/report-info "build-date" "added date-build to %s files" (count updated-files))
       (perun/set-global-meta updated-fs new-global-meta))))
 
@@ -238,7 +234,7 @@
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
           updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
-      (u/dbug "Generated slugs:\n%s\n" (pr-str (map :slug updated-files)))
+      (perun/report-debug "slug" "generated slugs" (map :slug updated-files))
       (perun/report-info "slug" "added slugs to %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
@@ -258,7 +254,7 @@
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
           updated-files (map assoc-perma files)]
-      (u/dbug "Generated permalinks:\n%s\n" (pr-str (map :permalink updated-files)))
+      (perun/report-info "permalink"  "generated permalinks" (map :permalink updated-files))
       (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
 
@@ -393,7 +389,6 @@
             files (filter (:filterer options) (perun/get-meta fileset))
             content-files (filter :content files)]
         (doseq [{:keys [path] :as file} content-files]
-          (u/dbug " - %s" path)
           (let [render-data   {:meta    (perun/get-global-meta fileset)
                                :entries (vec content-files)
                                :entry   file}
@@ -405,7 +400,7 @@
                                             (string/replace #"/$" "/index.html")
                                             perun/url-to-path)
                                     (string/replace path #"(?i).[a-z]+$" ".html")))]
-            (u/dbug " -> %s\n" page-filepath)
+            (perun/report-debug "render" "rendered page for path" path)
             (perun/create-file tmp page-filepath html)))
         (perun/report-info "render" "rendered %s pages" (count content-files))
         (commit fileset tmp)))))
@@ -497,7 +492,7 @@
                                       (map (comp slurp boot/tmp-file)))]
            (doseq [file files
                    :let [new-file (io/file out (boot/tmp-path file))]]
-             (u/dbug "Injecting %s scripts %s\n" scripts (boot/tmp-path file))
+             (perun/report-info "inject-scripts" "injecting scripts" (boot/tmp-path file))
              (io/make-parents new-file)
              (pod/with-call-in @pod
                (io.perun.contrib.inject-scripts/inject-scripts
