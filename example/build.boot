@@ -1,7 +1,7 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[perun "0.2.1-SNAPSHOT"]
+  :dependencies '[[perun "0.2.2-SNAPSHOT"]
                   [hiccup "1.0.5"]
                   [pandeiro/boot-http "0.6.3-SNAPSHOT"]
                   [jeluard/boot-notify "0.1.2" :scope "test"]])

@@ -90,7 +90,6 @@ Then your code might look like this:
         (s3-sync)))
 ```
 
-
 ## Use cases
 
  - generate blog from markdown files
@@ -109,7 +108,6 @@ Following sites were created with perun and Boot:
 
 Also check out [example](https://github.com/hashobject/perun/tree/master/example) folder.
 
-
 ## How does it work
 
 Perun works in the following steps:
@@ -126,7 +124,7 @@ Fileset passed to every task has metadata `(:metadata (meta fileset)`. This meta
 ## Install
 
 ```clojure
-[perun "0.2.0-SNAPSHOT"]
+[perun "0.2.2-SNAPSHOT"]
 ```
 
 ## Usage
