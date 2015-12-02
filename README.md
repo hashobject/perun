@@ -19,6 +19,7 @@ that suits your needs.
  - sitemap - generate sitemap for site
  - rss - generate RSS feed
  - atom-feed - generate Atom feed
+ - print-meta - utility task to print perun metadata (useful for debugging each task)
  - slugs - generate slugs based on any property (available under `:slug` key)
  - build-date - add `:data-build` to global meta and each file meta
  - permalink - create permalink for each page
@@ -219,8 +220,7 @@ your source files. So you'd be able to preview your changes almost immediately.
 
 It's quite easy to setup automatic static site deployment.
 E.x. you have GitHub repo for your blog and you are using `boot-s3` to sync files to Amazon S3.
-In this case it's possible to setup flow in a way that every commit to GitHub would be built on Heroku using
-perun and deployed to AWS S3.
+In this case it's possible to setup flow in a way that every commit to GitHub would be built on Heroku using perun and deployed to AWS S3.
 
 Assuming you have setup similar to [example](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot#L31) in order to achieve this you need to:
  - create [Heroku](heroku.com) application for your GitHub repo with `build.boot` file

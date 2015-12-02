@@ -24,8 +24,8 @@
       (boot/add-resource tmp)
       boot/commit!))
 
-(deftask dump-meta
-  "Utility task to dump perun metadata via boot.util/info"
+(deftask print-meta
+  "Utility task to print perun metadata"
   [m map-fn MAPFN code "function to map over metadata items before printing"]
   (boot/with-pre-wrap fileset
     (let [map-fn (or map-fn identity)]
