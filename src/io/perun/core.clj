@@ -43,7 +43,7 @@
         (str
           (ansi/yellow (str "[" task "]"))
           " - "
-          (ansi/green (str "[" msg "]\n")))
+          (ansi/green (str msg "\n")))
         args))
 
 (defn report-debug [task msg datastructure]
@@ -51,7 +51,7 @@
     (str
       (ansi/yellow (str "[" task "]"))
       " - "
-      (ansi/blue (str "[" msg "]\n"))
+      (ansi/blue (str msg "\n"))
       "%s\n")
     (pr-str datastructure)))
 
@@ -92,8 +92,8 @@
 
 (defn parent-path [filepath filename-with-extension]
   (if (.endsWith filepath filename-with-extension)
-       (.substring filepath 0 (- (count filepath)
-                          (count filename-with-extension)))
+      (.substring filepath 0 (- (count filepath)
+                              (count filename-with-extension)))
      filepath))
 
 (defn ^String extension [name]
