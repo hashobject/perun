@@ -9,7 +9,8 @@
                   [sitemap "0.2.4" :scope "test"]
                   [clj-rss "0.2.3" :scope "test"]
                   [gravatar "1.1.1" :scope "test"]
-                  [clj-time "0.11.0"]])
+                  [clj-time "0.11.0"]
+                  [mvxcvi/puget "1.0.0"]])
 
 (require '[adzerk.bootlaces :refer :all])
 

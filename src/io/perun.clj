@@ -6,7 +6,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [io.perun.core :as perun]))
+            [io.perun.core :as perun]
+            [puget.printer :as puget]))
 
 (def ^:private global-deps
   '[])
@@ -28,7 +29,7 @@
   [m map-fn MAPFN code "function to map over metadata items before printing"]
   (boot/with-pre-wrap fileset
     (let [map-fn (or map-fn identity)]
-      (prn (pr-str (map map-fn (perun/get-meta fileset)))))
+      (puget/cprint (map map-fn (perun/get-meta fileset))))
     fileset))
 
 (defn add-filedata [f]
@@ -151,8 +152,8 @@
                      boot/tmp-file
                      slurp
                      read-string)]
-             (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
-             (perun/set-global-meta fileset global-meta))))
+         (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
+         (perun/set-global-meta fileset global-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -193,7 +194,7 @@
             updated-files (pod/with-call-in @pod
                             (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
-      (perun/set-meta fileset updated-files)))))
+       (perun/set-meta fileset updated-files)))))
 
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
@@ -428,15 +429,15 @@
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
     (cond (not (fn? (:comparator options)))
-              (u/fail "collection task :comparator option should implement IFn\n")
+          (u/fail "collection task :comparator option should implement IFn\n")
           (not (ifn? (:filterer options)))
-              (u/fail "collection task :filterer option value should implement IFn\n")
+          (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
-              (u/fail "using the :page option will render any :groupby option setting effectless\n")
+          (u/fail "using the :page option will render any :groupby option setting effectless\n")
           (not (ifn? (:groupby options)))
-              (u/fail "collection task :groupby option value should implement IFn\n")
+          (u/fail "collection task :groupby option value should implement IFn\n")
           (not (ifn? (:sortby options)))
-              (u/fail "collection task :sortby option value should implement IFn\n")
+          (u/fail "collection task :sortby option value should implement IFn\n")
           :else
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
@@ -455,10 +456,10 @@
                                                 html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {
-                                                  :path page-filepath
-                                                  :canonical-url (str (:base-url global-meta) "/" page)
-                                                  :content html
-                                                  :date-build (:date-build global-meta)}]
+                                                               :path page-filepath
+                                                               :canonical-url (str (:base-url global-meta) "/" page)
+                                                               :content html
+                                                               :date-build (:date-build global-meta)}]
                                             (perun/create-file tmp page-filepath html)
                                             (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
