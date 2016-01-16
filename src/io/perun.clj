@@ -333,12 +333,14 @@
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
-   :target "public"})
+   :target "public"
+   :filterer identity})
 
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str "generated Atom feed filename"
    o target      OUTDIR      str "the output directory"
+   _ filterer    FILTER     code "filter function"
    t title       TITLE       str "feed title"
    s subtitle    SUBTITLE    str "feed subtitle"
    p description DESCRIPTION str "feed description"
@@ -349,9 +351,10 @@
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (perun/get-meta fileset)
-            content-files (filter :content files)]
+            content-files (filter :content files)
+            filtered-files (filter (:filterer options) content-files)]
         (pod/with-call-in @pod
-          (io.perun.atom/generate-atom ~(.getPath tmp) ~content-files ~options))
+          (io.perun.atom/generate-atom ~(.getPath tmp) ~filtered-files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (defn- wrap-pool [pool]
