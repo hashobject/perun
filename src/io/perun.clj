@@ -129,7 +129,10 @@
             updated-files (pod/with-call-in @pod
                              (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
-            final-metadata   (perun/merge-meta* initial-metadata updated-files)
+            ; Pure merge instead of `merge-with merge` (meta-meta).
+            ; This is because updated metadata should replace previous metadata to
+            ; correctly handle cases where a metadata key is removed from post metadata.
+            final-metadata   (vals (merge (perun/key-meta initial-metadata) (perun/key-meta updated-files)))
             final-metadata   (remove #(-> % :path removed?) final-metadata)]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
