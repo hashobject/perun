@@ -91,7 +91,7 @@
           pod (create-pod images-resize-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext perun/images-exts)
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
@@ -202,7 +202,10 @@
   []
   (boot/with-pre-wrap fileset
     (let  [files          (perun/get-meta fileset)
-           images         (filter :width files)
+           images         (filter
+                              (fn [file]
+                                (contains? perun/images-exts (perun/extension file)))
+                              files)
            groupped-files (group-by :parent-path images)
            assoc-images   (fn [file]
                              (if (not? (nil? (:content file)))

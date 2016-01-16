@@ -38,6 +38,8 @@
 (defn set-global-meta [fileset data]
   (vary-meta fileset assoc +global-meta-key+ data))
 
+(def images-exts #{"jpg" "svg" "png" "gif" "JPG" "SVG" "PNG" "GIF"})
+
 (defn report-info [task msg & args]
   (apply u/info
         (str
