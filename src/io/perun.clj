@@ -124,7 +124,7 @@
                           (boot/fileset-removed @prev-fs)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
-                          (map #(:path (boot/tmp-file %)))
+                          (map #(boot/tmp-path %))
                           set)
             updated-files (pod/with-call-in @pod
                              (io.perun.markdown/parse-markdown ~md-files ~options))
