@@ -379,7 +379,7 @@
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
-   :filterer identity})
+   :filterer :content})
 
 (deftask render
   "Render pages.
@@ -395,11 +395,10 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))
-            content-files (filter :content files)]
-        (doseq [{:keys [path] :as file} content-files]
+            files (filter (:filterer options) (perun/get-meta fileset))]
+        (doseq [{:keys [path] :as file} files]
           (let [render-data   {:meta    (perun/get-global-meta fileset)
-                               :entries (vec content-files)
+                               :entries (vec files)
                                :entry   file}
                 html          (render-in-pod pod renderer render-data)
                 page-filepath (perun/create-filepath
@@ -411,12 +410,12 @@
                                     (string/replace path #"(?i).[a-z]+$" ".html")))]
             (perun/report-debug "render" "rendered page for path" path)
             (perun/create-file tmp page-filepath html)))
-        (perun/report-info "render" "rendered %s pages" (count content-files))
+        (perun/report-info "render" "rendered %s pages" (count files))
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
-   :filterer identity
+   :filterer :content
    :groupby (fn [data] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
@@ -448,8 +447,7 @@
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
                     files          (perun/get-meta fileset)
-                    content-files  (filter :content files)
-                    filtered-files (filter (:filterer options) content-files)
+                    filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)
                     global-meta    (perun/get-global-meta fileset)
                     new-files      (doall
@@ -461,8 +459,7 @@
                                                                :entries (vec sorted)}
                                                 html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     {
-                                                               :path page-filepath
+                                                new-entry     {:path page-filepath
                                                                :canonical-url (str (:base-url global-meta) "/" page)
                                                                :content html
                                                                :date-build (:date-build global-meta)}]
