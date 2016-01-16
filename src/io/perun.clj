@@ -196,6 +196,22 @@
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
        (perun/set-meta fileset updated-files)))))
 
+
+(deftask images
+  "Assoc list of :images to the post"
+  []
+  (boot/with-pre-wrap fileset
+    (let  [files          (perun/get-meta fileset)
+           images         (filter :width files)
+           groupped-files (group-by :parent-path images)
+           assoc-images   (fn [file]
+                             (if (not? (nil? (:content file)))
+                               (assoc file :images (get groupped-files (:parent-path file)))
+                               file))
+           updated-files  (map assoc-images files)]
+      (perun/report-info "images" "add associated images to %s files" (count updated-files))
+      (perun/set-meta fileset updated-files))))
+
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
   "Exclude draft files"
