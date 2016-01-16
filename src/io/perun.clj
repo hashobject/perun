@@ -81,8 +81,8 @@
 
 (deftask images-resize
   "Resize images to the provided resolutions.
-  Each image file would have resolution appended to it's name:
-  e.x. san-francisco.jpg would become san-francisco-3840.jpg"
+   Each image file would have resolution appended to it's name:
+   e.x. san-francisco.jpg would become san-francisco-3840.jpg"
   [o out-dir     OUTDIR       str    "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
@@ -106,9 +106,9 @@
 (deftask markdown
   "Parse markdown files
 
-  This task will look for files ending with `md` or `markdown`
-  and add a `:content` key to their metadata containing the
-  HTML resulting from processing markdown file's content"
+   This task will look for files ending with `md` or `markdown`
+   and add a `:content` key to their metadata containing the
+   HTML resulting from processing markdown file's content"
   [o options OPTS edn "options to be passed to endophile"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
@@ -223,7 +223,7 @@
 (defn ^:private default-slug-fn [filename]
   "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
 
-  Jekyll uses the same format by default."
+   Jekyll uses the same format by default."
   (->> (string/split filename #"[-\.]")
        (drop 3)
        drop-last
