@@ -290,7 +290,7 @@
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str "generated sitemap filename"
-   f filterer FILTER   code "filter function"
+   _ filterer FILTER   code "filter function"
    o target   OUTDIR   str "the output directory"
    u url      URL      str "base URL"]
   (let [pod     (create-pod sitemap-deps)
@@ -314,7 +314,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str "generated RSS feed filename"
-   f filterer    FILTER     code "filter function"
+   _ filterer    FILTER     code "filter function"
    o target      OUTDIR      str "the output directory"
    t title       TITLE       str "feed title"
    p description DESCRIPTION str "feed description"
