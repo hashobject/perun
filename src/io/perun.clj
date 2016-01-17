@@ -254,7 +254,7 @@
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   f filterer     FILTER      code "filter function"]
+   _ filterer     FILTER      code "filter function"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -284,21 +284,22 @@
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
+   :filterer :content
    :target "public"})
 
 (deftask sitemap
   "Generate sitemap"
-  [f filename FILENAME str "generated sitemap filename"
-   o target   OUTDIR   str "the output directory"
-   u url      URL      str "base URL"]
+  [f filename FILENAME str  "generated sitemap filename"
+   _ filterer FILTER   code "filter function"
+   o target   OUTDIR   str  "the output directory"
+   u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (perun/get-meta fileset)
-            content-files (filter :content files)]
+      (let [files (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~content-files ~options))
+          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
@@ -307,24 +308,25 @@
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
+   :filterer :content
    :target "public"})
 
 (deftask rss
   "Generate RSS feed"
-  [f filename    FILENAME    str "generated RSS feed filename"
-   o target      OUTDIR      str "the output directory"
-   t title       TITLE       str "feed title"
-   p description DESCRIPTION str "feed description"
-   l link        LINK        str "feed link"]
+  [f filename    FILENAME    str  "generated RSS feed filename"
+   _ filterer    FILTER      code "filter function"
+   o target      OUTDIR      str  "the output directory"
+   t title       TITLE       str  "feed title"
+   p description DESCRIPTION str  "feed description"
+   l link        LINK        str  "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
-            files         (perun/get-meta fileset)
-            content-files (filter :content files)]
+            files         (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.rss/generate-rss ~(.getPath tmp) ~content-files ~options))
+          (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (def ^:private atom-deps
@@ -333,14 +335,14 @@
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
-   :target "public"
-   :filterer identity})
+   :filterer :content
+   :target "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   o target      OUTDIR      str  "the output directory"
    _ filterer    FILTER      code "filter function"
+   o target      OUTDIR      str  "the output directory"
    t title       TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
    p description DESCRIPTION str  "feed description"
@@ -350,11 +352,9 @@
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
-            files         (perun/get-meta fileset)
-            content-files (filter :content files)
-            filtered-files (filter (:filterer options) content-files)]
+            files         (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.atom/generate-atom ~(.getPath tmp) ~filtered-files ~(dissoc options :filterer)))
+          (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (defn- wrap-pool [pool]
@@ -379,7 +379,7 @@
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
-   :filterer identity})
+   :filterer :content})
 
 (deftask render
   "Render pages.
@@ -388,18 +388,17 @@
    If permalink ends in slash, index.html is used as filename.
    If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory"
-   f filterer FILTER   code "filter function"
+   _ filterer FILTER   code "filter function"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))
-            content-files (filter :content files)]
-        (doseq [{:keys [path] :as file} content-files]
+            files (filter (:filterer options) (perun/get-meta fileset))]
+        (doseq [{:keys [path] :as file} files]
           (let [render-data   {:meta    (perun/get-global-meta fileset)
-                               :entries (vec content-files)
+                               :entries (vec files)
                                :entry   file}
                 html          (render-in-pod pod renderer render-data)
                 page-filepath (perun/create-filepath
@@ -411,12 +410,12 @@
                                     (string/replace path #"(?i).[a-z]+$" ".html")))]
             (perun/report-debug "render" "rendered page for path" path)
             (perun/create-file tmp page-filepath html)))
-        (perun/report-info "render" "rendered %s pages" (count content-files))
+        (perun/report-info "render" "rendered %s pages" (count files))
         (commit fileset tmp)))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
-   :filterer identity
+   :filterer :content
    :groupby (fn [data] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
@@ -425,7 +424,7 @@
   "Render collection files"
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
-   f filterer   FILTER     code "filter function"
+   _ filterer   FILTER     code "filter function"
    s sortby     SORTBY     code "sort by function"
    g groupby    GROUPBY    code "group posts by function, keys will be used as filenames where posts (values) will be rendered"
    c comparator COMPARATOR code "sort by comparator function"
@@ -448,8 +447,7 @@
             (boot/with-pre-wrap fileset
               (let [pod            (pods fileset)
                     files          (perun/get-meta fileset)
-                    content-files  (filter :content files)
-                    filtered-files (filter (:filterer options) content-files)
+                    filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)
                     global-meta    (perun/get-global-meta fileset)
                     new-files      (doall
@@ -461,8 +459,7 @@
                                                                :entries (vec sorted)}
                                                 html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     {
-                                                               :path page-filepath
+                                                new-entry     {:path page-filepath
                                                                :canonical-url (str (:base-url global-meta) "/" page)
                                                                :content html
                                                                :date-build (:date-build global-meta)}]
@@ -479,8 +476,8 @@
    Use either filter to include only files matching or remove to
    include only files not matching regex."
    [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-     f filter  RE        #{regex} "Regexes to filter HTML files"
-     r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
+    f filter  RE        #{regex} "Regexes to filter HTML files"
+    r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
