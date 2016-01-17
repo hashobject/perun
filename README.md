@@ -1,12 +1,20 @@
 ![perun-small](https://github.com/hashobject/perun/blob/master/resources/logo.png)
 
+[![Clojars Project](https://img.shields.io/clojars/v/perun.svg)](https://clojars.org/perun)
 [![Dependencies Status](http://jarkeeper.com/hashobject/perun/status.svg)](http://jarkeeper.com/hashobject/perun)
 [![Downloads](https://jarkeeper.com/hashobject/perun/downloads.svg)](https://jarkeeper.com/hashobject/perun)
 
 Simple, composable static site generator built on top of the [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
-Perun is a collection of boot tasks/plugins that you can chain together and build something custom
+Perun is a collection of boot tasks that you can chain together and build something custom
 that suits your needs.
+
+## For information and help
+
+[Clojurians slack](https://clojurians.slack.com/) ([join](http://clojurians.net/))
+has a channel [#perun](https://clojurians.slack.com/messages/perun/) for talk about Perun.
+
+Check [SPEC.md](./SPEC.md) for documentation about metadata keys used by built-in tasks.
 
 ## Plugins
 
@@ -26,7 +34,7 @@ that suits your needs.
  - canonical-url - create canonical-url for each page
  - gravatar - find gravatar urls using emails
  - rendering to any format - flexible rendering
- - inject-scripts - inject JS scripts into html pages. Can be used e.x. to add Google Analytics script to all pages
+ - inject-scripts - inject JS scripts into HTML pages. Can be used e.x. to add Google Analytics script to all pages
 
 ## 3rd party useful plugins
 
@@ -124,7 +132,7 @@ Fileset passed to every task has metadata `(:metadata (meta fileset)`. This meta
 ## Install
 
 ```clojure
-[perun "0.2.2-SNAPSHOT"]
+[perun "0.3.0"]
 ```
 
 ## Usage
@@ -181,13 +189,13 @@ See documentation for each task to find all supported options for each plugin.
 
 After you created `build` task simply do:
 
-```
-  boot build
+```bash
+boot build
 ```
 
 ## Tips
 
-## Debug
+### Debug
 
 To see more detailed output from each task (useful for debugging) please use
 `--verbose` boot flag. E.x. `boot --verbose dev`
@@ -229,16 +237,6 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
  - change your site in GitHub and see changes deployed to AWS S3 in few minutes
 
 Similar auto deployment can be configured using [CircleCI](http://circleci.com) too.
-
-
-## Status
-
-This project is in the active development and used to generate several sites already.
-
-Main things todo:
-
-  - [ ] improve readme
-  - [ ] more plugins
 
 ## Contributions
 

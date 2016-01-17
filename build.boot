@@ -15,7 +15,7 @@
 (require '[adzerk.bootlaces :refer :all])
 
 
-(def +version+ "0.2.2-SNAPSHOT")
+(def +version+ "0.3.0")
 (bootlaces! +version+)
 
 (task-options!
@@ -36,7 +36,6 @@
   "Release snapshot"
   []
   (comp (build-jar) (push-snapshot)))
-
 
 (deftask dev
   "Dev process"
