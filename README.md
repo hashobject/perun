@@ -106,7 +106,7 @@ Following sites were created with perun and Boot:
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
  - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
 
-Also check out [example](https://github.com/hashobject/perun/tree/master/example) folder.
+Also check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder.
 
 ## How does it work
 
