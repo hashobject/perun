@@ -32,7 +32,7 @@
         (build-date)
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
-        (collection :renderer 'io.perun.example.index/render :page "index.html" :filter identity)
+        (collection :renderer 'io.perun.example.index/render :page "index.html" :filterer identity)
         (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :site-description "Hashobject blog")

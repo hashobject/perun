@@ -254,7 +254,7 @@
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   f filterer     FILTER      code "filter function"]
+   _ filterer     FILTER      code "filter function"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -289,10 +289,10 @@
 
 (deftask sitemap
   "Generate sitemap"
-  [f filename FILENAME str "generated sitemap filename"
+  [f filename FILENAME str  "generated sitemap filename"
    _ filterer FILTER   code "filter function"
-   o target   OUTDIR   str "the output directory"
-   u url      URL      str "base URL"]
+   o target   OUTDIR   str  "the output directory"
+   u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
@@ -313,12 +313,12 @@
 
 (deftask rss
   "Generate RSS feed"
-  [f filename    FILENAME    str "generated RSS feed filename"
-   _ filterer    FILTER     code "filter function"
-   o target      OUTDIR      str "the output directory"
-   t title       TITLE       str "feed title"
-   p description DESCRIPTION str "feed description"
-   l link        LINK        str "feed link"]
+  [f filename    FILENAME    str  "generated RSS feed filename"
+   _ filterer    FILTER      code "filter function"
+   o target      OUTDIR      str  "the output directory"
+   t title       TITLE       str  "feed title"
+   p description DESCRIPTION str  "feed description"
+   l link        LINK        str  "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
@@ -340,13 +340,13 @@
 
 (deftask atom-feed
   "Generate Atom feed"
-  [f filename    FILENAME    str "generated Atom feed filename"
-   _ filterer    FILTER     code "filter function"
-   o target      OUTDIR      str "the output directory"
-   t title       TITLE       str "feed title"
-   s subtitle    SUBTITLE    str "feed subtitle"
-   p description DESCRIPTION str "feed description"
-   l link        LINK        str "feed link"]
+  [f filename    FILENAME    str  "generated Atom feed filename"
+   _ filterer    FILTER      code "filter function"
+   o target      OUTDIR      str  "the output directory"
+   t title       TITLE       str  "feed title"
+   s subtitle    SUBTITLE    str  "feed subtitle"
+   p description DESCRIPTION str  "feed description"
+   l link        LINK        str  "feed link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
@@ -388,7 +388,7 @@
    If permalink ends in slash, index.html is used as filename.
    If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory"
-   f filterer FILTER   code "filter function"
+   _ filterer FILTER   code "filter function"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
@@ -424,7 +424,7 @@
   "Render collection files"
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
-   f filterer   FILTER     code "filter function"
+   _ filterer   FILTER     code "filter function"
    s sortby     SORTBY     code "sort by function"
    g groupby    GROUPBY    code "group posts by function, keys will be used as filenames where posts (values) will be rendered"
    c comparator COMPARATOR code "sort by comparator function"
@@ -476,8 +476,8 @@
    Use either filter to include only files matching or remove to
    include only files not matching regex."
    [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-     f filter  RE        #{regex} "Regexes to filter HTML files"
-     r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
+    f filter  RE        #{regex} "Regexes to filter HTML files"
+    r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
