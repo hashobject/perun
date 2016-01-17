@@ -284,21 +284,22 @@
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
+   :filterer :content
    :target "public"})
 
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str "generated sitemap filename"
+   f filterer FILTER   code "filter function"
    o target   OUTDIR   str "the output directory"
    u url      URL      str "base URL"]
   (let [pod     (create-pod sitemap-deps)
         tmp     (boot/tmp-dir!)
         options (merge +sitemap-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (perun/get-meta fileset)
-            content-files (filter :content files)]
+      (let [files (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~content-files ~options))
+          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
