@@ -338,13 +338,13 @@
 
 (deftask atom-feed
   "Generate Atom feed"
-  [f filename    FILENAME    str "generated Atom feed filename"
-   o target      OUTDIR      str "the output directory"
-   _ filterer    FILTER     code "filter function"
-   t title       TITLE       str "feed title"
-   s subtitle    SUBTITLE    str "feed subtitle"
-   p description DESCRIPTION str "feed description"
-   l link        LINK        str "feed link"]
+  [f filename    FILENAME    str  "generated Atom feed filename"
+   o target      OUTDIR      str  "the output directory"
+   _ filterer    FILTER      code "filter function"
+   t title       TITLE       str  "feed title"
+   s subtitle    SUBTITLE    str  "feed subtitle"
+   p description DESCRIPTION str  "feed description"
+   l link        LINK        str  "feed link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
