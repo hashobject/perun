@@ -299,7 +299,7 @@
     (boot/with-pre-wrap fileset
       (let [files (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~files ~options))
+          (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (def ^:private rss-deps
@@ -326,7 +326,7 @@
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~options))
+          (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (def ^:private atom-deps
@@ -354,7 +354,7 @@
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~options))
+          (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (defn- wrap-pool [pool]
