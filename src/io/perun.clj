@@ -308,11 +308,13 @@
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
+   :filterer :content
    :target "public"})
 
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str "generated RSS feed filename"
+   f filterer    FILTER     code "filter function"
    o target      OUTDIR      str "the output directory"
    t title       TITLE       str "feed title"
    p description DESCRIPTION str "feed description"
@@ -322,10 +324,9 @@
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
-            files         (perun/get-meta fileset)
-            content-files (filter :content files)]
+            files         (filter (:filterer options) (perun/get-meta fileset))]
         (pod/with-call-in @pod
-          (io.perun.rss/generate-rss ~(.getPath tmp) ~content-files ~options))
+          (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~options))
         (commit fileset tmp)))))
 
 (def ^:private atom-deps
