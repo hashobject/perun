@@ -254,7 +254,7 @@
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   _ filterer     FILTER      code "filter function"]
+   _ filterer     FILTER      code "predicate to use for selecting entries (default: `identity`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -290,7 +290,7 @@
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str  "generated sitemap filename"
-   _ filterer FILTER   code "filter function"
+   _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    o target   OUTDIR   str  "the output directory"
    u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
@@ -314,7 +314,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "filter function"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o target      OUTDIR      str  "the output directory"
    t title       TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -341,7 +341,7 @@
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "filter function"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o target      OUTDIR      str  "the output directory"
    t title       TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
@@ -382,13 +382,23 @@
    :filterer :content})
 
 (deftask render
-  "Render pages.
+  "Render individual pages for entries in perun data.
 
-   If permalink is set for the file, it is used as the filepath.
-   If permalink ends in slash, index.html is used as filename.
-   If permalink is not set, the original filename is used with file extension set to html."
-  [o out-dir  OUTDIR   str  "the output directory"
-   _ filterer FILTER   code "filter function"
+  The symbol supplied as `renderer` should resolve to a function
+  which will be called with a map containing the following keys:
+   - `:meta`, global perun metadata
+   - `:entries`, all entries
+   - `:entry`, the entry to be rendered
+
+  Entries can optionally be filtered by supplying a function
+  to the `filterer` option.
+
+  Filename is determined as follows:
+  If permalink is set for the file, it is used as the filepath.
+  If permalink ends in slash, index.html is used as filename.
+  If permalink is not set, the original filename is used with file extension set to html."
+  [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
+   _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
   (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp     (boot/tmp-dir!)
@@ -421,12 +431,22 @@
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask collection
-  "Render collection files"
+  "Render single file for a collection of entries
+  The symbol supplied as `renderer` should resolve to a function
+  which will be called with a map containing the following keys:
+   - `:meta`, global perun metadata
+   - `:entries`, all entries
+
+  Entries can optionally be filtered by supplying a function
+  to the `filterer` option.
+
+  The `sortby` and `groupby` functions can be used for ordering entries
+  before rendering as well as rendering groups of entries to different pages."
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
-   _ filterer   FILTER     code "filter function"
-   s sortby     SORTBY     code "sort by function"
-   g groupby    GROUPBY    code "group posts by function, keys will be used as filenames where posts (values) will be rendered"
+   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:content`)"
+   s sortby     SORTBY     code "sort entries by function"
+   g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
    p page       PAGE       str  "collection result page path"]
   (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
