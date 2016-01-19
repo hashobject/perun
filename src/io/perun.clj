@@ -371,8 +371,12 @@
         (reset! prev fileset)
         pod))))
 
+(defn- assert-renderer [sym]
+  (assert (and (symbol? sym) (namespace sym))
+          "Renderer must be a fully qualified symbol, i.e. 'my.ns/fun"))
+
 (defn- render-in-pod [pod sym render-data]
-  {:pre [(symbol? sym) (namespace sym)]}
+  (assert-renderer sym)
   (pod/with-eval-in pod
     (require '~(symbol (namespace sym)))
     ((resolve '~sym) ~(pod/send! render-data))))
