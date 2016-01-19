@@ -285,13 +285,13 @@
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
    :filterer :content
-   :target "public"})
+   :out-dir "public"})
 
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str  "generated sitemap filename"
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
-   o target   OUTDIR   str  "the output directory"
+   o out-dir  OUTDIR   str  "the output directory"
    u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
         tmp     (boot/tmp-dir!)
@@ -309,13 +309,13 @@
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
    :filterer :content
-   :target "public"})
+   :out-dir "public"})
 
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
-   o target      OUTDIR      str  "the output directory"
+   o out-dir     OUTDIR      str  "the output directory"
    t title       TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
    l link        LINK        str  "feed link"]
@@ -336,13 +336,13 @@
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
    :filterer :content
-   :target "public"})
+   :out-dir "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
-   o target      OUTDIR      str  "the output directory"
+   o out-dir     OUTDIR      str  "the output directory"
    t title       TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
    p description DESCRIPTION str  "feed description"
