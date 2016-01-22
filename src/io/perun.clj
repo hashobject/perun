@@ -47,18 +47,33 @@
      :extension      (perun/extension filename)}))
 
 (deftask base
-  "Adds some basic information to the perun metadata and
-   establishes metadata structure."
+  "Add some basic information to the perun metadata and
+   establishe metadata structure."
   []
   (boot/with-pre-wrap fileset
     (let [updated-files (map add-filedata (boot/user-files fileset))]
+      (perun/set-meta fileset updated-files))))
+
+(def ^:private file-type-deps
+  '[[com.novemberain/pantomime "2.8.0"]])
+
+(deftask file-type
+  "Add `:file-type` and `:mime-type` keys to each file metadata"
+  []
+  (boot/with-pre-wrap fileset
+    (let [pod (create-pod file-type-deps)
+          files (->> fileset
+                     boot/user-files
+                     (map add-filedata))
+          updated-files (pod/with-call-in @pod
+                         (io.perun.file-type/process-files ~files))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
   '[[image-resizer "0.1.8"]])
 
 (deftask images-dimensions
-  "Adds images' dimensions to the file metadata:
+  "Add images' dimensions to the file metadata:
    - width
    - height"
   []
@@ -109,7 +124,7 @@
    This task will look for files ending with `md` or `markdown`
    and add a `:content` key to their metadata containing the
    HTML resulting from processing markdown file's content"
-  [o options OPTS edn "options to be passed to endophile"]
+  [o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
@@ -395,7 +410,7 @@
     - `:entry`, the entry to be rendered
 
    Entries can optionally be filtered by supplying a function
-   to the `filterer` option. 
+   to the `filterer` option.
 
    Filename is determined as follows:
    If permalink is set for the file, it is used as the filepath.
