@@ -42,7 +42,7 @@
           ])])))
 
 (defn generate-atom [tgt-path files options]
-  (let [atom-filepath (str (:target options) "/" (:filename options))
+  (let [atom-filepath (str (:out-dir options) "/" (:filename options))
         atom-string   (generate-atom-str files options)]
     (perun/create-file tgt-path atom-filepath atom-string)
     (perun/report-info "atom" "generated Atom feed and saved to %s" atom-filepath)))
