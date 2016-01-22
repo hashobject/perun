@@ -22,7 +22,7 @@
     files))
 
 (defn generate-sitemap [tgt-path files options]
-  (let [sitemap-filepath (str (:target options) "/" (:filename options))
+  (let [sitemap-filepath (str (:out-dir options) "/" (:filename options))
         sitemap-xml      (create-sitemap files)
         sitemap-string   (sitemap-gen/generate-sitemap sitemap-xml)]
     (perun/create-file tgt-path sitemap-filepath sitemap-string)
