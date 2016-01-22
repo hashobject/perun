@@ -162,7 +162,7 @@
   '[[time-to-read "0.1.0"]])
 
 (deftask ttr
-  "Calculate time to read for each file"
+  "Calculate time to read for each file. Add `:ttr` key to the files' meta"
   []
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
@@ -173,7 +173,7 @@
         (perun/set-meta fileset updated-files)))))
 
 (deftask word-count
-  "Count words in each file"
+  "Count words in each file. Add `:word-count` key to the files' meta"
   []
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
@@ -388,19 +388,19 @@
 (deftask render
   "Render individual pages for entries in perun data.
 
-  The symbol supplied as `renderer` should resolve to a function
-  which will be called with a map containing the following keys:
-   - `:meta`, global perun metadata
-   - `:entries`, all entries
-   - `:entry`, the entry to be rendered
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entries`, all entries
+    - `:entry`, the entry to be rendered
 
-  Entries can optionally be filtered by supplying a function
-  to the `filterer` option.
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option. 
 
-  Filename is determined as follows:
-  If permalink is set for the file, it is used as the filepath.
-  If permalink ends in slash, index.html is used as filename.
-  If permalink is not set, the original filename is used with file extension set to html."
+   Filename is determined as follows:
+   If permalink is set for the file, it is used as the filepath.
+   If permalink ends in slash, index.html is used as filename.
+   If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
@@ -436,16 +436,16 @@
 
 (deftask collection
   "Render single file for a collection of entries
-  The symbol supplied as `renderer` should resolve to a function
-  which will be called with a map containing the following keys:
-   - `:meta`, global perun metadata
-   - `:entries`, all entries
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entries`, all entries
 
-  Entries can optionally be filtered by supplying a function
-  to the `filterer` option.
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
 
-  The `sortby` and `groupby` functions can be used for ordering entries
-  before rendering as well as rendering groups of entries to different pages."
+   The `sortby` and `groupby` functions can be used for ordering entries
+   before rendering as well as rendering groups of entries to different pages."
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
    _ filterer   FILTER     code "predicate to use for selecting entries (default: `:content`)"
@@ -500,8 +500,8 @@
    Use either filter to include only files matching or remove to
    include only files not matching regex."
    [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-    f filter  RE        #{regex} "Regexes to filter HTML files"
-    r remove  RE        #{regex} "Regexes to blacklist HTML files with"]
+    f filter  RE         #{regex} "Regexes to filter HTML files"
+    r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
