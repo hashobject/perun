@@ -108,7 +108,7 @@ Then your code might look like this:
 
 Following sites were created with perun and Boot:
 
- - [perun.io](https://perun.io.). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
+ - [perun.io](https://perun.io). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [code.hashobject.com](http://code.hashobject.com). See [build.boot](https://github.com/hashobject/code.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
