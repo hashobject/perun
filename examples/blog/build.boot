@@ -35,8 +35,8 @@
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filterer identity)
         (inject-scripts :scripts #{"start.js"})
         (sitemap)
-        (rss :site-description "Hashobject blog")
-        (atom-feed  :site-title "Hashobject" :base-url "http://blog.hashobject.com")
+        (rss :description "Hashobject blog")
+        (atom-feed :title "Hashobject" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask dev

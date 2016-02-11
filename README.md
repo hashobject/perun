@@ -81,8 +81,8 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
         (permalink)
         (render :renderer renderer)
         (sitemap :filename "sitemap.xml")
-        (rss :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
-        (atom-feed :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (atom-feed :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 ```
 You can also chain this with standard boot tasks. E.x. if you want to upload generated files to Amazon S3 you might use
@@ -182,7 +182,7 @@ See documentation for each task to find all supported options for each plugin.
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html")
         (sitemap :filename "sitemap.xml")
-        (rss :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (s3-sync)
         (notify)))
 ```
