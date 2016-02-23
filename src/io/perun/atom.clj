@@ -28,10 +28,9 @@
                       reverse
                       first)]
        [:id base-url]
-       (for [{:keys [permalink canonical-url content name author author-email] :as post} (take 10 posts)]
-         ; FIXME: permalink is required
+       (for [{:keys [uuid canonical-url content name author author-email] :as post} (take 10 posts)]
          [:entry
-          [:id permalink]
+          [:id (str "urn:uuid:" uuid)]
           [:title name]
           (if canonical-url
             [:link {:href canonical-url}])
