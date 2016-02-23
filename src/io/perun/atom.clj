@@ -19,7 +19,7 @@
       [:feed {:xmlns "http://www.w3.org/2005/Atom"}
        [:title site-title]
        (if description [:subtitle description])
-       [:link {:href (str base-url "/" filename) :rel "self"}]
+       [:link {:href (str base-url filename) :rel "self"}]
        [:link {:href base-url}]
        [:updated (->> (take 10 posts)
                       (map updated)

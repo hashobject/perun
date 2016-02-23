@@ -1,5 +1,5 @@
 {
-  :base-url "http://example.perun.io"
+  :base-url "http://example.perun.io/"
   :site-title "Perun Example"
   :description "Perun Example Project"
 }

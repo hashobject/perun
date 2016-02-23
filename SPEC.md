@@ -17,6 +17,7 @@ set for the tasks using task options.
     - **:name**
     - **:email**
 - **:base-url**
+    - Must be in canonical form, that is end in `/`
     - Required by: *canonical-url*
     - Required by: *atom-feed*
     - Required by: *rss*

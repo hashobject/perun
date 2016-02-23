@@ -491,7 +491,7 @@
                                                 html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {:path page-filepath
-                                                               :canonical-url (str (:base-url global-meta) "/" page)
+                                                               :canonical-url (str (:base-url global-meta) page)
                                                                :content html
                                                                :date-build (:date-build global-meta)}]
                                             (perun/create-file tmp page-filepath html)
