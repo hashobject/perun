@@ -33,7 +33,8 @@
          [:entry
           [:id permalink]
           [:title name]
-          (if canonical-url [:link canonical-url])
+          (if canonical-url
+            [:link {:href canonical-url}])
           [:updated (iso-datetime (updated post))]
           [:content {:type "html"} (str content)]
           [:author
