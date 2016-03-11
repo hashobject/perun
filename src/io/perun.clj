@@ -7,7 +7,8 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
-            [puget.printer :as puget]))
+            [puget.printer :as puget]
+            [pantomime.mime  :as pm]))
 
 (def ^:private global-deps
   '[])
@@ -33,40 +34,31 @@
     fileset))
 
 (defn add-filedata [f]
-  (let [tmpfile  (boot/tmp-file f)
-        filename (.getName tmpfile)
-        tmp-path (boot/tmp-path f)]
+  (let [tmpfile   (boot/tmp-file f)
+        full-path (.getPath tmpfile)
+        filename  (.getName tmpfile)
+        tmp-path  (boot/tmp-path f)
+        io-file   (io/file full-path)
+        mime-type (pm/mime-type-of io-file)
+        file-type (first (string/split mime-type #"/"))]
     {; filename with extension
      :filename        filename
      ; filename without extension
      :short-filename (perun/filename filename)
      :path           tmp-path
+     :mime-type      mime-type
+     :file-type      file-type
      ; parent folder path
      :parent-path    (perun/parent-path tmp-path filename)
-     :full-path      (.getPath tmpfile)
+     :full-path      full-path
      :extension      (perun/extension filename)}))
 
 (deftask base
   "Add some basic information to the perun metadata and
-   establishe metadata structure."
+   establish metadata structure."
   []
   (boot/with-pre-wrap fileset
     (let [updated-files (map add-filedata (boot/user-files fileset))]
-      (perun/set-meta fileset updated-files))))
-
-(def ^:private file-type-deps
-  '[[com.novemberain/pantomime "2.8.0"]])
-
-(deftask file-type
-  "Add `:file-type` and `:mime-type` keys to each file metadata"
-  []
-  (boot/with-pre-wrap fileset
-    (let [pod (create-pod file-type-deps)
-          files (->> fileset
-                     boot/user-files
-                     (map add-filedata))
-          updated-files (pod/with-call-in @pod
-                         (io.perun.file-type/process-files ~files))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
