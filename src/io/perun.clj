@@ -325,7 +325,7 @@
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
-   l base-url    LINK        str  "feed link"]
+   l base-url    LINK        str  "feed site link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
@@ -353,7 +353,7 @@
    t title       TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
    p description DESCRIPTION str  "feed description"
-   l link        LINK        str  "feed link"]
+   l link        LINK        str  "feed site-link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
