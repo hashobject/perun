@@ -7,7 +7,8 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
-            [puget.printer :as puget]))
+            [puget.printer :as puget]
+            [pantomime.mime  :as pm]))
 
 (def ^:private global-deps
   '[])
@@ -33,22 +34,28 @@
     fileset))
 
 (defn add-filedata [f]
-  (let [tmpfile  (boot/tmp-file f)
-        filename (.getName tmpfile)
-        tmp-path (boot/tmp-path f)]
+  (let [tmpfile   (boot/tmp-file f)
+        full-path (.getPath tmpfile)
+        filename  (.getName tmpfile)
+        tmp-path  (boot/tmp-path f)
+        io-file   (io/file full-path)
+        mime-type (pm/mime-type-of io-file)
+        file-type (first (string/split mime-type #"/"))]
     {; filename with extension
-     :filename        filename
+     :filename       filename
      ; filename without extension
      :short-filename (perun/filename filename)
      :path           tmp-path
+     :mime-type      mime-type
+     :file-type      file-type
      ; parent folder path
      :parent-path    (perun/parent-path tmp-path filename)
-     :full-path      (.getPath tmpfile)
+     :full-path      full-path
      :extension      (perun/extension filename)}))
 
 (deftask base
-  "Adds some basic information to the perun metadata and
-   establishes metadata structure."
+  "Add some basic information to the perun metadata and
+   establish metadata structure."
   []
   (boot/with-pre-wrap fileset
     (let [updated-files (map add-filedata (boot/user-files fileset))]
@@ -58,7 +65,7 @@
   '[[image-resizer "0.1.8"]])
 
 (deftask images-dimensions
-  "Adds images' dimensions to the file metadata:
+  "Add images' dimensions to the file metadata:
    - width
    - height"
   []
@@ -109,7 +116,7 @@
    This task will look for files ending with `md` or `markdown`
    and add a `:content` key to their metadata containing the
    HTML resulting from processing markdown file's content"
-  [o options OPTS edn "options to be passed to endophile"]
+  [o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
@@ -395,7 +402,7 @@
     - `:entry`, the entry to be rendered
 
    Entries can optionally be filtered by supplying a function
-   to the `filterer` option. 
+   to the `filterer` option.
 
    Filename is determined as follows:
    If permalink is set for the file, it is used as the filepath.
