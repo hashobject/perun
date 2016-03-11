@@ -42,7 +42,7 @@
         mime-type (pm/mime-type-of io-file)
         file-type (first (string/split mime-type #"/"))]
     {; filename with extension
-     :filename        filename
+     :filename       filename
      ; filename without extension
      :short-filename (perun/filename filename)
      :path           tmp-path

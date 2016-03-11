@@ -20,7 +20,6 @@
         (images-dimensions)
         (images-resize)
         (base)
-        ;(file-type)
         (markdown)
         (draft)
         (print-meta)
