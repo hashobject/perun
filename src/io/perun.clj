@@ -323,9 +323,9 @@
   [f filename    FILENAME    str  "generated RSS feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
-   t title       TITLE       str  "feed title"
-   p description DESCRIPTION str  "feed description"
-   l link        LINK        str  "feed site link"]
+   t title       TITLE       str  "feed title. Default to global :site-title"
+   p description DESCRIPTION str  "feed description. Default to global :description"
+   l link        LINK        str  "feed site link. Default to global :base-url"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
@@ -350,10 +350,10 @@
   [f filename    FILENAME    str  "generated Atom feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
-   t title       TITLE       str  "feed title"
+   t title       TITLE       str  "feed title. Default to global :site-title"
    s subtitle    SUBTITLE    str  "feed subtitle"
-   p description DESCRIPTION str  "feed description"
-   l link        LINK        str  "feed site-link"]
+   p description DESCRIPTION str  "feed description. Default to global :description"
+   l link        LINK        str  "feed site link. Default to global :base-url"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
