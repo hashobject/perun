@@ -1,4 +1,4 @@
-![perun-small](https://github.com/hashobject/perun/blob/master/resources/logo.png)
+![perun-logo-big](https://cloud.githubusercontent.com/assets/97496/12526336/caca771a-c16c-11e5-8b8f-b6282a874403.png)
 
 [![Clojars Project](https://img.shields.io/clojars/v/perun.svg)](https://clojars.org/perun)
 [![Dependencies Status](http://jarkeeper.com/hashobject/perun/status.svg)](http://jarkeeper.com/hashobject/perun)
@@ -81,8 +81,8 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
         (permalink)
         (render :renderer renderer)
         (sitemap :filename "sitemap.xml")
-        (rss :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
-        (atom-feed :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
+        (atom-feed :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (notify)))
 ```
 You can also chain this with standard boot tasks. E.x. if you want to upload generated files to Amazon S3 you might use
@@ -108,7 +108,7 @@ Then your code might look like this:
 
 Following sites were created with perun and Boot:
 
- - [perun.io](https://perun.io.). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
+ - [perun.io](https://perun.io). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [code.hashobject.com](http://code.hashobject.com). See [build.boot](https://github.com/hashobject/code.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
@@ -182,7 +182,7 @@ See documentation for each task to find all supported options for each plugin.
         (render :renderer renderer)
         (collection :renderer index-renderer :page "index.html")
         (sitemap :filename "sitemap.xml")
-        (rss :site-title "Hashobject" :site-description "Hashobject blog" :base-url "http://blog.hashobject.com")
+        (rss :title "Hashobject" :description "Hashobject blog" :link "http://blog.hashobject.com")
         (s3-sync)
         (notify)))
 ```
