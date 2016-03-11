@@ -323,9 +323,9 @@
   [f filename    FILENAME    str  "generated RSS feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
-   t title       TITLE       str  "feed title"
+   t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
-   l link        LINK        str  "feed link"]
+   l base-url    LINK        str  "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset

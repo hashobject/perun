@@ -1,6 +1,6 @@
 (ns io.perun.rss
-  (:require [io.perun.core   :as perun]
-            [clj-rss.core    :as rss-gen]))
+  (:require [io.perun.core :as perun]
+            [clj-rss.core  :as rss-gen]))
 
 (defn rss-definitions [files]
   (for [file files]
@@ -12,9 +12,10 @@
      :author      (:author-email file)}))
 
 (defn generate-rss-str [files options]
-  (let [opts         (select-keys options [:title :description :link])
+  (let [opts         (select-keys options [:site-title :description :base-url])
+        rss-options  (clojure.set/rename-keys opts {:site-title :title :base-url :link})
         items        (rss-definitions (filter :name files))
-        rss-str      (apply rss-gen/channel-xml opts items)]
+        rss-str      (apply rss-gen/channel-xml rss-options items)]
     rss-str))
 
 (defn generate-rss [tgt-path files options]
