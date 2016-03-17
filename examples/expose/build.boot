@@ -17,6 +17,9 @@
   []
   (comp
         (global-metadata)
+        (images-dimensions)
+        (images-resize)
+        (base)
         (markdown)
         (draft)
         (print-meta)
@@ -29,10 +32,7 @@
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html" :filterer identity)
-        (inject-scripts :scripts #{"start.js"})
         (sitemap)
-        (rss :description "Hashobject blog")
-        (atom-feed :title "Hashobject" :link "http://blog.hashobject.com")
         (notify)))
 
 (deftask dev
