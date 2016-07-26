@@ -69,7 +69,7 @@
     {:original true}))
 
 (defn remove-metadata [content]
-  (let [splitted (str/split content #"---\n")]
+  (let [splitted (str/split content #"---\n" 3)]
     (if (> (count splitted) 2)
       (first (drop 2 splitted))
       content)))
