@@ -98,3 +98,8 @@
 
 (defn ^String extension [name]
   (last (seq (string/split name #"\."))))
+
+(defn assert-base-url [base-url]
+  (assert (= \/ (last base-url))
+          "base-url must end in \"/\"")
+  base-url)

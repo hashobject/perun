@@ -279,7 +279,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          base-url      (:base-url (perun/get-global-meta fileset))
+          base-url      (perun/assert-base-url (:base-url (perun/get-global-meta fileset)))
           assoc-can-url #(assoc % :canonical-url (str base-url (:permalink %)))
           updated-files (map assoc-can-url files)]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
@@ -332,6 +332,7 @@
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
+        (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
@@ -360,6 +361,7 @@
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
+        (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
