@@ -98,7 +98,7 @@
           pod (create-pod images-resize-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext perun/images-exts)
                      (map add-filedata))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
@@ -205,6 +205,25 @@
                             (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
        (perun/set-meta fileset updated-files)))))
+
+
+(deftask images
+  "Assoc list of :images to the post"
+  []
+  (boot/with-pre-wrap fileset
+    (let  [files          (perun/get-meta fileset)
+           images         (filter
+                              (fn [file]
+                                (contains? perun/images-exts (perun/extension file)))
+                              files)
+           groupped-files (group-by :parent-path images)
+           assoc-images   (fn [file]
+                             (if (not? (nil? (:content file)))
+                               (assoc file :images (get groupped-files (:parent-path file)))
+                               file))
+           updated-files  (map assoc-images files)]
+      (perun/report-info "images" "add associated images to %s files" (count updated-files))
+      (perun/set-meta fileset updated-files))))
 
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
