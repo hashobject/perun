@@ -33,7 +33,7 @@
        [:id base-url]
        (for [{:keys [uuid canonical-url content name author author-email] :as post} (take 10 posts)
              :let [author (or author (:name (:author global-metadata)))
-                   author-email (or author (:email (:author global-metadata)))]]
+                   author-email (or author-email (:email (:author global-metadata)))]]
          (do
            (assert (seq uuid) (format "Atom XML requires that each post has a unique uuid, if you need one, use this: %s" (str (java.util.UUID/randomUUID))))
            (assert (seq author) (format "Atom XML requires that each post has author name."))
