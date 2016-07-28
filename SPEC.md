@@ -14,8 +14,7 @@ set for the tasks using task options.
     - Required by: *rss*
 - **:author**
     - Required by: *atom-feed* if posts don't have author metadata
-    - **:name**
-    - **:email**
+- **:author-email**
 - **:base-url**
     - Must be in canonical form, that is end in `/`
     - Required by: *canonical-url*
