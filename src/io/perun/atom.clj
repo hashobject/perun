@@ -12,13 +12,16 @@
 (defn iso-datetime [date]
   (tf/unparse (tf/formatters :date-time-no-ms) (tc/from-date date)))
 
-(defn generate-atom-str [posts {:keys [site-title description base-url filename]}]
-  ; FIXME: title and link are required, Schema validation?
+(defn generate-atom-str [posts {:keys [site-title description base-url filename] :as global-metadata}]
+  (assert (seq site-title) "Atom XML requires non-empty site-title")
+  (assert (seq base-url) "Atom XML requires full base-url")
+  ;; FIXME: chould validate that it is an URL?
   (xml/emit-str
     (xml/sexp-as-element
       [:feed {:xmlns "http://www.w3.org/2005/Atom"}
        [:title site-title]
-       (if description [:subtitle description])
+       (if (seq description)
+         [:subtitle description])
        [:link {:href (str base-url filename) :rel "self"}]
        [:link {:href base-url}]
        [:updated (->> (take 10 posts)
@@ -28,18 +31,23 @@
                       reverse
                       first)]
        [:id base-url]
-       (for [{:keys [uuid canonical-url content name author author-email] :as post} (take 10 posts)]
-         [:entry
-          [:id (str "urn:uuid:" uuid)]
-          [:title name]
-          (if canonical-url
-            [:link {:href canonical-url}])
-          [:updated (iso-datetime (updated post))]
-          [:content {:type "html"} (str content)]
-          [:author
-           [:name author]
-           (if author-email [:email author-email])]
-          ])])))
+       (for [{:keys [uuid canonical-url content name author author-email] :as post} (take 10 posts)
+             :let [author (or author (:name (:author global-metadata)))
+                   author-email (or author (:email (:author global-metadata)))]]
+         (do
+           (assert (seq uuid) (format "Atom XML requires that each post has a unique uuid, if you need one, use this: %s" (str (java.util.UUID/randomUUID))))
+           (assert (seq author) (format "Atom XML requires that each post has author name."))
+           [:entry
+            [:id (str "urn:uuid:" uuid)]
+            [:title name]
+            (if canonical-url
+              [:link {:href canonical-url}])
+            [:updated (iso-datetime (updated post))]
+            [:content {:type "html"} (str content)]
+            [:author
+             [:name author]
+             (if author-email [:email author-email])]
+            ]))])))
 
 (defn generate-atom [tgt-path files options]
   (let [atom-filepath (str (:out-dir options) "/" (:filename options))
