@@ -7,7 +7,6 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
-            [puget.printer :as puget]
             [pantomime.mime  :as pm]))
 
 (def ^:private global-deps
@@ -25,13 +24,18 @@
       (boot/add-resource tmp)
       boot/commit!))
 
+(def ^:private print-meta-deps
+  '[[mvxcvi/puget "1.0.0"]])
+
 (deftask print-meta
   "Utility task to print perun metadata"
   [m map-fn MAPFN code "function to map over metadata items before printing"]
-  (boot/with-pre-wrap fileset
-    (let [map-fn (or map-fn identity)]
-      (puget/cprint (map map-fn (perun/get-meta fileset))))
-    fileset))
+  (let [pod (create-pod print-meta-deps)]
+    (boot/with-pre-wrap fileset
+      (let [map-fn (or map-fn identity)]
+        (pod/with-call-in @pod
+         (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
+      fileset)))
 
 (defn add-filedata [f]
   (let [tmpfile   (boot/tmp-file f)

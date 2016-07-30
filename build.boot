@@ -10,7 +10,7 @@
                   [clj-rss "0.2.3" :scope "test"]
                   [gravatar "1.1.1" :scope "test"]
                   [clj-time "0.12.0" :scope "test"]
-                  [mvxcvi/puget "1.0.0"]
+                  [mvxcvi/puget "1.0.0" :scope "test"]
                   [com.novemberain/pantomime "2.8.0"]])
 
 (require '[adzerk.bootlaces :refer :all])
