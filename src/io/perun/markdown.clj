@@ -2,8 +2,11 @@
   (:require [io.perun.core   :as perun]
             [clojure.java.io :as io]
             [clojure.string  :as str]
-            [clj-yaml.core   :as yaml])
-    (:import [org.pegdown PegDownProcessor Extensions]))
+            [clj-yaml.core   :as yaml]
+            [clojure.walk    :as walk])
+  (:import [org.pegdown PegDownProcessor Extensions]
+           [flatland.ordered.map OrderedMap]
+           [flatland.ordered.set OrderedSet]))
 
 ;; Extension handling has been copied from endophile.core
 ;; See https://github.com/sirthias/pegdown/blob/master/src/main/java/org/pegdown/Extensions.java
@@ -59,9 +62,21 @@
             (str/split suffix)
             first)))
 
+(defn normal-colls
+  "Clj-yaml keeps order of map properties by using ordered maps. These are inconvenient
+  for us as the ordered library is not necessarily available in other pods."
+  [x]
+  (walk/postwalk
+    (fn [y]
+      (cond
+        (instance? OrderedMap y) (into {} y)
+        (instance? OrderedSet y) (into #{} y)
+        :else y))
+    x))
+
 (defn parse-file-metadata [file-content]
   (if-let [metadata-str (substr-between file-content #"---\n" #"---\n")]
-    (if-let [parsed-yaml (yaml/parse-string metadata-str)]
+    (if-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
       ; we use `original` file flag to distinguish between generated files
       ; (e.x. created those by plugins)
       (assoc parsed-yaml :original true)
@@ -86,7 +101,7 @@
   (let [file-content (-> file :full-path io/file slurp)
         md-metadata (parse-file-metadata file-content)
         html (markdown-to-html file-content options)]
-        (merge md-metadata {:content html} file)))
+    (merge md-metadata {:content html} file)))
 
 (defn parse-markdown [markdown-files options]
   (let [updated-files (doall (map #(process-file % options) markdown-files))]
