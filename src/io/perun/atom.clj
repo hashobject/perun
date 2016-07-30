@@ -35,8 +35,8 @@
              :let [author (or author (:author global-metadata))
                    author-email (or author-email (:author-email global-metadata))]]
          (do
-           (assert (seq uuid) (format "Atom XML requires that each post has a unique uuid, if you need one, use this: %s" (str (java.util.UUID/randomUUID))))
-           (assert (seq author) (format "Atom XML requires that each post has author name."))
+           (assert (seq uuid) (format "Atom XML requires that each post has a unique uuid, if you need one, use this: %s. Post %s is missing one" (str (java.util.UUID/randomUUID)) canonical-url))
+           (assert (seq author) (format "Atom XML requires that each post has author name. Post %s is missing one" canonical-url))
            [:entry
             [:id (str "urn:uuid:" uuid)]
             [:title name]
