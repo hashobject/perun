@@ -287,7 +287,7 @@
 
 (def ^:private sitemap-deps
   '[[sitemap "0.2.4"]
-    [clj-time "0.11.0"]])
+    [clj-time "0.12.0"]])
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
@@ -311,7 +311,7 @@
 
 (def ^:private rss-deps
   '[[clj-rss "0.2.3"]
-    [clj-time "0.11.0"]])
+    [clj-time "0.12.0"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
@@ -339,7 +339,7 @@
 
 (def ^:private atom-deps
   '[[org.clojure/data.xml "0.0.8"]
-    [clj-time "0.11.0"]])
+    [clj-time "0.12.0"]])
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
