@@ -1,4 +1,4 @@
-![perun-logo-big](https://cloud.githubusercontent.com/assets/97496/12526336/caca771a-c16c-11e5-8b8f-b6282a874403.png)
+![perun-logo-big](perun.png)
 
 [![Clojars Project](https://img.shields.io/clojars/v/perun.svg)](https://clojars.org/perun)
 [![Dependencies Status](http://jarkeeper.com/hashobject/perun/status.svg)](http://jarkeeper.com/hashobject/perun)

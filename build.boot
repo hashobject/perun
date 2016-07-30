@@ -1,6 +1,6 @@
 (set-env!
   :source-paths #{"test"}
-  :resource-paths #{"src" "resources"}
+  :resource-paths #{"src"}
   :dependencies '[[boot/core "2.5.5" :scope "provided"]
                   [adzerk/bootlaces "0.1.13" :scope "test"]
                   [org.pegdown/pegdown "1.6.0" :scope "test"]
