@@ -32,7 +32,7 @@
         (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :description "Hashobject blog")
-        (atom-feed :title "Hashobject" :link "http://blog.hashobject.com")
+        (atom-feed :filterer :original)
         (notify)))
 
 (deftask dev

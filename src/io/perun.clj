@@ -279,7 +279,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          base-url      (:base-url (perun/get-global-meta fileset))
+          base-url      (perun/assert-base-url (:base-url (perun/get-global-meta fileset)))
           assoc-can-url #(assoc % :canonical-url (str base-url (:permalink %)))
           updated-files (map assoc-can-url files)]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
@@ -323,15 +323,16 @@
   [f filename    FILENAME    str  "generated RSS feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
-   t title       TITLE       str  "feed title. Default to global :site-title"
-   p description DESCRIPTION str  "feed description. Default to global :description"
-   l link        LINK        str  "feed site link. Default to global :base-url"]
+   t site-title  TITLE       str  "feed title"
+   p description DESCRIPTION str  "feed description"
+   l base-url    LINK        str  "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
+        (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
@@ -350,16 +351,17 @@
   [f filename    FILENAME    str  "generated Atom feed filename"
    _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
-   t title       TITLE       str  "feed title. Default to global :site-title"
+   t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
-   p description DESCRIPTION str  "feed description. Default to global :description"
-   l link        LINK        str  "feed site link. Default to global :base-url"]
+   p description DESCRIPTION str  "feed description"
+   l base-url    LINK        str  "feed link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (filter (:filterer options) (perun/get-meta fileset))]
+        (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
@@ -491,7 +493,7 @@
                                                 html          (render-in-pod pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {:path page-filepath
-                                                               :canonical-url (str (:base-url global-meta) "/" page)
+                                                               :canonical-url (str (:base-url global-meta) page)
                                                                :content html
                                                                :date-build (:date-build global-meta)}]
                                             (perun/create-file tmp page-filepath html)
