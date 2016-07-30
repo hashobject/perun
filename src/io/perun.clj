@@ -6,18 +6,20 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [io.perun.core :as perun]
-            [pantomime.mime  :as pm]))
+            [io.perun.core :as perun]))
 
 (def ^:private global-deps
   '[])
 
-(defn- create-pod [deps]
+(defn- create-pod' [deps]
   (-> (boot/get-env)
       (update-in [:dependencies] into global-deps)
       (update-in [:dependencies] into deps)
-      pod/make-pod
-      future))
+      pod/make-pod))
+
+(defn- create-pod
+  [deps]
+  (future (create-pod' deps)))
 
 (defn- commit [fileset tmp]
   (-> fileset
@@ -37,32 +39,22 @@
          (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
       fileset)))
 
-(defn add-filedata [f]
-  (let [tmpfile   (boot/tmp-file f)
-        full-path (.getPath tmpfile)
-        filename  (.getName tmpfile)
-        tmp-path  (boot/tmp-path f)
-        io-file   (io/file full-path)
-        mime-type (pm/mime-type-of io-file)
-        file-type (first (string/split mime-type #"/"))]
-    {; filename with extension
-     :filename       filename
-     ; filename without extension
-     :short-filename (perun/filename filename)
-     :path           tmp-path
-     :mime-type      mime-type
-     :file-type      file-type
-     ; parent folder path
-     :parent-path    (perun/parent-path tmp-path filename)
-     :full-path      full-path
-     :extension      (perun/extension filename)}))
+(def ^:private filedata-deps
+  '[[com.novemberain/pantomime "2.8.0"]])
+
+;; The namespace is stateless etc. so one is enough
+(def filedata-pod (delay (create-pod' filedata-deps)))
+
+(defn add-filedata [tmp-files]
+  (pod/with-call-in @filedata-pod
+    (io.perun.filedata/filedatas ~(vec (map (juxt boot/tmp-path #(.getPath (boot/tmp-file %))) tmp-files)))))
 
 (deftask base
   "Add some basic information to the perun metadata and
    establish metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [updated-files (map add-filedata (boot/user-files fileset))]
+    (let [updated-files (add-filedata (boot/user-files fileset))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
@@ -78,7 +70,7 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     (map add-filedata))
+                     add-filedata)
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-dimensions/images-dimensions ~files {}))]
       (perun/set-meta fileset updated-files))))
@@ -103,7 +95,7 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     (map add-filedata))
+                     add-filedata)
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-files)
@@ -129,7 +121,7 @@
                           (boot/fileset-diff @prev-fs)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
-                          (map add-filedata))
+                          add-filedata)
             ; process all removed markdown files
             removed? (->> fileset
                           (boot/fileset-removed @prev-fs)
