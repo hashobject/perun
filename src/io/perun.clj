@@ -29,15 +29,16 @@
 (def ^:private print-meta-deps
   '[[mvxcvi/puget "1.0.0"]])
 
+(def print-meta-pod (delay (create-pod' print-meta-deps)))
+
 (deftask print-meta
   "Utility task to print perun metadata"
   [m map-fn MAPFN code "function to map over metadata items before printing"]
-  (let [pod (create-pod print-meta-deps)]
-    (boot/with-pre-wrap fileset
-      (let [map-fn (or map-fn identity)]
-        (pod/with-call-in @pod
-         (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
-      fileset)))
+  (boot/with-pre-wrap fileset
+    (let [map-fn (or map-fn identity)]
+      (pod/with-call-in @print-meta-pod
+        (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
+    fileset))
 
 (def ^:private filedata-deps
   '[[com.novemberain/pantomime "2.8.0"]])
