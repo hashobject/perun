@@ -27,7 +27,8 @@
        [:title site-title]
        (if (seq description)
          [:subtitle description])
-       [:generator {:uri "https://perun.io/" :rel "self"} "Perun"]
+       ;; FIXME: :version property
+       [:generator {:uri "https://perun.io/"} "Perun"]
        [:link {:href (str base-url filename) :rel "self"}]
        [:link {:href base-url :type "text/html"}]
        [:updated (->> (take 10 posts)
