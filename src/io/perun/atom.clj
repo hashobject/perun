@@ -27,8 +27,9 @@
        [:title site-title]
        (if (seq description)
          [:subtitle description])
+       [:generator {:url "https://perun.io/" :rel "self"} "Perun"]
        [:link {:href (str base-url filename) :rel "self"}]
-       [:link {:href base-url}]
+       [:link {:href base-url :type "text/html"}]
        [:updated (->> (take 10 posts)
                       (map updated)
                       (map iso-datetime)
@@ -36,6 +37,12 @@
                       reverse
                       first)]
        [:id base-url]
+
+       (if (:author global-metadata)
+         [:author
+          [:name (:author global-metadata)]
+          [:email (:author-email global-metadata)]])
+
        (for [{:keys [uuid canonical-url content name author author-email] :as post} (take 10 posts)
              :let [author (or author (:author global-metadata))
                    author-email (or author-email (:author-email global-metadata))]]
@@ -46,13 +53,16 @@
             [:id (str "urn:uuid:" uuid)]
             [:title name]
             (if canonical-url
-              [:link {:href canonical-url}])
+              [:link {:href canonical-url :type "text/html" :title name}])
             [:published (iso-datetime (published post))]
             [:updated (iso-datetime (updated post))]
+            ;; FIXME: plain text on xml:base property
             [:content {:type "html"} (str content)]
             [:author
              [:name author]
              (if author-email [:email author-email])]
+            ;; FIXME: category & tags [:category {:term "tag"}]
+            ;; FIXME: post-image media:thumbnail
             ]))])))
 
 (defn generate-atom [tgt-path files options]
