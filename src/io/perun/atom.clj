@@ -27,7 +27,7 @@
        [:title site-title]
        (if (seq description)
          [:subtitle description])
-       [:generator {:url "https://perun.io/" :rel "self"} "Perun"]
+       [:generator {:uri "https://perun.io/" :rel "self"} "Perun"]
        [:link {:href (str base-url filename) :rel "self"}]
        [:link {:href base-url :type "text/html"}]
        [:updated (->> (take 10 posts)
