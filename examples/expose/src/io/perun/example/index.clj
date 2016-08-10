@@ -13,4 +13,4 @@
     [:body
          [:ul.items.columns.small-12
           (for [post posts]
-            [:li (:name post)])]]))
+            [:li (:title post)])]]))

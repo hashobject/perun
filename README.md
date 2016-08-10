@@ -169,7 +169,7 @@ See documentation for each task to find all supported options for each plugin.
 (defn renderer [{global :meta posts :entries post :entry}] (:name post))
 
 (defn index-renderer [{global :meta files :entries}]
-  (let [names (map :name files)]
+  (let [names (map :title files)]
     (clojure.string/join "\n" names)))
 
 (deftask build
