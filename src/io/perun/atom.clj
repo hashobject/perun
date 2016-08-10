@@ -6,8 +6,13 @@
             [clj-time.coerce  :as tc]
             [clj-time.format  :as tf]))
 
-(defn updated [{:keys [date-modified date-published date-created]}]
-  (or date-modified date-published date-created))
+;; Check https://github.com/jekyll/jekyll-feed/blob/master/lib/feed.xml for tags to use
+
+(defn published [{:keys [date-published date-created]}]
+  (or date-published date-created))
+
+(defn updated [{:keys [date-modified] :as post}]
+  (or date-modified (published post)))
 
 (defn iso-datetime [date]
   (tf/unparse (tf/formatters :date-time-no-ms) (tc/from-date date)))
@@ -42,6 +47,7 @@
             [:title name]
             (if canonical-url
               [:link {:href canonical-url}])
+            [:published (iso-datetime (published post))]
             [:updated (iso-datetime (updated post))]
             [:content {:type "html"} (str content)]
             [:author
