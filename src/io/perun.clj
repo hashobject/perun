@@ -146,14 +146,22 @@
   '[[org.asciidoctor/asciidoctorj "1.5.4"]
     [circleci/clj-yaml "0.5.5"]])
 
+(def ^:private +asciidoctor-defaults+
+  {:gempath    ""
+   :libraries  '("asciidoctor-diagram")
+   :attributes {:generator "perun"}})
+
 (deftask asciidoctor
   "Parse asciidoc files
 
-   This task will look for files ending with `adoc` (preferred), `ad`, `asc`,
-   `adoc` or `asciidoc` and add a `:content` key to their metadata containing
-   the HTML resulting from processing asciidoc file's content"
+   This task will look for files ending with `adoc` (preferred),
+   `ad`, `asc`, `adoc` or `asciidoc` and add a `:content` key to
+   their metadata containing the HTML resulting from processing
+   asciidoc file's content"
   [o options OPTS edn "options to be passed to the asciidoctor parser"]
-  (let [pod       (create-pod asciidoctor-deps)
+
+  (let [options   (merge +images-resize-defaults+ *opts*)
+        pod       (create-pod asciidoctor-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
@@ -170,7 +178,7 @@
                           (map #(boot/tmp-path %))
                           set)
             updated-files (pod/with-call-in @pod
-                             (io.perun.contrib.asciidoctor/parse-asciidoc ~ad-files ~options))
+                             (io.perun.contrib.asciidoctor/parse-asciidoc ~ad-files ~(merge +asciidoctor-defaults+ options)))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
             ; Pure merge instead of `merge-with merge` (meta-meta).
             ; This is because updated metadata should replace previous metadata to
