@@ -147,9 +147,10 @@
     [circleci/clj-yaml "0.5.5"]])
 
 (def ^:private +asciidoctor-defaults+
-  {:gempath    ""
-   :libraries  '("asciidoctor-diagram")
-   :attributes {:generator "perun"}})
+  {:gempath       ""
+   :libraries     ["asciidoctor-diagram"]
+   :header_footer false
+   :attributes    {:generator "perun"}})
 
 (deftask asciidoctor
   "Parse asciidoc files

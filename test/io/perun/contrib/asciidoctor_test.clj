@@ -56,9 +56,24 @@ I Zeus would like to describe how the god Perun relates to my image.
    :name "in my own image"
    :original true})
 
+(def diagram-sample "
+= The way Perun does
+
+[plantuml, lighting-direction]
+....
+Branch --|> Velves
+....
+")
+
+(def expected-diagram-html "<div class=\"imageblock\">
+<div class=\"content\">
+<img src=\"lighting-direction.png\" alt=\"lighting direction\" width=\"88\" height=\"175\">
+</div>
+</div>")
+
 (def +asciidoctor-defaults+
   {:gempath    ""
-   :libraries  '("asciidoctor-diagram")
+   :libraries  ["asciidoctor-diagram"]
    :attributes {:generator "perun"}})
 
 (deftest test-asciidoc-to-html
@@ -70,3 +85,8 @@ I Zeus would like to describe how the god Perun relates to my image.
   "Test the metadata extraction by `parse-file-metadata`."
   (let [metadata (parse-file-metadata sample-adoc)]
     (is (= expected-meta metadata))))
+
+(deftest convert-with-asciidoctor-diagram
+  "Test the handling by the `asciidoctor-diagram` library for built-in images"
+  (let [rendered (asciidoc-to-html diagram-sample (normalize-options +asciidoctor-defaults+))]
+    (is (= expected-diagram-html rendered))))

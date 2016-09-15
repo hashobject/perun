@@ -1,5 +1,5 @@
 (ns io.perun.contrib.asciidoctor
-  "AsciidoctorJ based converter from Asciidoc to HTML"
+  "AsciidoctorJ based converter from Asciidoc to HTML."
   (:require [io.perun.core     :as perun]
             [clojure.java.io   :as io]
             [clojure.string    :as str]
@@ -24,16 +24,12 @@
         opts (assoc clj-opts :attributes atr)]
     (keywords->names opts)))
 
-;; TODO integrate all options and defaults into a single map, and expose to the perun.clj file
-
 (defn new-adoc-container
   "Creates a new AsciidoctorJ (JRuby) container, based on the normalized options
    provided."
   [n-opts]
-  (let [libraries (get n-opts "libraries")]
-    ; (AsciidoctorContainer. (Asciidoctor$Factory/create) gempath libraries)))
-    (Asciidoctor$Factory/create (str (get n-opts "gempath")))))
-;; TODO add desired libraries
+  (let [acont (Asciidoctor$Factory/create (str (get n-opts "gempath")))]
+    (doto acont (.requireLibraries (into '() (get n-opts "libraries"))))))
 
 (defn parse-file-metadata
   "Read the file-content and derive relevant metadata for use in other Perun
@@ -50,7 +46,6 @@
         options   (-> (select-keys ["header_footer" "attributes"] n-opts)
                       (assoc "backend" "html5"))]
     (.convert container (md/remove-metadata file-content) options)))
-;; TODO incorporate options into container creation
 
 (defn process-file
   "Parses the content of a single file and associates the available metadata to
@@ -64,8 +59,13 @@
     (merge ad-metadata {:content html} file)))
 
 (defn parse-asciidoc
-  "Responsible for parsing all provided asciidoc files. The actual parsing is
-   dispatched."
+  "The main function of `io.perun.contrib.asciidoctor`. Responsible for parsing
+   all provided asciidoc files. The actual parsing is dispatched. It accepts a
+   boot fileset and a map of options.
+
+   The map of options typically includes an array of libraries and an array of attributes: {:libraries [] :attributes {}}. Libraries are loaded from the AsciidoctorJ project, and can be loaded specifically (\"asciidoctor-diagram/ditaa\") or more broadly (\"asciidoctor-diagram\"). Attributes can be set freely, although a large set
+   has been predefined in the Asciidoctor project to configure rendering options
+   or set meta-data."
   [asciidoc-files options]
   (let [updated-files (doall (map #(process-file % options) asciidoc-files))]
     (perun/report-info "asciidoctor" "parsed %s asciidoc files" (count asciidoc-files))
