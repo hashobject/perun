@@ -9,9 +9,15 @@
 
 (defn keywords->names
   "Converts a map with keywords to a map with named keys. Only handles the top
-   level of any nesting structure."
+   level of any nested structure."
   [m]
   (reduce-kv #(assoc %1 (name %2) %3) {} m))
+
+(defn names->keywords
+  "Converts a map with named keys to a map with keywords. Only handles the top
+   level of any nested structure."
+   [m]
+   (reduce-kv #(assoc %1 (keyword %2) %3) {} m))
 
 (defn normalize-options
   "Takes the options for the Asciidoctor parser and puts the in the format
@@ -33,17 +39,27 @@
 
 (defn parse-file-metadata
   "Read the file-content and derive relevant metadata for use in other Perun
-   tasks."
-  [file-content]
-  (md/parse-file-metadata file-content))
-;; TODO include asciidoctor based metadata including attributes
+   tasks. The document is read in its entirety (.readDocumentStructure instead
+   of .readDocumentHeader) to have the results of the options reflected into the
+   resulting metadata. As the document is rendered again, the time-based
+   attributes will vary from the asciidoc-to-html convertion (doctime,
+   docdatetime, localdate, localdatetime, localtime)."
+  [container file-content n-opts]
+  (let [frontmatter (md/parse-file-metadata file-content)
+        attributes  (->> (.readDocumentStructure container file-content n-opts)
+                         (.getHeader)
+                         (.getAttributes)
+                         (into {})
+                         (names->keywords))]
+    (merge frontmatter attributes)))
+;; TODO align attribute keywords with perun keywords
+;; TODO perhaps use dedicated functions for getting the title and author info
 
 (defn asciidoc-to-html
   "Converts a given string of asciidoc into HTML. The normalized options that
    can be provided, influence the behavior of the conversion."
-  [file-content n-opts]
-  (let [container (new-adoc-container n-opts)
-        options   (-> (select-keys ["header_footer" "attributes"] n-opts)
+  [container file-content n-opts]
+  (let [options   (-> (select-keys ["header_footer" "attributes"] n-opts)
                       (assoc "backend" "html5"))]
     (.convert container (md/remove-metadata file-content) options)))
 
@@ -52,10 +68,11 @@
    the resulting html string. The HTML conversion is dispatched."
   [file options]
   (perun/report-debug "asciidoctor" "processing asciidoc" (:filename file))
-  (let [file-content (-> file :full-path io/file slurp)
-        ad-metadata  (parse-file-metadata file-content)
-        n-opts       (normalize-options options)
-        html         (asciidoc-to-html file-content n-opts)]
+  (let [n-opts       (normalize-options options)
+        container    (new-adoc-container n-opts)
+        file-content (-> file :full-path io/file slurp)
+        ad-metadata  (parse-file-metadata container file-content n-opts)
+        html         (asciidoc-to-html container file-content n-opts)]
     (merge ad-metadata {:content html} file)))
 
 (defn parse-asciidoc
