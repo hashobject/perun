@@ -66,11 +66,9 @@
 (defn process-file
   "Parses the content of a single file and associates the available metadata to
    the resulting html string. The HTML conversion is dispatched."
-  [file options]
+  [container file n-opts]
   (perun/report-debug "asciidoctor" "processing asciidoc" (:filename file))
-  (let [n-opts       (normalize-options options)
-        container    (new-adoc-container n-opts)
-        file-content (-> file :full-path io/file slurp)
+  (let [file-content (-> file :full-path io/file slurp)
         ad-metadata  (parse-file-metadata container file-content n-opts)
         html         (asciidoc-to-html container file-content n-opts)]
     (merge ad-metadata {:content html} file)))
@@ -80,10 +78,22 @@
    all provided asciidoc files. The actual parsing is dispatched. It accepts a
    boot fileset and a map of options.
 
-   The map of options typically includes an array of libraries and an array of attributes: {:libraries [] :attributes {}}. Libraries are loaded from the AsciidoctorJ project, and can be loaded specifically (\"asciidoctor-diagram/ditaa\") or more broadly (\"asciidoctor-diagram\"). Attributes can be set freely, although a large set
-   has been predefined in the Asciidoctor project to configure rendering options
-   or set meta-data."
+   The map of options typically includes an array of libraries and an array of
+   attributes: {:libraries [] :attributes {}}. Libraries are loaded from the
+   AsciidoctorJ project, and can be loaded specifically
+   (\"asciidoctor-diagram/ditaa\") or more broadly (\"asciidoctor-diagram\").
+   Attributes can be set freely, although a large set has been predefined in the
+   Asciidoctor project to configure rendering options or set meta-data.
+
+   This will create a new AsciidoctorJ (JRuby) container for parsing the given
+   set of files. All the downstream operations on the files will use this
+   container, preventing concurrent parsing. But the container creation and
+   computing overhead is such that having a couple of AsciidoctorJ containers
+   only makes sense for large or complex jobs, taking minutes rather than
+   seconds."
   [asciidoc-files options]
-  (let [updated-files (doall (map #(process-file % options) asciidoc-files))]
+  (let [n-opts        (normalize-options options)
+        container     (new-adoc-container n-opts)
+        updated-files (doall (map #(process-file container % n-opts ) asciidoc-files))]
     (perun/report-info "asciidoctor" "parsed %s asciidoc files" (count asciidoc-files))
     updated-files))
