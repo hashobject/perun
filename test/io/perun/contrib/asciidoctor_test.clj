@@ -65,12 +65,13 @@ I Zeus would like to describe how the god Perun relates to my image.
    :basebackend-html "",
    :basebackend-html-doctype-article "",
    :caution-caption "Caution",
-   :docdate "2016-09-16",
+  ;  :docdate "2016-09-16",
   ;  :docdatetime "2016-09-16 08:31:58 CEST",
    :docdir "",
   ;  :doctime "08:31:58 CEST",
    :doctype "article",
    :doctype-article "",
+   :draft nil, ;; from frontmatter
    :embedded "",
    :example-caption "Example",
    :figure-caption "Figure",
@@ -88,8 +89,10 @@ I Zeus would like to describe how the god Perun relates to my image.
   ;  :localtime "08:31:58 CEST",
    :manname-title "NAME",
    :max-include-depth 64,
+   :name "in my own image" ;; from frontmatter
    :note-caption "Note",
    :notitle "",
+   :original true, ;; from frontmatter
    :outfilesuffix ".html",
    :prewrap "",
    :safe-mode-level 20,
