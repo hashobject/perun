@@ -32,7 +32,8 @@ I Zeus would like to describe how the god Perun relates to my image.
 ----
 ")
 
-(def expected-html "<div class=\"paragraph\">
+(def expected-html "<h1>In my own image: Perun</h1>
+<div class=\"paragraph\">
 <p>I Zeus would like to describe how the god Perun relates to my image.</p>
 </div>
 <div class=\"quoteblock\">
@@ -137,7 +138,8 @@ Branch --|> Velves
 ....
 ")
 
-(def expected-diagram-html "<div class=\"imageblock\">
+(def expected-diagram-html "<h1>The way Perun does</h1>
+<div class=\"imageblock\">
 <div class=\"content\">
 <img src=\"lightning-direction.png\" alt=\"lightning direction\" width=\"88\" height=\"175\">
 </div>

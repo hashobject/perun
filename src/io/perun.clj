@@ -152,7 +152,8 @@
    :header_footer false                       ; no full HTML doc
    :attributes    {:generator         "perun" ; context to document
                    :backend           "html5" ; for HTML5 output
-                   :skip-front-matter ""}})   ; skip YAML frontmatter
+                   :skip-front-matter ""      ; skip YAML frontmatter
+                   :showtitle ""}})
 
 (deftask asciidoctor
   "Parse asciidoc files
@@ -163,7 +164,7 @@
    asciidoc file's content"
   [o options OPTS edn "options to be passed to the asciidoctor parser"]
 
-  (let [options   (merge +images-resize-defaults+ *opts*)
+  (let [options   (merge +asciidoctor-defaults+ *opts*)
         pod       (create-pod asciidoctor-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
@@ -191,7 +192,7 @@
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         (perun/set-meta fileset final-metadata)))))
-;; TODO perhaps reuse the Asciidoctor container inside a pod, to prevent repeatedly re-initializing the JRuby container.
+;; TODO Support task option syntax
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
