@@ -147,10 +147,12 @@
     [circleci/clj-yaml "0.5.5"]])
 
 (def ^:private +asciidoctor-defaults+
-  {:gempath       ""
-   :libraries     ["asciidoctor-diagram"]
-   :header_footer false
-   :attributes    {:generator "perun"}})
+  {:gempath       ""                          ; no given gempath
+   :libraries     ["asciidoctor-diagram"]     ; asciidoctor-diagram incl.
+   :header_footer false                       ; no full HTML doc
+   :attributes    {:generator         "perun" ; context to document
+                   :backend           "html5" ; for HTML5 output
+                   :skip-front-matter ""}})   ; skip YAML frontmatter
 
 (deftask asciidoctor
   "Parse asciidoc files

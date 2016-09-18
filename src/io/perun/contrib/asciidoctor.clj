@@ -46,6 +46,16 @@
   (let [acont (Asciidoctor$Factory/create (str (get n-opts "gempath")))]
     (doto acont (.requireLibraries (into '() (get n-opts "libraries"))))))
 
+(defn perunize-meta
+  [meta]
+  "Add duplicate entries for the metadata keys gathered from the AsciidoctorJ
+   parsing using keys that adhere to the Perun specification of keys. The native
+   AsciidoctorJ keys are still available for reference and debugging."
+  (merge meta {:author-email  (:email     meta)
+               :name          (:doctitle  meta)
+               :date-build    (:localdate meta)
+               :date-modified (:docdate   meta)}))
+
 (defn parse-file-metadata
   "Read the file-content and derive relevant metadata for use in other Perun
    tasks. The document is read in its entirety (.readDocumentStructure instead
@@ -55,22 +65,20 @@
    docdatetime, localdate, localdatetime, localtime)."
   [container file-content n-opts]
   (let [frontmatter (md/parse-file-metadata file-content)
-        attributes  (->> (.readDocumentStructure container file-content n-opts)
+        attributes  (->> (.readDocumentStructure container (md/remove-metadata file-content) n-opts)
                          (.getHeader)
                          (.getAttributes)
                          (into {})
                          (names->keywords))]
-    (merge frontmatter attributes)))
-;; TODO align attribute keywords with perun keywords
-;; TODO perhaps use dedicated functions for getting the title and author info
+    (merge frontmatter (perunize-meta attributes))))
+;; TODO make sure remove-metadata is compatible with Asciidoctor block syntax's
 
 (defn asciidoc-to-html
   "Converts a given string of asciidoc into HTML. The normalized options that
    can be provided, influence the behavior of the conversion."
   [container file-content n-opts]
-  (let [options   (-> (select-keys ["header_footer" "attributes"] n-opts)
-                      (assoc "backend" "html5"))]
-    (.convert container (md/remove-metadata file-content) options)))
+  (.convert container (md/remove-metadata file-content) n-opts))
+;; TODO get 'skip-front-matter' attribute working to avoid the md/remove-metadata call
 
 (defn process-file
   "Parses the content of a single file and associates the available metadata to
