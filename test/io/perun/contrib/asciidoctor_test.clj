@@ -95,7 +95,8 @@ I Zeus would like to describe how the god Perun relates to my image.
    :generator "perun",
    :htmlsyntax "html",
    :iconfont-remote "",
-   :iconsdir "./images/icons",
+   :iconsdir "./icons",
+   :imagesdir "."
    :important-caption "Important",
    :last-update-label "Last updated",
    :linkcss "",
@@ -114,6 +115,7 @@ I Zeus would like to describe how the god Perun relates to my image.
    :safe-mode-level 20,
    :safe-mode-name "secure",
    :safe-mode-secure "",
+   :showtitle "",
    :skip-front-matter ""
    :sectids "",
    :stylesdir ".",
@@ -141,26 +143,41 @@ Branch --|> Velves
 (def expected-diagram-html "<h1>The way Perun does</h1>
 <div class=\"imageblock\">
 <div class=\"content\">
-<img src=\"lightning-direction.png\" alt=\"lightning direction\" width=\"88\" height=\"175\">
+<img src=\"./lightning-direction.png\" alt=\"lightning direction\" width=\"88\" height=\"175\">
 </div>
 </div>")
+
+(def expected-extraction
+  {:meta
+    {:draft nil
+     :name "in my own image"
+      :original true},
+   :asciidoc
+     "= In my own image: Perun\n:author: Zeus\n:email: zeus@thunderdome.olympus\n:revdate: 02-08-907\n:toc:\n:description: Some posts are close to your heart...\n\nI Zeus would like to describe how the god Perun relates to my image.\n\n[quote, Perun, Having struck Veles]\n\"Well, there is your place, remain there!\"\n\n.No power more godlike then the Clojure power of Perun\n[source, clojure]\n----\n(deftask build\n  \"Build blog.\"\n  []\n  (comp (asciidoctor)\n        (render :renderer renderer)))\n----\n"})
 
 (def n-opts (normalize-options @#'io.perun/+asciidoctor-defaults+))
 ; deref the private defintion var to circument the private-ness
 
 (def container (new-adoc-container n-opts))
 
+(deftest test-extract-meta
+  (let [extraction (extract-meta sample-adoc)]
+    (is (= expected-extraction extraction))))
+
 (deftest test-asciidoc-to-html
   "Test the `asciidoc-to-html` function on its actual conversion."
-  (let [rendered (asciidoc-to-html container sample-adoc n-opts)]
+  (let [rendered (asciidoc-to-html container (:asciidoc (extract-meta sample-adoc)) n-opts)]
     (is (= expected-html rendered))))
 
 (deftest test-parse-file-metadata
   "Test the metadata extraction by `parse-file-metadata`."
-  (let [metadata (parse-file-metadata container sample-adoc n-opts)]
+  (let [extraction   (extract-meta sample-adoc)
+        adoc-content (:asciidoc extraction)
+        frontmatter  (:meta extraction)
+        metadata     (parse-file-metadata container adoc-content frontmatter n-opts)]
     (is (s/subset? (into #{} expected-meta) (into #{} metadata)))))
 
 (deftest convert-with-asciidoctor-diagram
   "Test the handling by the `asciidoctor-diagram` library for built-in images"
-  (let [rendered (asciidoc-to-html container diagram-sample n-opts)]
+  (let [rendered (asciidoc-to-html container (:asciidoc (extract-meta diagram-sample)) n-opts)]
     (is (= expected-diagram-html rendered))))

@@ -153,7 +153,8 @@
    :attributes    {:generator         "perun" ; context to document
                    :backend           "html5" ; for HTML5 output
                    :skip-front-matter ""      ; skip YAML frontmatter
-                   :showtitle ""}})
+                   :showtitle         ""      ; include <h1> from header
+                   :imagesdir         "."}})  ; image dir relative to adoc file
 
 (deftask asciidoctor
   "Parse asciidoc files

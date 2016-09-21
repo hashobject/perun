@@ -12,7 +12,7 @@
   (:require [io.perun.core     :as perun]
             [clojure.java.io   :as io]
             [clojure.string    :as str]
-            [clj-yaml.core     :as yml]
+            [clj-yaml.core     :as yaml]
             [io.perun.markdown :as md])
   (:import [org.asciidoctor Asciidoctor Asciidoctor$Factory]))
 
@@ -39,6 +39,44 @@
         opts (assoc clj-opts :attributes atr)]
     (keywords->names opts)))
 
+(defn base-dir
+  "Derive the `base_dir` from the meta-data, as a basis for links and inclusions
+   but also for image generation. The regex will filter out the last part of the
+   file path, after the last slash (`/`) to get back the base_dir."
+  [full-path]
+  (get (re-matches #"(.*\/)[^\/]+" full-path) 1))
+
+(defn extract-meta
+  "Extract the above YAML metadata (front-matter) from the head of the file.
+   It returns a map with the `:meta` and the `:asciidoc` content. The `:meta`
+   key contains a map of the metadata, or a `nil` if the extraction or parsing
+   failed. The `:asciidoc` key contains a string of the remaining Asciidoc
+   content.
+
+   This function prevents the need to rely on the `skip-front-matter` option in
+   the AsciidoctorJ conversion process."
+  [content]
+  (let [first-line   (first (drop-while str/blank? (str/split-lines content)))
+        start?       (= "---" first-line)
+        splitted     (str/split content #"---\n" 3)
+        finish?      (> (count splitted) 2)]
+    (if (and start? finish?)
+      ;; metadata was found, try to parse it
+      (let [;metadata-str (nth splitted 1)
+            ;adoc-content (nth splitted 2)]
+            metadata-str (get splitted 1)
+            adoc-content (get splitted 2)]
+        (if-let [parsed-yaml (md/normal-colls (yaml/parse-string metadata-str))]
+          ;; yaml parsing succeeded, return the map
+          {:meta (assoc parsed-yaml :original true)
+           :asciidoc adoc-content}
+          ;; yaml parsing failed, return only the adoc-content
+          {:meta nil
+           :asciidoc adoc-content}))
+      ;; no metadata found, return the original content
+      {:meta nil
+       :asciidoc content})))
+
 (defn new-adoc-container
   "Creates a new AsciidoctorJ (JRuby) container, based on the normalized options
    provided."
@@ -57,38 +95,42 @@
                :date-modified (:docdate   meta)}))
 
 (defn parse-file-metadata
-  "Read the file-content and derive relevant metadata for use in other Perun
+  "Read the asciidoc content and derive relevant metadata for use in other Perun
    tasks. The document is read in its entirety (.readDocumentStructure instead
    of .readDocumentHeader) to have the results of the options reflected into the
    resulting metadata. As the document is rendered again, the time-based
    attributes will vary from the asciidoc-to-html convertion (doctime,
    docdatetime, localdate, localdatetime, localtime)."
-  [container file-content n-opts]
-  (let [frontmatter (md/parse-file-metadata file-content)
-        attributes  (->> (.readDocumentStructure container (md/remove-metadata file-content) n-opts)
+  [container adoc-content frontmatter n-opts]
+  (let [attributes  (->> (.readDocumentStructure container adoc-content n-opts)
                          (.getHeader)
                          (.getAttributes)
                          (into {})
                          (names->keywords))]
     (merge frontmatter (perunize-meta attributes))))
-;; TODO make sure remove-metadata is compatible with Asciidoctor block syntax's
 
 (defn asciidoc-to-html
   "Converts a given string of asciidoc into HTML. The normalized options that
    can be provided, influence the behavior of the conversion."
-  [container file-content n-opts]
-  (.convert container (md/remove-metadata file-content) n-opts))
-;; TODO get 'skip-front-matter' attribute working to avoid the md/remove-metadata call
+  [container adoc-content n-opts]
+  (.convert container adoc-content n-opts))
 
 (defn process-file
   "Parses the content of a single file and associates the available metadata to
    the resulting html string. The HTML conversion is dispatched."
-  [container file n-opts]
+  [container file options]
   (perun/report-debug "asciidoctor" "processing asciidoc" (:filename file))
-  (let [file-content (-> file :full-path io/file slurp)
-        ad-metadata  (parse-file-metadata container file-content n-opts)
-        html         (asciidoc-to-html container file-content n-opts)]
+  (let [basedir      {:base_dir (base-dir (:full-path file))}
+        opts         (merge-with options {:attributes {:base_dir (base-dir (:full-path file))}})
+        n-opts       (normalize-options opts)
+        file-content (-> file :full-path io/file slurp)
+        extraction   (extract-meta file-content)
+        adoc-content (:asciidoc extraction)
+        frontmatter  (:meta extraction)
+        ad-metadata  (parse-file-metadata container adoc-content frontmatter n-opts)
+        html         (asciidoc-to-html container adoc-content n-opts)]
     (merge ad-metadata {:content html} file)))
+;; TODO get 'skip-front-matter' attribute working to avoid the extract-meta call
 
 (defn parse-asciidoc
   "The main function of `io.perun.contrib.asciidoctor`. Responsible for parsing
@@ -111,6 +153,6 @@
   [asciidoc-files options]
   (let [n-opts        (normalize-options options)
         container     (new-adoc-container n-opts)
-        updated-files (doall (map #(process-file container % n-opts ) asciidoc-files))]
+        updated-files (doall (map #(process-file container % options ) asciidoc-files))]
     (perun/report-info "asciidoctor" "parsed %s asciidoc files" (count asciidoc-files))
     updated-files))
