@@ -4,7 +4,7 @@
 
 (defn inject [html scripts]
   (reduce
-    #(.replaceFirst %1 "</head>" (format "<script>%s</script></head>" %2))
+    #(.replaceFirst %1 "</body>" (format "<script>%s</script></body>" %2))
     html
     scripts))
 
