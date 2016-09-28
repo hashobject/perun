@@ -7,7 +7,7 @@
     {:link        (:canonical-url file)
      :guid        (:canonical-url file)
      :pubDate     (:date-published file)
-     :title       (:name file)
+     :title       (:title file)
      :description (:description file)
      :author      (:author-email file)}))
 
@@ -15,7 +15,7 @@
   (let [rss-options  {:title       (or (:title options) (:site-title options))
                       :description (:description options)
                       :link        (or (:link options) (:base-url options))}
-        items        (rss-definitions (filter :name files))
+        items        (rss-definitions (filter :title files))
         rss-str      (apply rss-gen/channel-xml rss-options items)]
     rss-str))
 

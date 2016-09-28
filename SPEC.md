@@ -29,14 +29,14 @@ set for the tasks using task options.
 
 All posts have a filename which is used as a key to identify the post.
 
-- **:name**
+- **:title**
     - Required by: *atom-feed*
     - Used by: *rss* either this or description is required
 - **:content** The post content
     - Set by: *markdown*
     - Used by: *atom-feed*
 - **:description**
-    - Used by: *rss* either this or name is required
+    - Used by: *rss* either this or title is required
 - **:slug**
     - Set by: slug
     - Required by: *permalink* default fn
