@@ -35,6 +35,8 @@
    :all-optionals        Extensions/ALL_OPTIONALS
    :all-with-optionals   Extensions/ALL_WITH_OPTIONALS})
 
+(def ^:dynamic *yaml-head* #"---\r?\n")
+
 (defn extensions-map->int [opts]
   (->> opts
        (merge {:autolinks true
@@ -75,7 +77,7 @@
     x))
 
 (defn parse-file-metadata [file-content]
-  (if-let [metadata-str (substr-between file-content #"---\n" #"---\n")]
+  (if-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
     (if-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
       ; we use `original` file flag to distinguish between generated files
       ; (e.x. created those by plugins)
@@ -84,7 +86,7 @@
     {:original true}))
 
 (defn remove-metadata [content]
-  (let [splitted (str/split content #"---\n" 3)]
+  (let [splitted (str/split content *yaml-head* 3)]
     (if (> (count splitted) 2)
       (first (drop 2 splitted))
       content)))
