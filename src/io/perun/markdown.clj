@@ -86,21 +86,24 @@
       (first (drop 2 splitted))
       content)))
 
-(defn markdown-to-html [file-content options]
+(defn markdown-to-html [file-content options preprocessor]
   (let [processor (PegDownProcessor. (extensions-map->int (:extensions options)))]
     (->> file-content
          remove-metadata
+         preprocessor
          char-array
          (.markdownToHtml processor))))
 
-(defn process-file [file options]
+(defn process-file [file options preprocessor]
   (perun/report-debug "markdown" "processing markdown" (:filename file))
   (let [file-content (-> file :full-path io/file slurp)
         md-metadata (merge (:meta options) (parse-file-metadata file-content))
-        html (markdown-to-html file-content (:options options))]
+        html (markdown-to-html file-content (:options options) preprocessor)]
     (merge md-metadata {:content html} file)))
 
-(defn parse-markdown [markdown-files options]
-  (let [updated-files (doall (map #(process-file % options) markdown-files))]
+(defn parse-markdown [markdown-files options preprocessor]
+  (let [_ (require (symbol (namespace preprocessor)))
+        preprocessor (resolve preprocessor)
+        updated-files (doall (map #(process-file % options preprocessor) markdown-files))]
     (perun/report-info "markdown" "parsed %s markdown files" (count markdown-files))
     updated-files))
