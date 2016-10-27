@@ -454,9 +454,6 @@
   (let [tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
-    (pod/with-call-in @render-pod
-      (io.perun.render/update!))
-
     (cond (not (fn? (:comparator options)))
           (u/fail "collection task :comparator option should implement IFn\n")
           (not (ifn? (:filterer options)))
@@ -469,6 +466,9 @@
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
             (boot/with-pre-wrap fileset
+              (pod/with-call-in @render-pod
+                (io.perun.render/update!))
+
               (let [files          (perun/get-meta fileset)
                     filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)
