@@ -277,7 +277,11 @@
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
           base-url      (perun/assert-base-url (:base-url (perun/get-global-meta fileset)))
-          assoc-can-url #(assoc % :canonical-url (str base-url (:permalink %)))
+          assoc-can-url
+            #(assoc %
+                  :canonical-url
+                  ; we need to call perun/relativize-url to remove leading / becayse base-url has trailing /
+                  (str base-url (:permalink (perun/relativize-url %))))
           updated-files (map assoc-can-url files)]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
         (perun/merge-meta fileset updated-files))))
