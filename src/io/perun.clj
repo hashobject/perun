@@ -393,12 +393,13 @@
 
 (defn render-to-paths
   [data renderer pod tmp]
-  (map
-   (fn [[path {:keys [render-data entry]}]]
-     (let [body (render-in-pod pod renderer render-data)]
-       (perun/create-file tmp path body)
-       (assoc entry :body body)))
-   data))
+  (doall
+   (map
+    (fn [[path {:keys [render-data entry]}]]
+      (let [body (render-in-pod pod renderer render-data)]
+        (perun/create-file tmp path body)
+        (assoc entry :body body)))
+    data)))
 
 (defn render-pre-wrap
   [render-paths-fn options]
