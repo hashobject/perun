@@ -292,13 +292,13 @@
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
-   :filterer :content
+   :filterer :body
    :out-dir "public"})
 
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str  "generated sitemap filename"
-   _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer FILTER   code "predicate to use for selecting entries (default: `:body`)"
    o out-dir  OUTDIR   str  "the output directory"
    u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
@@ -316,13 +316,13 @@
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
-   :filterer :content
+   :filterer :body
    :out-dir "public"})
 
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:body`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -344,13 +344,13 @@
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
-   :filterer :content
+   :filterer :body
    :out-dir "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:body`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
@@ -391,6 +391,28 @@
     (require '~(symbol (namespace sym)))
     ((resolve '~sym) ~(pod/send! render-data))))
 
+(defn render-to-paths
+  [data renderer pod tmp]
+  (map
+   (fn [[path {:keys [render-data entry]}]]
+     (let [body (render-in-pod pod renderer render-data)]
+       (perun/create-file tmp path body)
+       (assoc entry :body body)))
+   data))
+
+(defn render-pre-wrap
+  [render-paths-fn options]
+  (let [pods (wrap-pool (pod/pod-pool (boot/get-env)))
+        tmp  (boot/tmp-dir!)]
+    (boot/with-pre-wrap fileset
+      (let [pod (pods fileset)
+            new-metadata (-> fileset
+                             (render-paths-fn options)
+                             (render-to-paths (:renderer options) pod tmp))]
+        (-> fileset
+            (perun/merge-meta new-metadata)
+            (commit tmp))))))
+
 (def ^:private +render-defaults+
   {:out-dir  "public"
    :filterer :content})
@@ -414,33 +436,96 @@
   [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
-  (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
-        tmp     (boot/tmp-dir!)
-        options (merge +render-defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))]
-        (doseq [{:keys [path] :as file} files]
-          (let [render-data   {:meta    (perun/get-global-meta fileset)
-                               :entries (vec files)
-                               :entry   file}
-                html          (render-in-pod pod renderer render-data)
-                page-filepath (perun/create-filepath
-                                (:out-dir options)
-                                ; If permalink ends in slash, append index.html as filename
-                                (or (some-> (:permalink file)
-                                            (string/replace #"/$" "/index.html")
-                                            perun/url-to-path)
-                                    (string/replace path #"(?i).[a-z]+$" ".html")))]
-            (perun/report-debug "render" "rendered page for path" path)
-            (perun/create-file tmp page-filepath html)))
-        (perun/report-info "render" "rendered %s pages" (count files))
-        (commit fileset tmp)))))
+  (let [options (merge +render-defaults+ *opts*)]
+    (letfn [(render-paths [fileset options]
+              (let [entries (filter (:filterer options) (perun/get-meta fileset))
+                    paths (reduce
+                           (fn [result {:keys [path] :as entry}]
+                             (let [render-data   {:meta    (perun/get-global-meta fileset)
+                                                  :entries (vec entries)
+                                                  :entry   entry}
+                                   page-filepath (perun/create-filepath
+                                                  (:out-dir options)
+                                                  ; If permalink ends in slash, append index.html as filename
+                                                  (or (some-> (:permalink entry)
+                                                              (string/replace #"/$" "/index.html")
+                                                              perun/url-to-path)
+                                                      (string/replace path #"(?i).[a-z]+$" ".html")))]
+                               (perun/report-debug "render" "rendered page for path" path)
+                               (assoc result page-filepath {:render-data render-data
+                                                            :entry       entry})))
+                           {}
+                           entries)]
+                (perun/report-info "render" "rendered %s pages" (count paths))
+                paths))]
+      (render-pre-wrap render-paths options))))
+
+(defn- grouped-paths
+  [task-name fileset options]
+  (let [global-meta (perun/get-global-meta fileset)
+        grouper (:grouper options)]
+    (->> fileset
+         perun/get-meta
+         (filter (:filterer options))
+         grouper
+         (reduce
+          (fn [result [path page-meta]]
+            (let [sorted        (sort-by (:sortby options) (:comparator options) page-meta)
+                  render-data   {:meta    global-meta
+                                 :entries (vec sorted)}
+                  page-filepath (perun/create-filepath (:out-dir options) path)
+                  new-entry     {:path          page-filepath
+                                 :canonical-url (str (:base-url global-meta) path)
+                                 :date-build    (:date-build global-meta)}]
+              (perun/report-info task-name (str "rendered " task-name " " path))
+              (assoc result page-filepath {:render-data render-data
+                                           :entry       new-entry})))
+          {}))))
+
+(def ^:private +assortment-defaults+
+  {:out-dir "public"
+   :filterer :content
+   :grouper #(-> {"index.html" %})
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask assortment
+  "Render potentially multiple files for groups of entries
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entries`, all entries
+
+   The `grouper` function will be called with a seq containing the
+   entries to be grouped, and it should return a map with keys that
+   are filenames and values that are seqs of entries to be rendered.
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str  "the output directory"
+   r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
+   g grouper    GROUPER    code "group posts function, keys are filenames, values are to-be-rendered entries"
+   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:content`)"
+   s sortby     SORTBY     code "sort entries by function"
+   c comparator COMPARATOR code "sort by comparator function"]
+  (let [options (merge +assortment-defaults+ *opts*)]
+    (cond (not (fn? (:comparator options)))
+          (u/fail "assortment task :comparator option should implement Fn\n")
+          (not (ifn? (:filterer options)))
+          (u/fail "assortment task :filterer option value should implement IFn\n")
+          (not (ifn? (:grouper options)))
+          (u/fail "assortment task :grouper option value should implement IFn\n")
+          (not (ifn? (:sortby options)))
+          (u/fail "assortment task :sortby option value should implement IFn\n")
+          :else
+          (let [assortment-paths (partial grouped-paths "assortment")]
+            (render-pre-wrap assortment-paths options)))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
    :filterer :content
-   :groupby (fn [data] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -454,56 +539,27 @@
    Entries can optionally be filtered by supplying a function
    to the `filterer` option.
 
-   The `sortby` and `groupby` functions can be used for ordering entries
-   before rendering as well as rendering groups of entries to different pages."
+   The `sortby` function can be used for ordering entries before rendering."
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
    _ filterer   FILTER     code "predicate to use for selecting entries (default: `:content`)"
    s sortby     SORTBY     code "sort entries by function"
-   g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
    p page       PAGE       str  "collection result page path"]
-  (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
-        tmp       (boot/tmp-dir!)
-        options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
-                                                        {:groupby (fn [_] p)}))]
+  (let [options (merge +collection-defaults+
+                       (dissoc *opts* :page)
+                       (if-let [p (:page *opts*)]
+                         {:grouper #(group-by (fn [_] p) %)}
+                         {:grouper #(-> {"index.html" %})}))]
     (cond (not (fn? (:comparator options)))
-          (u/fail "collection task :comparator option should implement IFn\n")
+          (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
           (u/fail "collection task :filterer option value should implement IFn\n")
-          (and (:page options) (:groupby *opts*))
-          (u/fail "using the :page option will render any :groupby option setting effectless\n")
-          (not (ifn? (:groupby options)))
-          (u/fail "collection task :groupby option value should implement IFn\n")
           (not (ifn? (:sortby options)))
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
-            (boot/with-pre-wrap fileset
-              (let [pod            (pods fileset)
-                    files          (perun/get-meta fileset)
-                    filtered-files (filter (:filterer options) files)
-                    grouped-files  (group-by (:groupby options) filtered-files)
-                    global-meta    (perun/get-global-meta fileset)
-                    new-files      (doall
-                                    (map
-                                      (fn [[page page-files]]
-                                        (do
-                                          (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
-                                                render-data   {:meta    global-meta
-                                                               :entries (vec sorted)}
-                                                html          (render-in-pod pod renderer render-data)
-                                                page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     {:path page-filepath
-                                                               :canonical-url (str (:base-url global-meta) page)
-                                                               :content html
-                                                               :date-build (:date-build global-meta)}]
-                                            (perun/create-file tmp page-filepath html)
-                                            (perun/report-info "collection" "rendered collection %s" page)
-                                            new-entry)))
-                                      grouped-files))
-                    updated-files    (apply conj files new-files)
-                    updated-fileset  (perun/set-meta fileset updated-files)]
-                  (commit updated-fileset tmp))))))
+          (let [collection-paths (partial grouped-paths "collection")]
+            (render-pre-wrap collection-paths options)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
