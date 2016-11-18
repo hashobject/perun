@@ -392,6 +392,16 @@
     ((resolve '~sym) ~(pod/send! render-data))))
 
 (defn render-to-paths
+  "Renders paths in `data`, using `renderer` in `pod`, and writes
+  the result to `tmp`.
+
+  `data` should be a map with keys that are fileset paths, and
+  values that are themselves maps with these keys:
+   - `:render-data` the map argument that `renderer` will be called with
+   - `:entry` the metadata for the item being rendered
+
+  All `:entry`s will be returned, after having their `:body` set to the
+  rendering result"
   [data renderer pod tmp]
   (doall
    (map
@@ -402,6 +412,13 @@
     data)))
 
 (defn render-pre-wrap
+  "Handles common rendering task orchestration
+
+  `render-paths-fn` takes two arguments: a fileset, and a map of task options.
+  `options` is a map that must have a `:renderer` key, and any other keys
+  that are required by `render-paths-fn`.
+
+  Returns a boot `with-pre-wrap` result"
   [render-paths-fn options]
   (let [pods (wrap-pool (pod/pod-pool (boot/get-env)))
         tmp  (boot/tmp-dir!)]
@@ -462,6 +479,8 @@
       (render-pre-wrap render-paths options))))
 
 (defn- grouped-paths
+  "Produces path maps of the shape required by `render-to-paths`, based
+  on the provided `fileset` and `options`."
   [task-name fileset options]
   (let [global-meta (perun/get-global-meta fileset)
         grouper (:grouper options)]
