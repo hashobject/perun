@@ -316,13 +316,13 @@
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
-   :filterer :body
+   :filterer :content
    :out-dir "public"})
 
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:body`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -344,13 +344,13 @@
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
-   :filterer :body
+   :filterer :content
    :out-dir "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:body`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
