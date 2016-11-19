@@ -489,14 +489,16 @@
          (filter (:filterer options))
          grouper
          (reduce
-          (fn [result [path page-meta]]
-            (let [sorted        (sort-by (:sortby options) (:comparator options) page-meta)
-                  render-data   {:meta    global-meta
-                                 :entries (vec sorted)}
+          (fn [result [path {:keys [entries group-meta]}]]
+            (let [sorted        (sort-by (:sortby options) (:comparator options) entries)
                   page-filepath (perun/create-filepath (:out-dir options) path)
-                  new-entry     {:path          page-filepath
-                                 :canonical-url (str (:base-url global-meta) path)
-                                 :date-build    (:date-build global-meta)}]
+                  new-entry     (merge {:path          page-filepath
+                                        :canonical-url (str (:base-url global-meta) path)
+                                        :date-build    (:date-build global-meta)}
+                                       group-meta)
+                  render-data   {:meta    global-meta
+                                 :entry   new-entry
+                                 :entries (vec sorted)}]
               (perun/report-info task-name (str "rendered " task-name " " path))
               (assoc result page-filepath {:render-data render-data
                                            :entry       new-entry})))
@@ -505,12 +507,12 @@
 (def ^:private +assortment-defaults+
   {:out-dir "public"
    :filterer :content
-   :grouper #(-> {"index.html" %})
+   :grouper #(-> {"index.html" {:entries %}})
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask assortment
-  "Render potentially multiple files for groups of entries
+  "Render multiple collections
    The symbol supplied as `renderer` should resolve to a function
    which will be called with a map containing the following keys:
     - `:meta`, global perun metadata
@@ -518,7 +520,9 @@
 
    The `grouper` function will be called with a seq containing the
    entries to be grouped, and it should return a map with keys that
-   are filenames and values that are seqs of entries to be rendered.
+   are filenames and values that are maps with the keys:
+    - `:entries`: the entries for each collection
+    - `:group-meta`: (optional) page metadata for this collection
 
    Entries can optionally be filtered by supplying a function
    to the `filterer` option.
@@ -569,8 +573,8 @@
   (let [options (merge +collection-defaults+
                        (dissoc *opts* :page)
                        (if-let [p (:page *opts*)]
-                         {:grouper #(group-by (fn [_] p) %)}
-                         {:grouper #(-> {"index.html" %})}))]
+                         {:grouper #(-> {p {:entries %}})}
+                         {:grouper #(-> {"index.html" {:entries %}})}))]
     (cond (not (fn? (:comparator options)))
           (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
