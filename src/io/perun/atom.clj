@@ -54,7 +54,7 @@
             [:id (str "urn:uuid:" uuid)]
             [:title title]
             (if canonical-url
-              [:link {:href canonical-url :type "text/html" :title name}])
+              [:link {:href canonical-url :type "text/html" :title title}])
             [:published (iso-datetime (published post))]
             [:updated (iso-datetime (updated post))]
             ;; FIXME: plain text on xml:base property
