@@ -14,6 +14,9 @@
                    (util/dbug "Scan directories: %s\n" (pr-str (:directories pod/env)))
                    (dir/scan-dirs (or tracker (track/tracker)) (:directories pod/env))))
 
+  ;; Only reload namespaces which are already loaded
+  (swap! tracker (fn [tracker] (update tracker ::track/load (fn [load] (filter find-ns load)))))
+
   (let [changed-ns (::track/load @tracker)]
 
     (util/dbug "Unload: %s\n" (pr-str (::track/unload @tracker)))
