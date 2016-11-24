@@ -142,6 +142,59 @@
         (reset! prev-meta final-metadata)
         (perun/set-meta fileset final-metadata)))))
 
+(def ^:private asciidoctor-deps
+  '[[org.asciidoctor/asciidoctorj "1.5.4"]
+    [circleci/clj-yaml "0.5.5"]])
+
+(def ^:private +asciidoctor-defaults+
+  {:gempath       ""                          ; no given gempath
+   :libraries     ["asciidoctor-diagram"]     ; asciidoctor-diagram incl.
+   :header_footer false                       ; no full HTML doc
+   :attributes    {:generator         "perun" ; context to document
+                   :backend           "html5" ; for HTML5 output
+                   :skip-front-matter ""      ; skip YAML frontmatter
+                   :showtitle         ""      ; include <h1> from header
+                   :imagesdir         "."}})  ; image dir relative to adoc file
+
+(deftask asciidoctor
+  "Parse asciidoc files
+
+   This task will look for files ending with `adoc` (preferred),
+   `ad`, `asc`, `adoc` or `asciidoc` and add a `:content` key to
+   their metadata containing the HTML resulting from processing
+   asciidoc file's content"
+  [o options OPTS edn "options to be passed to the asciidoctor parser"]
+
+  (let [options   (merge +asciidoctor-defaults+ *opts*)
+        pod       (create-pod asciidoctor-deps)
+        prev-meta (atom {})
+        prev-fs   (atom nil)]
+    (boot/with-pre-wrap fileset
+      (let [ad-files (->> fileset
+                          (boot/fileset-diff @prev-fs)
+                          boot/user-files
+                          (boot/by-ext ["ad" "asc" "adoc" "asciidoc"])
+                          add-filedata)
+            ; process all removed asciidoc files
+            removed? (->> fileset
+                          (boot/fileset-removed @prev-fs)
+                          boot/user-files
+                          (boot/by-ext ["ad" "asc" "adoc" "asciidoc"])
+                          (map #(boot/tmp-path %))
+                          set)
+            updated-files (pod/with-call-in @pod
+                             (io.perun.contrib.asciidoctor/parse-asciidoc ~ad-files ~(merge +asciidoctor-defaults+ options)))
+            initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
+            ; Pure merge instead of `merge-with merge` (meta-meta).
+            ; This is because updated metadata should replace previous metadata to
+            ; correctly handle cases where a metadata key is removed from post metadata.
+            final-metadata   (vals (merge (perun/key-meta initial-metadata) (perun/key-meta updated-files)))
+            final-metadata   (remove #(-> % :path removed?) final-metadata)]
+        (reset! prev-fs fileset)
+        (reset! prev-meta final-metadata)
+        (perun/set-meta fileset final-metadata)))))
+;; TODO Support task option syntax
+
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
 
