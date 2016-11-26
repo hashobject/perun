@@ -103,7 +103,14 @@
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
-(defmulti content-parser (fn [language _] language))
+(defmulti content-parser
+  "Extension point for the `content` task
+  Takes the language to be parsed and a map of options.
+  Returns a map with the following keys:
+   - `:file-exts` A vector of file extensions, on which the parser will operate
+   - `:parse-form` A fn that takes a list of files to parse, and returns a form that will be evaled to perform the parsing
+   - `:pod` (optional) A pod that contains dependencies that the parser needs"
+  (fn [language _] language))
 
 (defmethod content-parser :default
   [language _]
