@@ -103,35 +103,52 @@
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
-(def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.5"]])
+(defmulti content-parser
+  "Extension point for the `content` task
+  Takes the language to be parsed and a map of options.
+  Returns a map with the following keys:
+   - `:file-exts` A vector of file extensions, on which the parser will operate
+   - `:parse-form` A fn that takes a list of files to parse, and returns a form that will be evaled to perform the parsing
+   - `:pod` (optional) A pod that contains dependencies that the parser needs"
+  (fn [language _] language))
 
-(deftask markdown
-  "Parse markdown files
+(defmethod content-parser :default
+  [language _]
+  (perun/report-info "content" "Unknown content language %s" language))
 
-   This task will look for files ending with `md` or `markdown`
+(def ^:private +content-defaults+
+  {:languages [:markdown]})
+
+(deftask content
+  "Parse content files
+
+   This task will look for file types that perun can parse
    and add a `:content` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
-  [o options OPTS edn "options to be passed to the markdown parser"]
-  (let [pod       (create-pod markdown-deps)
+   HTML resulting from processing the file's content"
+  [l languages     LANGUAGES [kw] "languages to parse (default: `[:markdown]`)"
+   p parse-options PARSEOPTS edn  "options to pass to underlying parsers (ex: {:markdown {:smarts true}})"]
+  (let [options   (merge +content-defaults+ *opts*)
+        parsers   (doall (map #(content-parser % (% parse-options)) (:languages options)))
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [md-files (->> fileset
-                          (boot/fileset-diff @prev-fs)
-                          boot/user-files
-                          (boot/by-ext ["md" "markdown"])
-                          add-filedata)
-            ; process all removed markdown files
+      (let [updated-files (mapcat
+                           (fn [{:keys [file-exts parse-form pod]}]
+                             (let [files (->> fileset
+                                              (boot/fileset-diff @prev-fs)
+                                              boot/user-files
+                                              (boot/by-ext file-exts)
+                                              add-filedata)]
+                               (if pod
+                                 (pod/with-call-in @pod ~(parse-form files))
+                                 (eval (parse-form files)))))
+                           parsers)
             removed? (->> fileset
                           (boot/fileset-removed @prev-fs)
                           boot/user-files
-                          (boot/by-ext ["md" "markdown"])
+                          (boot/by-ext (mapcat :file-exts parsers))
                           (map #(boot/tmp-path %))
                           set)
-            updated-files (pod/with-call-in @pod
-                             (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
             ; Pure merge instead of `merge-with merge` (meta-meta).
             ; This is because updated metadata should replace previous metadata to
@@ -141,6 +158,26 @@
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         (perun/set-meta fileset final-metadata)))))
+
+(def ^:private markdown-deps
+  '[[org.pegdown/pegdown "1.6.0"]
+    [circleci/clj-yaml "0.5.5"]])
+
+(defmethod content-parser :markdown
+  [_ options]
+  {:file-exts ["md" "markdown"]
+   :parse-form (fn [files] `(io.perun.content.markdown/parse-markdown ~files ~options))
+   :pod (create-pod markdown-deps)})
+
+(def ^:private asciidoc-deps
+  '[[org.asciidoctor/asciidoctorj "1.5.4.1"]
+    [circleci/clj-yaml "0.5.5"]])
+
+(defmethod content-parser :asciidoc
+  [_ options]
+  {:file-exts ["adoc" "asciidoc"]
+   :parse-form (fn [files] `(io.perun.content.asciidoc/parse-asciidoc ~files ~options))
+   :pod (create-pod asciidoc-deps)})
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
