@@ -11,7 +11,8 @@
                   [gravatar "1.1.1" :scope "test"]
                   [clj-time "0.12.0" :scope "test"]
                   [mvxcvi/puget "1.0.0" :scope "test"]
-                  [com.novemberain/pantomime "2.8.0" :scope "test"]])
+                  [com.novemberain/pantomime "2.8.0" :scope "test"]
+                  [org.clojure/tools.namespace "0.3.0-alpha3" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 

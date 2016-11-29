@@ -367,20 +367,6 @@
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
-(defn- wrap-pool [pool]
-  (let [prev (atom nil)]
-    (fn [fileset]
-      ; Do not refresh on the first run
-      (let [pod (if (and @prev
-                         (seq (->> fileset
-                                   (boot/fileset-diff @prev)
-                                   boot/input-files
-                                   (boot/by-ext ["clj" "cljc"]))))
-                  (pool :refresh)
-                  (pool))]
-        (reset! prev fileset)
-        pod))))
-
 (defn- assert-renderer [sym]
   (assert (and (symbol? sym) (namespace sym))
           "Renderer must be a fully qualified symbol, i.e. 'my.ns/fun"))
@@ -394,6 +380,11 @@
 (def ^:private +render-defaults+
   {:out-dir  "public"
    :filterer :content})
+
+(def ^:private render-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
+
+(def render-pod (delay (create-pod' render-deps)))
 
 (deftask render
   "Render individual pages for entries in perun data.
@@ -414,17 +405,18 @@
   [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
-  (let [pods    (wrap-pool (pod/pod-pool (boot/get-env)))
-        tmp     (boot/tmp-dir!)
+  (let [tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [pod   (pods fileset)
-            files (filter (:filterer options) (perun/get-meta fileset))]
+      (let [files (filter (:filterer options) (perun/get-meta fileset))]
+        (pod/with-call-in @render-pod
+          (io.perun.render/update!))
+
         (doseq [{:keys [path] :as file} files]
           (let [render-data   {:meta    (perun/get-global-meta fileset)
                                :entries (vec files)
                                :entry   file}
-                html          (render-in-pod pod renderer render-data)
+                html          (render-in-pod @render-pod renderer render-data)
                 page-filepath (perun/create-filepath
                                 (:out-dir options)
                                 ; If permalink ends in slash, append index.html as filename
@@ -463,8 +455,7 @@
    g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
    p page       PAGE       str  "collection result page path"]
-  (let [pods      (wrap-pool (pod/pod-pool (boot/get-env)))
-        tmp       (boot/tmp-dir!)
+  (let [tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
     (cond (not (fn? (:comparator options)))
@@ -479,8 +470,10 @@
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
             (boot/with-pre-wrap fileset
-              (let [pod            (pods fileset)
-                    files          (perun/get-meta fileset)
+              (pod/with-call-in @render-pod
+                (io.perun.render/update!))
+
+              (let [files          (perun/get-meta fileset)
                     filtered-files (filter (:filterer options) files)
                     grouped-files  (group-by (:groupby options) filtered-files)
                     global-meta    (perun/get-global-meta fileset)
@@ -491,7 +484,7 @@
                                           (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
                                                 render-data   {:meta    global-meta
                                                                :entries (vec sorted)}
-                                                html          (render-in-pod pod renderer render-data)
+                                                html          (render-in-pod @render-pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
                                                 new-entry     {:path page-filepath
                                                                :canonical-url (str (:base-url global-meta) page)
