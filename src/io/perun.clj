@@ -367,20 +367,6 @@
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
-(defn- wrap-pool [pool]
-  (let [prev (atom nil)]
-    (fn [fileset]
-      ; Do not refresh on the first run
-      (let [pod (if (and @prev
-                         (seq (->> fileset
-                                   (boot/fileset-diff @prev)
-                                   boot/input-files
-                                   (boot/by-ext ["clj" "cljc"]))))
-                  (pool :refresh)
-                  (pool))]
-        (reset! prev fileset)
-        pod))))
-
 (defn- assert-renderer [sym]
   (assert (and (symbol? sym) (namespace sym))
           "Renderer must be a fully qualified symbol, i.e. 'my.ns/fun"))
@@ -390,6 +376,15 @@
   (pod/with-eval-in pod
     (require '~(symbol (namespace sym)))
     ((resolve '~sym) ~(pod/send! render-data))))
+
+(def ^:private +render-defaults+
+  {:out-dir  "public"
+   :filterer :content})
+
+(def ^:private render-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
+
+(def render-pod (delay (create-pod' render-deps)))
 
 (defn render-to-paths
   "Renders paths in `data`, using `renderer` in `pod`, and writes
@@ -402,14 +397,13 @@
 
   All `:entry`s will be returned, after having their `:body` set to the
   rendering result"
-  [data renderer pod tmp]
-  (doall
-   (map
-    (fn [[path {:keys [render-data entry]}]]
-      (let [body (render-in-pod pod renderer render-data)]
-        (perun/create-file tmp path body)
-        (assoc entry :body body)))
-    data)))
+  [data renderer tmp]
+  (pod/with-call-in @render-pod
+    (io.perun.render/update!))
+  (doseq [[path {:keys [render-data entry]}] data]
+    (let [body (render-in-pod @render-pod renderer render-data)]
+      (perun/create-file tmp path body)
+      (assoc entry :body body))))
 
 (defn render-pre-wrap
   "Handles common rendering task orchestration
@@ -420,20 +414,14 @@
 
   Returns a boot `with-pre-wrap` result"
   [render-paths-fn options]
-  (let [pods (wrap-pool (pod/pod-pool (boot/get-env)))
-        tmp  (boot/tmp-dir!)]
+  (let [tmp  (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [pod (pods fileset)
-            new-metadata (-> fileset
+      (let [new-metadata (-> fileset
                              (render-paths-fn options)
-                             (render-to-paths (:renderer options) pod tmp))]
+                             (render-to-paths (:renderer options) tmp))]
         (-> fileset
             (perun/merge-meta new-metadata)
             (commit tmp))))))
-
-(def ^:private +render-defaults+
-  {:out-dir  "public"
-   :filterer :content})
 
 (deftask render
   "Render individual pages for entries in perun data.
