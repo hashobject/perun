@@ -281,7 +281,7 @@
             #(assoc %
                   :canonical-url
                   ; we need to call perun/relativize-url to remove leading / because base-url has trailing /
-                  (str base-url (:permalink (perun/relativize-url %))))
+                  (str base-url (perun/relativize-url (:permalink  %))))
           updated-files (map assoc-can-url files)]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
         (perun/merge-meta fileset updated-files))))
