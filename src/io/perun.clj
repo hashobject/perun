@@ -316,7 +316,7 @@
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
-   :filterer :content
+   :filterer :include-rss
    :out-dir "public"})
 
 (deftask rss
@@ -344,7 +344,7 @@
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
-   :filterer :content
+   :filterer :include-atom
    :out-dir "public"})
 
 (deftask atom-feed
