@@ -76,14 +76,19 @@
         :else y))
     x))
 
+(def ^:private default-meta
+  {:original true
+   :include-rss true
+   :include-atom true})
+
 (defn parse-file-metadata [file-content]
   (if-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
     (if-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
       ; we use `original` file flag to distinguish between generated files
       ; (e.x. created those by plugins)
-      (assoc parsed-yaml :original true)
-      {:original true})
-    {:original true}))
+      (merge default-meta parsed-yaml)
+      default-meta)
+    default-meta))
 
 (defn remove-metadata [content]
   (let [splitted (str/split content *yaml-head* 3)]
