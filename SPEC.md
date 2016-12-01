@@ -34,7 +34,6 @@ All posts have a filename which is used as a key to identify the post.
     - Used by: *rss* either this or description is required
 - **:content** The post content
     - Set by: *markdown*
-    - Used by: *atom-feed*
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
@@ -72,3 +71,9 @@ All posts have a filename which is used as a key to identify the post.
     - Set by: *markdown*
 - **:ttr**
     - Set by: *ttr*
+- **:include-atom**
+    - Set by: *markdown*, true by default
+    - Used by: *atom-feed*
+- **:include-rss**
+    - Set by: *markdown*, true by default
+    - Used by: *rss*
