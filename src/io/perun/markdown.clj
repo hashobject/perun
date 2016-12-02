@@ -76,19 +76,10 @@
         :else y))
     x))
 
-(def ^:private default-meta
-  {:original true
-   :include-rss true
-   :include-atom true})
-
 (defn parse-file-metadata [file-content]
-  (if-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
-    (if-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
-      ; we use `original` file flag to distinguish between generated files
-      ; (e.x. created those by plugins)
-      (merge default-meta parsed-yaml)
-      default-meta)
-    default-meta))
+  (when-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
+    (when-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
+      parsed-yaml)))
 
 (defn remove-metadata [content]
   (let [splitted (str/split content *yaml-head* 3)]
@@ -106,8 +97,8 @@
 (defn process-file [file options]
   (perun/report-debug "markdown" "processing markdown" (:filename file))
   (let [file-content (-> file :full-path io/file slurp)
-        md-metadata (parse-file-metadata file-content)
-        html (markdown-to-html file-content options)]
+        md-metadata (merge (:meta options) (parse-file-metadata file-content))
+        html (markdown-to-html file-content (:options options))]
     (merge md-metadata {:content html} file)))
 
 (defn parse-markdown [markdown-files options]

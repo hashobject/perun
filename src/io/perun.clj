@@ -107,18 +107,25 @@
   '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.5"]])
 
+(def ^:private +markdown-defaults+
+  {:meta {:original true
+          :include-rss true
+          :include-atom true}})
+
 (deftask markdown
   "Parse markdown files
 
    This task will look for files ending with `md` or `markdown`
    and add a `:content` key to their metadata containing the
    HTML resulting from processing markdown file's content"
-  [o options OPTS edn "options to be passed to the markdown parser"]
+  [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [md-files (->> fileset
+      (let [options  (merge +markdown-defaults+ *opts*)
+            md-files (->> fileset
                           (boot/fileset-diff @prev-fs)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
@@ -454,7 +461,8 @@
    s sortby     SORTBY     code "sort entries by function"
    g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
-   p page       PAGE       str  "collection result page path"]
+   p page       PAGE       str  "collection result page path"
+   m meta       META       edn  "metadata to set on each collection entry"]
   (let [tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
@@ -486,10 +494,12 @@
                                                                :entries (vec sorted)}
                                                 html          (render-in-pod @render-pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     {:path page-filepath
-                                                               :canonical-url (str (:base-url global-meta) page)
-                                                               :content html
-                                                               :date-build (:date-build global-meta)}]
+                                                new-entry     (merge
+                                                               meta
+                                                               {:path page-filepath
+                                                                :canonical-url (str (:base-url global-meta) page)
+                                                                :content html
+                                                                :date-build (:date-build global-meta)})]
                                             (perun/create-file tmp page-filepath html)
                                             (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
