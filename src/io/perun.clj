@@ -40,6 +40,10 @@
         (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
     fileset))
 
+(defn trace
+  [kw entries]
+  (map #(update-in % [:io.perun/trace] (fnil conj []) kw) entries))
+
 (def ^:private filedata-deps
   '[[com.novemberain/pantomime "2.8.0"]])
 
@@ -55,7 +59,10 @@
    establish metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [updated-files (add-filedata (boot/user-files fileset))]
+    (let [updated-files (->> fileset
+                             boot/user-files
+                             add-filedata
+                             (trace :io.perun/base))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
@@ -71,7 +78,8 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     add-filedata)
+                     add-filedata
+                     (trace :io.perun/images-dimensions))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-dimensions/images-dimensions ~files {}))]
       (perun/set-meta fileset updated-files))))
@@ -96,7 +104,8 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     add-filedata)
+                     add-filedata
+                     (trace :io.perun/images-resize))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-files)
@@ -140,11 +149,15 @@
             updated-files (pod/with-call-in @pod
                              (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
-            ; Pure merge instead of `merge-with merge` (meta-meta).
-            ; This is because updated metadata should replace previous metadata to
-            ; correctly handle cases where a metadata key is removed from post metadata.
-            final-metadata   (vals (merge (perun/key-meta initial-metadata) (perun/key-meta updated-files)))
-            final-metadata   (remove #(-> % :path removed?) final-metadata)]
+            final-metadata   (->> updated-files
+                                  perun/key-meta
+                                  ; Pure merge instead of `merge-with merge` (meta-meta).
+                                  ; This is because updated metadata should replace previous metadata to
+                                  ; correctly handle cases where a metadata key is removed from post metadata.
+                                  (merge (perun/key-meta initial-metadata))
+                                  vals
+                                  (remove #(-> % :path removed?))
+                                  (trace :io.perun/markdown))]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         (perun/set-meta fileset final-metadata)))))
@@ -178,8 +191,9 @@
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.ttr/calculate-ttr ~files))]
+            updated-files (trace :io.perun/ttr
+                                 (pod/with-call-in @pod
+                                   (io.perun.ttr/calculate-ttr ~files)))]
         (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-files))
         (perun/set-meta fileset updated-files)))))
 
@@ -189,8 +203,9 @@
   (let [pod (create-pod ttr-deps)]
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.word-count/count-words ~files))]
+            updated-files (trace :io.perun/word-count
+                                 (pod/with-call-in @pod
+                                   (io.perun.word-count/count-words ~files)))]
         (perun/report-debug "word-count" "counted words" (map :word-count updated-files))
         (perun/set-meta fileset updated-files)))))
 
@@ -205,8 +220,9 @@
   (let [pod (create-pod gravatar-deps)]
     (boot/with-pre-wrap fileset
       (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
+            updated-files (trace :io.perun/gravatar
+                                 (pod/with-call-in @pod
+                                   (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key)))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
        (perun/set-meta fileset updated-files)))))
 
@@ -216,7 +232,9 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (remove #(true? (:draft %)) files)]
+          updated-files (->> files
+                             (remove #(true? (:draft %)))
+                             (trace :io.perun/draft))]
       (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
@@ -227,7 +245,9 @@
     (let [files           (perun/get-meta fileset)
           global-meta     (perun/get-global-meta fileset)
           now             (java.util.Date.)
-          updated-files   (map #(assoc % :date-build now) files)
+          updated-files   (->> files
+                               (map #(assoc % :date-build now))
+                               (trace :io.perun/build-date))
           new-global-meta (assoc global-meta :date-build now)
           updated-fs      (perun/set-meta fileset updated-files)]
         (perun/report-debug "build-date" "added :date-build" (map :date-build updated-files))
@@ -250,7 +270,9 @@
   (boot/with-pre-wrap fileset
     (let [slug-fn       (or slug-fn default-slug-fn)
           files         (perun/get-meta fileset)
-          updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
+          updated-files (->> files
+                             (map #(assoc % :slug (-> % :filename slug-fn)))
+                             (trace :io.perun/slug))]
       (perun/report-debug "slug" "generated slugs" (map :slug updated-files))
       (perun/report-info "slug" "added slugs to %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
@@ -270,7 +292,9 @@
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
-          updated-files (map assoc-perma files)]
+          updated-files (->> files
+                             (map assoc-perma)
+                             (trace :io.perun/permalink))]
       (perun/report-debug "permalink"  "generated permalinks" (map :permalink updated-files))
       (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
@@ -289,7 +313,9 @@
                   :canonical-url
                   ; we need to call perun/relativize-url to remove leading / because base-url has trailing /
                   (str base-url (perun/relativize-url (:permalink  %))))
-          updated-files (map assoc-can-url files)]
+          updated-files (->> files
+                             (map assoc-can-url)
+                             (trace :io.perun/canonical-url))]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
         (perun/merge-meta fileset updated-files))))
 
@@ -507,7 +533,7 @@
                                             (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
                                       grouped-files))
-                    updated-files    (apply conj files new-files)
+                    updated-files    (apply conj files (trace :io.perun/collection new-files))
                     updated-fileset  (perun/set-meta fileset updated-files)]
                   (commit updated-fileset tmp))))))
 
