@@ -417,7 +417,7 @@
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (pod/with-call-in @render-pod
-          (io.perun.render/update!))
+        (io.perun.render/update!))
       (let [files (filter (:filterer options) (perun/get-meta fileset))
             updated-files (doall
                            (for [{:keys [path] :as file} files]
