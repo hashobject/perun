@@ -129,9 +129,8 @@
    HTML resulting from processing markdown file's content"
   [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options OPTS edn "options to be passed to the markdown parser"]
-  (let [pod       (create-pod markdown-deps)
-        prev-meta (atom {})
-        prev-fs   (atom nil)]
+  (let [pod     (create-pod markdown-deps)
+        prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
       (let [options  (merge +markdown-defaults+ *opts*)
             md-files (->> fileset
@@ -139,28 +138,13 @@
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           add-filedata)
-            ; process all removed markdown files
-            removed? (->> fileset
-                          (boot/fileset-removed @prev-fs)
-                          boot/user-files
-                          (boot/by-ext ["md" "markdown"])
-                          (map #(boot/tmp-path %))
-                          set)
-            updated-files (pod/with-call-in @pod
-                             (io.perun.markdown/parse-markdown ~md-files ~options))
-            initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
-            final-metadata   (->> updated-files
-                                  perun/key-meta
-                                  ; Pure merge instead of `merge-with merge` (meta-meta).
-                                  ; This is because updated metadata should replace previous metadata to
-                                  ; correctly handle cases where a metadata key is removed from post metadata.
-                                  (merge (perun/key-meta initial-metadata))
-                                  vals
-                                  (remove #(-> % :path removed?))
-                                  (trace :io.perun/markdown))]
-        (reset! prev-fs fileset)
-        (reset! prev-meta final-metadata)
-        (perun/set-meta fileset final-metadata)))))
+            updated-files (trace :io.perun/markdown
+                                 (pod/with-call-in @pod
+                                   (io.perun.markdown/parse-markdown ~md-files ~options)))
+            final-metadata (perun/merge-meta* (perun/get-meta @prev-fs) updated-files)
+            new-fs (perun/set-meta fileset final-metadata)]
+        (reset! prev-fs new-fs)
+        new-fs))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.

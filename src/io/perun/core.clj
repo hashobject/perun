@@ -2,6 +2,7 @@
   "Utilies which can be used in base JVM and pods."
   (:require [clojure.java.io         :as io]
             [clojure.string          :as string]
+            [boot.core               :as boot]
             [boot.from.io.aviso.ansi :as ansi]
             [boot.util               :as u]))
 
@@ -11,7 +12,7 @@
   "Return metadata on files. Files metadata is a list.
    Internally it's stored as a map indexed by `:path`"
   [fileset]
-  (-> fileset meta +meta-key+ vals))
+  (keep +meta-key+ (vals (:tree fileset))))
 
 (defn key-meta [data]
   (into {} (for [d data] [(:path d) d])))
@@ -19,7 +20,7 @@
 (defn set-meta
   "Update `+meta-key+` metadata for the fileset and return updates fileset"
   [fileset data]
-  (vary-meta fileset assoc +meta-key+ (key-meta data)))
+  (boot/add-meta fileset (into {} (for [d data] [(:path d) {+meta-key+ d}]))))
 
 (defn merge-meta* [m1 m2]
   (vals (merge-with merge (key-meta m1) (key-meta m2))))
