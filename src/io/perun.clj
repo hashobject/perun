@@ -567,7 +567,7 @@
                                            (into {}))}
                            {:grouper #(-> {"index.html" {:entries %}})})))]
     (cond (not (fn? (:comparator options)))
-          (u/fail "collection task :comparator option should implement IFn\n")
+          (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
           (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
