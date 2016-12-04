@@ -558,14 +558,17 @@
   (let [options (merge +collection-defaults+
                        (dissoc *opts* :page)
                        (if-let [p (:page *opts*)]
-                         {:grouper #(-> {p {:entries %}})}
+                         {:grouper #(-> {p {:entries %
+                                            :group-meta (:meta *opts*)}})}
                          (if-let [gb (:groupby *opts*)]
                            {:grouper #(->> %
                                            (group-by gb)
                                            (map (fn [[page entries]]
-                                                  [page {:entries entries}]))
+                                                  [page {:entries entries
+                                                         :group-meta (:meta *opts*)}]))
                                            (into {}))}
-                           {:grouper #(-> {"index.html" {:entries %}})})))]
+                           {:grouper #(-> {"index.html" {:entries %
+                                                         :group-meta (:meta *opts*)}})})))]
     (cond (not (fn? (:comparator options)))
           (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
