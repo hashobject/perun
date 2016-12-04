@@ -322,7 +322,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -350,7 +350,7 @@
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
