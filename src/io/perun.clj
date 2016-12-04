@@ -440,8 +440,8 @@
                              (render-paths-fn options)
                              (render-to-paths (:renderer options) tmp tracer))]
         (-> fileset
-            (perun/merge-meta new-metadata)
-            (commit tmp))))))
+            (commit tmp)
+            (perun/merge-meta new-metadata))))))
 
 (deftask render
   "Render individual pages for entries in perun data.
