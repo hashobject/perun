@@ -145,6 +145,7 @@
                                (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
                                      entry (-> entry*
                                                (assoc :has-content true)
+                                               (assoc :original-content parsed)
                                                (assoc :path page-filepath)
                                                (assoc :filename (string/replace filename
                                                                                 #"(?i).[a-z]+$" ".html"))

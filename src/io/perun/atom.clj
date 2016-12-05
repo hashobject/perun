@@ -44,7 +44,7 @@
           [:name (:author global-metadata)]
           [:email (:author-email global-metadata)]])
 
-       (for [{:keys [uuid canonical-url content title author author-email] :as post} (take 10 posts)
+       (for [{:keys [uuid canonical-url original-content title author author-email] :as post} (take 10 posts)
              :let [author (or author (:author global-metadata))
                    author-email (or author-email (:author-email global-metadata))]]
          (do
@@ -58,7 +58,7 @@
             [:published (iso-datetime (published post))]
             [:updated (iso-datetime (updated post))]
             ;; FIXME: plain text on xml:base property
-            [:content {:type "html"} (str content)]
+            [:content {:type "html"} (str original-content)]
             [:author
              [:name author]
              (if author-email [:email author-email])]
