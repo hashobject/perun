@@ -678,7 +678,7 @@
           (u/fail "assortment task :sortby option value should implement IFn\n")
           :else
           (let [assortment-paths (partial grouped-paths "assortment")]
-              (render-pre-wrap assortment-paths options :io.perun/assortment)))))
+            (render-pre-wrap assortment-paths options :io.perun/assortment)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
