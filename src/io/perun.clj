@@ -152,8 +152,12 @@
                                                        :full-path :mime-type :original))]
                                  (perun/create-file tmp page-filepath parsed)
                                  entry)))
+            input-metadata* (map #(-> %
+                                      (dissoc :include-rss)
+                                      (dissoc :include-atom))
+                                 input-metadata)
             final-metadata (perun/merge-meta* (perun/get-meta @prev-fs)
-                                              (concat input-metadata output-metadata))
+                                              (concat input-metadata* output-metadata))
             new-fs (-> fileset
                        (commit tmp)
                        (perun/set-meta final-metadata))]
