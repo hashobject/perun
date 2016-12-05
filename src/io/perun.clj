@@ -218,11 +218,11 @@
   '[[time-to-read "0.1.0"]])
 
 (def ^:private +ttr-defaults+
-  {:filterer :content})
+  {:filterer :has-content})
 
 (deftask ttr
   "Calculate time to read for each file. Add `:ttr` key to the files' meta"
-  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (let [pod     (create-pod ttr-deps)
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
@@ -234,11 +234,11 @@
         (perun/set-meta fileset updated-files)))))
 
 (def ^:private +word-count-defaults+
-  {:filterer :content})
+  {:filterer :has-content})
 
 (deftask word-count
   "Count words in each file. Add `:word-count` key to the files' meta"
-  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (let [pod (create-pod ttr-deps)
         options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
@@ -253,13 +253,13 @@
   '[[gravatar "0.1.0"]])
 
 (def ^:private +gravatar-defaults+
-  {:filterer :content})
+  {:filterer :has-content})
 
 (deftask gravatar
   "Find gravatar urls using emails"
   [s source-key SOURCE-PROP kw "email property used to lookup gravatar url"
    t target-key TARGET-PROP kw "property name to store gravatar url"
-   _ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+   _ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (let [pod (create-pod gravatar-deps)
         options (merge +gravatar-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
@@ -283,11 +283,11 @@
       (perun/set-meta fileset updated-files))))
 
 (def ^:private +build-date-defaults+
-  {:filterer :content})
+  {:filterer :has-content})
 
 (deftask build-date
   "Add :date-build attribute to each file metadata and also to the global meta"
-  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (boot/with-pre-wrap fileset
     (let [options         (merge +build-date-defaults+ *opts*)
           files           (filter (:filterer options) (perun/get-meta fileset))
@@ -408,7 +408,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -436,7 +436,7 @@
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
