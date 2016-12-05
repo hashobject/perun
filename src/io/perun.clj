@@ -590,13 +590,12 @@
    Entries can optionally be filtered by supplying a function
    to the `filterer` option.
 
-   The `sortby` and `groupby` functions can be used for ordering entries
+   The `sortby` function can be used for ordering entries
    before rendering as well as rendering groups of entries to different pages."
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
    _ filterer   FILTER     code "predicate to use for selecting entries (default: `:has-content`)"
    s sortby     SORTBY     code "sort entries by function"
-   g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
    p page       PAGE       str  "collection result page path"
    m meta       META       edn  "metadata to set on each collection entry"]
@@ -605,28 +604,74 @@
                        (if-let [p (:page *opts*)]
                          {:grouper #(-> {p {:entries %
                                             :group-meta (:meta *opts*)}})}
-                         (if-let [gb (:groupby *opts*)]
-                           {:grouper #(->> %
-                                           (group-by gb)
-                                           (map (fn [[page entries]]
-                                                  [page {:entries entries
-                                                         :group-meta (:meta *opts*)}]))
-                                           (into {}))}
-                           {:grouper #(-> {"index.html" {:entries %
-                                                         :group-meta (:meta *opts*)}})})))]
+                         {:grouper #(-> {"index.html" {:entries %
+                                                       :group-meta (:meta *opts*)}})}))]
     (cond (not (fn? (:comparator options)))
           (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
           (u/fail "collection task :filterer option value should implement IFn\n")
-          (and (:page options) (:groupby *opts*))
-          (u/fail "using the :page option will render any :groupby option setting effectless\n")
-          (and (:groupby options) (not (ifn? (:groupby options))))
-          (u/fail "collection task :groupby option value should implement IFn\n")
           (not (ifn? (:sortby options)))
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
           (let [collection-paths (partial grouped-paths "collection")]
             (render-pre-wrap collection-paths options :io.perun/collection)))))
+
+(def ^:private +assortment-defaults+
+  {:out-dir "public"
+   :filterer :has-content
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask assortment
+  "Render multiple collections
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   The `grouper` function will be called with a seq containing the
+   entries to be grouped, and it should return a map with keys that
+   are filenames and values that are maps with the keys:
+    - `:entries`: the entries for each collection
+    - `:group-meta`: (optional) page metadata for this collection
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str  "the output directory"
+   r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
+   g grouper    GROUPER    code "group posts function, keys are filenames, values are to-be-rendered entries"
+   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:has-content`)"
+   s sortby     SORTBY     code "sort entries by function"
+   c comparator COMPARATOR code "sort by comparator function"
+   m meta       META       edn  "metadata to set on each collection entry"]
+  (let [options (merge +assortment-defaults+
+                       *opts*
+                       (if-let [grouper* (:grouper *opts*)]
+                         {:grouper (fn [metas]
+                                     (->> metas
+                                          grouper*
+                                          (reduce
+                                           (fn [paths [page data]]
+                                             (assoc paths page
+                                                    (update-in data [:group-meta]
+                                                               #(merge (:meta *opts*) %))))
+                                           {})))}
+                         {:grouper #(-> {"index.html" {:entries %
+                                                       :group-meta (:meta *opts*)}})}))]
+    (cond (not (fn? (:comparator options)))
+          (u/fail "assortment task :comparator option should implement Fn\n")
+          (not (ifn? (:filterer options)))
+          (u/fail "assortment task :filterer option value should implement IFn\n")
+          (not (ifn? (:grouper options)))
+          (u/fail "assortment task :grouper option value should implement IFn\n")
+          (not (ifn? (:sortby options)))
+          (u/fail "assortment task :sortby option value should implement IFn\n")
+          :else
+          (let [assortment-paths (partial grouped-paths "assortment")]
+              (render-pre-wrap assortment-paths options :io.perun/assortment)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
