@@ -4,6 +4,7 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.java.io :as io]
+            [clojure.set :as set]
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]))
@@ -113,6 +114,56 @@
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
+(defn content-pre-wrap
+  [parse-form file-exts tracer options]
+  (let [tmp     (boot/tmp-dir!)
+        prev-fs (atom nil)]
+    (boot/with-pre-wrap fileset
+      (let [changed-files (->> (boot/fileset-diff @prev-fs fileset :hash)
+                               boot/user-files
+                               (boot/by-ext file-exts)
+                               add-filedata)
+            fs-files (->> fileset
+                          boot/user-files
+                          (boot/by-ext file-exts)
+                          set)
+            prev-fs-files (if @prev-fs
+                            (->> @prev-fs
+                                 boot/user-files
+                                 (boot/by-ext file-exts)
+                                 set)
+                            #{})
+            all-files (set/intersection fs-files prev-fs-files)
+            unchanged-metadata (->> changed-files
+                                    set
+                                    (set/difference all-files)
+                                    (keep perun/+meta-key+))
+            input-metadata (->>
+                            (if-let [pod (:pod options)]
+                              (pod/with-call-in @pod ~(parse-form changed-files))
+                              (eval (parse-form changed-files)))
+                            (trace tracer))
+            output-metadata (doall
+                             (for [{:keys [path parsed filename] :as entry*} (concat unchanged-metadata
+                                                                                     input-metadata)]
+                               (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
+                                     entry (-> entry*
+                                               (assoc :has-content true)
+                                               (assoc :path page-filepath)
+                                               (assoc :filename (string/replace filename
+                                                                                #"(?i).[a-z]+$" ".html"))
+                                               (dissoc :parsed :extension :file-type :parent-path
+                                                       :full-path :mime-type :original))]
+                                 (perun/create-file tmp page-filepath parsed)
+                                 entry)))
+            final-metadata (perun/merge-meta* (perun/get-meta @prev-fs)
+                                              (concat input-metadata output-metadata))
+            new-fs (-> fileset
+                       (commit tmp)
+                       (perun/set-meta final-metadata))]
+        (reset! prev-fs new-fs)
+        new-fs))))
+
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.5"]])
@@ -126,26 +177,17 @@
   "Parse markdown files
 
    This task will look for files ending with `md` or `markdown`
-   and add a `:content` key to their metadata containing the
+   and add a `:parsed` key to their metadata containing the
    HTML resulting from processing markdown file's content"
   [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
-        prev-fs (atom nil)]
-    (boot/with-pre-wrap fileset
-      (let [options  (merge +markdown-defaults+ *opts*)
-            md-files (->> fileset
-                          (boot/fileset-diff @prev-fs)
-                          boot/user-files
-                          (boot/by-ext ["md" "markdown"])
-                          add-filedata)
-            updated-files (trace :io.perun/markdown
-                                 (pod/with-call-in @pod
-                                   (io.perun.markdown/parse-markdown ~md-files ~options)))
-            final-metadata (perun/merge-meta* (perun/get-meta @prev-fs) updated-files)
-            new-fs (perun/set-meta fileset final-metadata)]
-        (reset! prev-fs new-fs)
-        new-fs))))
+        options (merge +markdown-defaults+ {:pod pod} *opts*)]
+    (content-pre-wrap
+     (fn [files] `(io.perun.markdown/parse-markdown ~files ~(dissoc options :pod)))
+     ["md" "markdown"]
+     :io.perun/markdown
+     options)))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
@@ -247,12 +289,12 @@
                                 drop-last
                                 (string/join "-")
                                 string/lower-case))
-   :filterer :content})
+   :filterer :has-content})
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
   [s slug-fn  SLUGFN code "function to build slug from filename"
-   _ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+   _ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +slug-defaults+ *opts*)
           slug-fn       (:slug-fn options)
@@ -266,14 +308,14 @@
 
 (def ^:private +permalink-defaults+
   {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
-   :filterer     :content})
+   :filterer     :has-content})
 
 (deftask permalink
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   _ filterer     FILTER      code "predicate to use for selecting entries (default: `:content`)"]
+   _ filterer     FILTER      code "predicate to use for selecting entries (default: `:has-content`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -286,14 +328,14 @@
       (perun/merge-meta fileset updated-files))))
 
 (def ^:private +canonical-url-defaults+
-  {:filterer :content})
+  {:filterer :has-content})
 
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
 
    The url is concatenation of :base-url in global metadata and files' permaurl.
    The base-url must end with '/'."
-  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +canonical-url-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -315,13 +357,13 @@
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
-   :filterer :content
+   :filterer :has-content
    :out-dir "public"})
 
 (deftask sitemap
   "Generate sitemap"
   [f filename FILENAME str  "generated sitemap filename"
-   _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer FILTER   code "predicate to use for selecting entries (default: `:has-content`)"
    o out-dir  OUTDIR   str  "the output directory"
    u url      URL      str  "base URL"]
   (let [pod     (create-pod sitemap-deps)
@@ -402,7 +444,7 @@
 
 (def ^:private +render-defaults+
   {:out-dir  "public"
-   :filterer :content})
+   :filterer :has-content})
 
 (def ^:private render-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
@@ -418,8 +460,8 @@
    - `:render-data` the map argument that `renderer` will be called with
    - `:entry` the metadata for the item being rendered
 
-  All `:entry`s will be returned, after having their `:content` set to the
-  rendering result"
+  All `:entry`s will be returned, with their `:path`s set, `:has-content`
+  set to `true`, and `tracer` added to `io.perun/trace`."
   [data renderer tmp tracer]
   (pod/with-call-in @render-pod
     (io.perun.render/update!))
@@ -428,7 +470,9 @@
           (for [[path {:keys [render-data entry]}] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
-              (assoc entry :content content))))))
+              (assoc entry
+                     :path path
+                     :has-content true))))))
 
 (defn render-pre-wrap
   "Handles common rendering task orchestration
@@ -439,14 +483,25 @@
 
   Returns a boot `with-pre-wrap` result"
   [render-paths-fn options tracer]
-  (let [tmp  (boot/tmp-dir!)]
+  (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
-      (let [new-metadata (-> fileset
-                             (render-paths-fn options)
-                             (render-to-paths (:renderer options) tmp tracer))]
+      (let [render-paths (render-paths-fn fileset options)
+            new-metadata (render-to-paths render-paths (:renderer options) tmp tracer)
+            rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
         (-> fileset
+            (boot/rm rm-files)
             (commit tmp)
             (perun/merge-meta new-metadata))))))
+
+(defn- make-path
+  [out-dir permalink path]
+  (perun/create-filepath
+   out-dir
+   ; If permalink ends in slash, append index.html as filename
+   (or (some-> permalink
+               (string/replace #"/$" "/index.html")
+               perun/url-to-path)
+       path)))
 
 (deftask render
   "Render individual pages for entries in perun data.
@@ -465,28 +520,24 @@
    If permalink ends in slash, index.html is used as filename.
    If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
-   _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer FILTER   code "predicate to use for selecting entries (default: `:has-content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"
    m meta     META     edn  "metadata to set on each entry"]
   (let [options (merge +render-defaults+ *opts*)]
     (letfn [(render-paths [fileset options]
               (let [entries (filter (:filterer options) (perun/get-meta fileset))
                     paths (reduce
-                           (fn [result {:keys [path] :as entry*}]
-                             (let [entry (merge meta entry*)
+                           (fn [result {:keys [path permalink] :as entry}]
+                             (let [content (slurp (boot/tmp-file (boot/tmp-get fileset path)))
+                                   new-path (make-path (:out-dir options) permalink path)
+                                   meta-entry (merge meta entry)
+                                   content-entry (assoc meta-entry :content content)
                                    render-data   {:meta    (perun/get-global-meta fileset)
                                                   :entries (vec entries)
-                                                  :entry   entry}
-                                   page-filepath (perun/create-filepath
-                                                  (:out-dir options)
-                                                  ; If permalink ends in slash, append index.html as filename
-                                                  (or (some-> (:permalink entry)
-                                                              (string/replace #"/$" "/index.html")
-                                                              perun/url-to-path)
-                                                      (string/replace path #"(?i).[a-z]+$" ".html")))]
+                                                  :entry   content-entry}]
                                (perun/report-debug "render" "rendered page for path" path)
-                               (assoc result page-filepath {:render-data render-data
-                                                            :entry       entry})))
+                               (assoc result new-path {:render-data render-data
+                                                       :entry       meta-entry})))
                            {}
                            entries)]
                 (perun/report-info "render" "rendered %s pages" (count paths))
@@ -504,24 +555,22 @@
          (filter (:filterer options))
          grouper
          (reduce
-          (fn [result [path {:keys [entries group-meta]}]]
-            (let [sorted        (sort-by (:sortby options) (:comparator options) entries)
-                  page-filepath (perun/create-filepath (:out-dir options) path)
-                  new-entry     (merge {:path          page-filepath
-                                        :canonical-url (str (:base-url global-meta) path)
-                                        :date-build    (:date-build global-meta)}
-                                       group-meta)
-                  render-data   {:meta    global-meta
-                                 :entry   new-entry
-                                 :entries (vec sorted)}]
+          (fn [result [path {:keys [entries group-meta permalink]}]]
+            (let [sorted      (sort-by (:sortby options) (:comparator options) entries)
+                  new-path    (make-path (:out-dir options) permalink path)
+                  new-entry   (merge group-meta {:path new-path
+                                                 :filename path})
+                  render-data {:meta    global-meta
+                               :entry   new-entry
+                               :entries (vec sorted)}]
               (perun/report-info task-name (str "rendered " task-name " " path))
-              (assoc result page-filepath {:render-data render-data
-                                           :entry       new-entry})))
+              (assoc result new-path {:render-data render-data
+                                      :entry       new-entry})))
           {}))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
-   :filterer :content
+   :filterer :has-content
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -530,6 +579,7 @@
    The symbol supplied as `renderer` should resolve to a function
    which will be called with a map containing the following keys:
     - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
     - `:entries`, all entries
 
    Entries can optionally be filtered by supplying a function
@@ -539,7 +589,7 @@
    before rendering as well as rendering groups of entries to different pages."
   [o out-dir    OUTDIR     str  "the output directory"
    r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
-   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:has-content`)"
    s sortby     SORTBY     code "sort entries by function"
    g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
