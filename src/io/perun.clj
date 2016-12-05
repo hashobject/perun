@@ -549,24 +549,29 @@
   on the provided `fileset` and `options`."
   [task-name fileset options]
   (let [global-meta (perun/get-global-meta fileset)
-        grouper (:grouper options)]
-    (->> fileset
-         perun/get-meta
-         (filter (:filterer options))
-         grouper
-         (reduce
-          (fn [result [path {:keys [entries group-meta permalink]}]]
-            (let [sorted      (sort-by (:sortby options) (:comparator options) entries)
-                  new-path    (make-path (:out-dir options) permalink path)
-                  new-entry   (merge group-meta {:path new-path
-                                                 :filename path})
-                  render-data {:meta    global-meta
-                               :entry   new-entry
-                               :entries (vec sorted)}]
-              (perun/report-info task-name (str "rendered " task-name " " path))
-              (assoc result new-path {:render-data render-data
-                                      :entry       new-entry})))
-          {}))))
+        grouper (:grouper options)
+        paths (->> fileset
+                   perun/get-meta
+                   (filter (:filterer options))
+                   grouper)]
+    (if (seq paths)
+      (reduce
+       (fn [result [path {:keys [entries group-meta permalink]}]]
+         (let [sorted      (sort-by (:sortby options) (:comparator options) entries)
+               new-path    (make-path (:out-dir options) permalink path)
+               new-entry   (merge group-meta {:path new-path
+                                              :filename path})
+               render-data {:meta    global-meta
+                            :entry   new-entry
+                            :entries (vec sorted)}]
+           (perun/report-info task-name (str "rendered " task-name " " path))
+           (assoc result new-path {:render-data render-data
+                                   :entry       new-entry})))
+       {}
+       paths)
+      (do
+        (perun/report-info task-name (str task-name " found nothing to render"))
+        []))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
