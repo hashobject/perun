@@ -115,7 +115,7 @@
       (commit fileset tmp))))
 
 (defn content-pre-wrap
-  [parse-form file-exts tracer options]
+  [parse-form file-exts tracer & [pod]]
   (let [tmp     (boot/tmp-dir!)
         prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
@@ -124,7 +124,7 @@
                                (boot/by-ext file-exts)
                                add-filedata)
             input-metadata (->>
-                            (if-let [pod (:pod options)]
+                            (if pod
                               (pod/with-call-in @pod ~(parse-form changed-files))
                               (eval (parse-form changed-files)))
                             (trace tracer))
@@ -183,12 +183,12 @@
   [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
-        options (merge +markdown-defaults+ {:pod pod} *opts*)]
+        options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     (fn [files] `(io.perun.markdown/parse-markdown ~files ~(dissoc options :pod)))
+     (fn [files] `(io.perun.markdown/parse-markdown ~files ~options))
      ["md" "markdown"]
      :io.perun/markdown
-     options)))
+     pod)))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
