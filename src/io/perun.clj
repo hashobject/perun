@@ -148,7 +148,7 @@
                                                (assoc :path page-filepath)
                                                (assoc :filename (string/replace filename
                                                                                 #"(?i).[a-z]+$" ".html"))
-                                               (dissoc :parsed :extension :file-type :parent-path
+                                               (dissoc :parsed :extension :file-type
                                                        :full-path :mime-type :original))]
                                  (perun/create-file tmp page-filepath parsed)
                                  entry)))
