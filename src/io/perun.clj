@@ -115,6 +115,10 @@
       (commit fileset tmp))))
 
 (defn content-pre-wrap
+  "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
+  files with extensions in `file-exts`, adds `tracer` to `:io.perun/trace`
+  and writes html files for subsequent tasks to process, if desired. Pass
+  `pod` if one is needed for parsing"
   [parse-form file-exts tracer & [pod]]
   (let [tmp     (boot/tmp-dir!)
         prev-fs (atom nil)]
@@ -495,6 +499,8 @@
             (perun/merge-meta new-metadata))))))
 
 (defn- make-path
+  "Encapsulates common logic for deciding where to write a file,
+  based on the source's metadata"
   [out-dir permalink path]
   (perun/create-filepath
    out-dir
