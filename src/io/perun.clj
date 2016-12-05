@@ -238,22 +238,24 @@
         (perun/report-info "build-date" "added date-build to %s files" (count updated-files))
       (perun/set-global-meta updated-fs new-global-meta))))
 
-(defn ^:private default-slug-fn [filename]
-  "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
-
-   Jekyll uses the same format by default."
-  (->> (string/split filename #"[-\.]")
-       (drop 3)
-       drop-last
-       (string/join "-")
-       string/lower-case))
+(def ^:private +slug-defaults+
+  {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
+   ; Jekyll uses the same format by default.
+   :slug-fn (fn [filename] (->> (string/split filename #"[-\.]")
+                                (drop 3)
+                                drop-last
+                                (string/join "-")
+                                string/lower-case))
+   :filterer :content})
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
-  [s slug-fn SLUGFN code "function to build slug from filename"]
+  [s slug-fn  SLUGFN code "function to build slug from filename"
+   _ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
-    (let [slug-fn       (or slug-fn default-slug-fn)
-          files         (perun/get-meta fileset)
+    (let [options       (merge +slug-defaults+ *opts*)
+          slug-fn       (:slug-fn options)
+          files         (filter (:filterer options) (perun/get-meta fileset))
           updated-files (->> files
                              (map #(assoc % :slug (-> % :filename slug-fn)))
                              (trace :io.perun/slug))]
@@ -261,17 +263,16 @@
       (perun/report-info "slug" "added slugs to %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
-
 (def ^:private +permalink-defaults+
   {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
-   :filterer     identity})
+   :filterer     :content})
 
 (deftask permalink
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   _ filterer     FILTER      code "predicate to use for selecting entries (default: `identity`)"]
+   _ filterer     FILTER      code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
@@ -283,14 +284,18 @@
       (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
 
+(def ^:private +canonical-url-defaults+
+  {:filterer :content})
+
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
 
    The url is concatenation of :base-url in global metadata and files' permaurl.
    The base-url must end with '/'."
-  []
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
-    (let [files         (perun/get-meta fileset)
+    (let [options       (merge +canonical-url-defaults+ *opts*)
+          files         (filter (:filterer options) (perun/get-meta fileset))
           base-url      (perun/assert-base-url (:base-url (perun/get-global-meta fileset)))
           assoc-can-url
             #(assoc %
