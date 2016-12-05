@@ -123,29 +123,25 @@
                                boot/user-files
                                (boot/by-ext file-exts)
                                add-filedata)
-            fs-files (->> fileset
-                          boot/user-files
-                          (boot/by-ext file-exts)
-                          set)
+            input-metadata (->>
+                            (if-let [pod (:pod options)]
+                              (pod/with-call-in @pod ~(parse-form changed-files))
+                              (eval (parse-form changed-files)))
+                            (trace tracer))
             prev-fs-files (if @prev-fs
                             (->> @prev-fs
                                  boot/user-files
                                  (boot/by-ext file-exts)
                                  set)
                             #{})
-            all-files (set/intersection fs-files prev-fs-files)
             unchanged-metadata (->> changed-files
                                     set
-                                    (set/difference all-files)
+                                    (set/difference prev-fs-files)
+                                    (filter #(boot/tmp-get fileset %))
                                     (keep perun/+meta-key+))
-            input-metadata (->>
-                            (if-let [pod (:pod options)]
-                              (pod/with-call-in @pod ~(parse-form changed-files))
-                              (eval (parse-form changed-files)))
-                            (trace tracer))
             output-metadata (doall
-                             (for [{:keys [path parsed filename] :as entry*} (concat unchanged-metadata
-                                                                                     input-metadata)]
+                             (for [{:keys [path parsed filename] :as entry*} (concat input-metadata
+                                                                                     unchanged-metadata)]
                                (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
                                      entry (-> entry*
                                                (assoc :has-content true)
