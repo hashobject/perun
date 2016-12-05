@@ -41,6 +41,8 @@
     fileset))
 
 (defn trace
+  "Helper function, conj `kw` onto the `:io.perun/trace` metadata
+  key of each entry in `entries`"
   [kw entries]
   (map #(update-in % [:io.perun/trace] (fnil conj []) kw) entries))
 
