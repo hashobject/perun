@@ -149,7 +149,7 @@
                                (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
                                      entry (-> entry*
                                                (assoc :has-content true)
-                                               (assoc :original-content parsed)
+                                               (assoc :original-path path)
                                                (assoc :path page-filepath)
                                                (assoc :filename (string/replace filename
                                                                                 #"(?i).[a-z]+$" ".html"))
@@ -447,7 +447,13 @@
     (boot/with-pre-wrap fileset
       (let [global-meta   (perun/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
-            files         (filter (:filterer options) (perun/get-meta fileset))]
+            files         (->> fileset
+                               perun/get-meta
+                               (filter (:filterer options))
+                               (map #(let [f (boot/tmp-get fileset (:original-path %))
+                                           oc (or (-> f perun/+meta-key+ :parsed)
+                                                  (-> f boot/tmp-file slurp))]
+                                       (assoc % :original-content oc))))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
