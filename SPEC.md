@@ -38,7 +38,7 @@ All posts have a path which is used as a key to identify the post.
 - **:has-content** Flag indicating that this file contains page content
     - Set by input parsing tasks (like `markdown`) on output files
     - Passed through by rendering tasks
-- **:original-content** Contains the content from the original parsing task
+- **:original-path** The path for the input file from which this entry is descended
     - Set by input parsing tasks (like `markdown`) on output files
     - Passed through by rendering tasks
 - **:parsed** Contains the parsed file content
