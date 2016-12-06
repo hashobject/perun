@@ -450,10 +450,12 @@
             files         (->> fileset
                                perun/get-meta
                                (filter (:filterer options))
-                               (map #(let [f (boot/tmp-get fileset (:original-path %))
-                                           oc (or (-> f perun/+meta-key+ :parsed)
-                                                  (-> f boot/tmp-file slurp))]
-                                       (assoc % :original-content oc))))]
+                               (map #(let [file (if-let [original-path (:original-path %)]
+                                                  (boot/tmp-get fileset original-path)
+                                                  (boot/tmp-get fileset (:path %)))
+                                           content (or (-> file perun/+meta-key+ :parsed)
+                                                       (-> file boot/tmp-file slurp))]
+                                       (assoc % :content content))))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
