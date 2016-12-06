@@ -118,8 +118,7 @@
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [md-files (->> fileset
-                          (boot/fileset-diff @prev-fs)
+      (let [md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           add-filedata)
