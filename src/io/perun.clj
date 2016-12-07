@@ -118,10 +118,16 @@
   '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.5"]])
 
+
 (def ^:private +markdown-defaults+
   {:meta {:original true
           :include-rss true
-          :include-atom true}})
+          :include-atom true
+          :preprocessor 'clojure.core/identity}})
+
+(defn- assert-preprocessor [sym]
+  (assert (and (symbol? sym) (namespace sym))
+  "Markdown :preprocessor must be a fully qualified symbol, i.e. 'my.ns/fun"))
 
 (deftask markdown
   "Parse markdown files
@@ -130,10 +136,13 @@
    and add a `:content` key to their metadata containing the
    HTML resulting from processing markdown file's content"
   [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
-   o options OPTS edn "options to be passed to the markdown parser"]
+   o options OPTS edn "options to be passed to the markdown parser"
+   p preprocessor PREPROCESSOR sym "process markdown before it is parsed (fully qualified symbol which resolves to a function)"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
-        prev-fs   (atom nil)]
+        prev-fs   (atom nil)
+        merged-def (merge +markdown-defaults+ *opts*)]
+    (assert-preprocessor (:preprocessor merged-def))
     (boot/with-pre-wrap fileset
       (let [options  (merge +markdown-defaults+ *opts*)
             md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
@@ -148,7 +157,7 @@
                           (map #(boot/tmp-path %))
                           set)
             updated-files (pod/with-call-in @pod
-                             (io.perun.markdown/parse-markdown ~md-files ~options))
+                             (io.perun.markdown/parse-markdown ~md-files ~options ~(:preprocessor merged-def)))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
             final-metadata   (->> updated-files
                                   perun/key-meta
