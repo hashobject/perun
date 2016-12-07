@@ -40,6 +40,12 @@
         (io.perun.print-meta/print-meta ~(vec (map map-fn (perun/get-meta fileset))))))
     fileset))
 
+(defn trace
+  "Helper function, conj `kw` onto the `:io.perun/trace` metadata
+  key of each entry in `entries`"
+  [kw entries]
+  (map #(update-in % [:io.perun/trace] (fnil conj []) kw) entries))
+
 (def ^:private filedata-deps
   '[[com.novemberain/pantomime "2.8.0"]])
 
@@ -55,7 +61,10 @@
    establish metadata structure."
   []
   (boot/with-pre-wrap fileset
-    (let [updated-files (add-filedata (boot/user-files fileset))]
+    (let [updated-files (->> fileset
+                             boot/user-files
+                             add-filedata
+                             (trace :io.perun/base))]
       (perun/set-meta fileset updated-files))))
 
 (def ^:private images-dimensions-deps
@@ -71,7 +80,8 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     add-filedata)
+                     add-filedata
+                     (trace :io.perun/images-dimensions))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-dimensions/images-dimensions ~files {}))]
       (perun/set-meta fileset updated-files))))
@@ -96,7 +106,8 @@
           files (->> fileset
                      boot/user-files
                      (boot/by-ext ["png" "jpeg" "jpg"])
-                     add-filedata)
+                     add-filedata
+                     (trace :io.perun/images-resize))
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-files)
@@ -125,8 +136,7 @@
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
       (let [options  (merge +markdown-defaults+ *opts*)
-            md-files (->> fileset
-                          (boot/fileset-diff @prev-fs)
+            md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           add-filedata)
@@ -140,11 +150,15 @@
             updated-files (pod/with-call-in @pod
                              (io.perun.markdown/parse-markdown ~md-files ~options))
             initial-metadata (perun/merge-meta* (perun/get-meta fileset) @prev-meta)
-            ; Pure merge instead of `merge-with merge` (meta-meta).
-            ; This is because updated metadata should replace previous metadata to
-            ; correctly handle cases where a metadata key is removed from post metadata.
-            final-metadata   (vals (merge (perun/key-meta initial-metadata) (perun/key-meta updated-files)))
-            final-metadata   (remove #(-> % :path removed?) final-metadata)]
+            final-metadata   (->> updated-files
+                                  perun/key-meta
+                                  ; Pure merge instead of `merge-with merge` (meta-meta).
+                                  ; This is because updated metadata should replace previous metadata to
+                                  ; correctly handle cases where a metadata key is removed from post metadata.
+                                  (merge (perun/key-meta initial-metadata))
+                                  vals
+                                  (remove #(-> % :path removed?))
+                                  (trace :io.perun/markdown))]
         (reset! prev-fs fileset)
         (reset! prev-meta final-metadata)
         (perun/set-meta fileset final-metadata)))))
@@ -172,41 +186,56 @@
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
+(def ^:private +ttr-defaults+
+  {:filterer :content})
+
 (deftask ttr
   "Calculate time to read for each file. Add `:ttr` key to the files' meta"
-  []
-  (let [pod (create-pod ttr-deps)]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  (let [pod     (create-pod ttr-deps)
+        options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.ttr/calculate-ttr ~files))]
+      (let [files         (filter (:filterer options) (perun/get-meta fileset))
+            updated-files (trace :io.perun/ttr
+                                 (pod/with-call-in @pod
+                                   (io.perun.ttr/calculate-ttr ~files)))]
         (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-files))
         (perun/set-meta fileset updated-files)))))
 
+(def ^:private +word-count-defaults+
+  {:filterer :content})
+
 (deftask word-count
   "Count words in each file. Add `:word-count` key to the files' meta"
-  []
-  (let [pod (create-pod ttr-deps)]
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  (let [pod (create-pod ttr-deps)
+        options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.word-count/count-words ~files))]
+      (let [files         (filter (:filterer options) (perun/get-meta fileset))
+            updated-files (trace :io.perun/word-count
+                                 (pod/with-call-in @pod
+                                   (io.perun.word-count/count-words ~files)))]
         (perun/report-debug "word-count" "counted words" (map :word-count updated-files))
         (perun/set-meta fileset updated-files)))))
-
 
 (def ^:private gravatar-deps
   '[[gravatar "0.1.0"]])
 
+(def ^:private +gravatar-defaults+
+  {:filterer :content})
+
 (deftask gravatar
   "Find gravatar urls using emails"
   [s source-key SOURCE-PROP kw "email property used to lookup gravatar url"
-   t target-key TARGET-PROP kw "property name to store gravatar url"]
-  (let [pod (create-pod gravatar-deps)]
+   t target-key TARGET-PROP kw "property name to store gravatar url"
+   _ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
+  (let [pod (create-pod gravatar-deps)
+        options (merge +gravatar-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (perun/get-meta fileset)
-            updated-files (pod/with-call-in @pod
-                            (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key))]
+      (let [files         (filter (:filterer options) (perun/get-meta fileset))
+            updated-files (trace :io.perun/gravatar
+                                 (pod/with-call-in @pod
+                                   (io.perun.gravatar/find-gravatar ~files ~source-key ~target-key)))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-files))
        (perun/set-meta fileset updated-files)))))
 
@@ -216,80 +245,99 @@
   []
   (boot/with-pre-wrap fileset
     (let [files         (perun/get-meta fileset)
-          updated-files (remove #(true? (:draft %)) files)]
+          updated-files (->> files
+                             (remove #(true? (:draft %)))
+                             (trace :io.perun/draft))]
       (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
+(def ^:private +build-date-defaults+
+  {:filterer :content})
+
 (deftask build-date
   "Add :date-build attribute to each file metadata and also to the global meta"
-  []
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
-    (let [files           (perun/get-meta fileset)
+    (let [options         (merge +build-date-defaults+ *opts*)
+          files           (filter (:filterer options) (perun/get-meta fileset))
           global-meta     (perun/get-global-meta fileset)
           now             (java.util.Date.)
-          updated-files   (map #(assoc % :date-build now) files)
+          updated-files   (->> files
+                               (map #(assoc % :date-build now))
+                               (trace :io.perun/build-date))
           new-global-meta (assoc global-meta :date-build now)
           updated-fs      (perun/set-meta fileset updated-files)]
         (perun/report-debug "build-date" "added :date-build" (map :date-build updated-files))
         (perun/report-info "build-date" "added date-build to %s files" (count updated-files))
       (perun/set-global-meta updated-fs new-global-meta))))
 
-(defn ^:private default-slug-fn [filename]
-  "Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
-
-   Jekyll uses the same format by default."
-  (->> (string/split filename #"[-\.]")
-       (drop 3)
-       drop-last
-       (string/join "-")
-       string/lower-case))
+(def ^:private +slug-defaults+
+  {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
+   ; Jekyll uses the same format by default.
+   :slug-fn (fn [filename] (->> (string/split filename #"[-\.]")
+                                (drop 3)
+                                drop-last
+                                (string/join "-")
+                                string/lower-case))
+   :filterer :content})
 
 (deftask slug
   "Adds :slug key to files metadata. Slug is derived from filename."
-  [s slug-fn SLUGFN code "function to build slug from filename"]
+  [s slug-fn  SLUGFN code "function to build slug from filename"
+   _ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
-    (let [slug-fn       (or slug-fn default-slug-fn)
-          files         (perun/get-meta fileset)
-          updated-files (map #(assoc % :slug (-> % :filename slug-fn)) files)]
+    (let [options       (merge +slug-defaults+ *opts*)
+          slug-fn       (:slug-fn options)
+          files         (filter (:filterer options) (perun/get-meta fileset))
+          updated-files (->> files
+                             (map #(assoc % :slug (-> % :filename slug-fn)))
+                             (trace :io.perun/slug))]
       (perun/report-debug "slug" "generated slugs" (map :slug updated-files))
       (perun/report-info "slug" "added slugs to %s files" (count updated-files))
       (perun/set-meta fileset updated-files))))
 
-
 (def ^:private +permalink-defaults+
   {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
-   :filterer     identity})
+   :filterer     :content})
 
 (deftask permalink
   "Adds :permalink key to files metadata. Value of key will determine target path.
 
    Make files permalinked. E.x. about.html will become about/index.html"
   [p permalink-fn PERMALINKFN code "function to build permalink from TmpFile metadata"
-   _ filterer     FILTER      code "predicate to use for selecting entries (default: `identity`)"]
+   _ filterer     FILTER      code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
     (let [options       (merge +permalink-defaults+ *opts*)
           files         (filter (:filterer options) (perun/get-meta fileset))
           assoc-perma   #(assoc % :permalink ((:permalink-fn options) %))
-          updated-files (map assoc-perma files)]
+          updated-files (->> files
+                             (map assoc-perma)
+                             (trace :io.perun/permalink))]
       (perun/report-debug "permalink"  "generated permalinks" (map :permalink updated-files))
       (perun/report-info "permalink" "added permalinks to %s files" (count updated-files))
       (perun/merge-meta fileset updated-files))))
+
+(def ^:private +canonical-url-defaults+
+  {:filterer :content})
 
 (deftask canonical-url
   "Adds :canonical-url key to files metadata.
 
    The url is concatenation of :base-url in global metadata and files' permaurl.
    The base-url must end with '/'."
-  []
+  [_ filterer FILTER code "predicate to use for selecting entries (default: `:content`)"]
   (boot/with-pre-wrap fileset
-    (let [files         (perun/get-meta fileset)
+    (let [options       (merge +canonical-url-defaults+ *opts*)
+          files         (filter (:filterer options) (perun/get-meta fileset))
           base-url      (perun/assert-base-url (:base-url (perun/get-global-meta fileset)))
           assoc-can-url
             #(assoc %
                   :canonical-url
                   ; we need to call perun/relativize-url to remove leading / because base-url has trailing /
                   (str base-url (perun/relativize-url (:permalink  %))))
-          updated-files (map assoc-can-url files)]
+          updated-files (->> files
+                             (map assoc-can-url)
+                             (trace :io.perun/canonical-url))]
         (perun/report-info "canonical-url" "added canonical urls to %s files" (count updated-files))
         (perun/merge-meta fileset updated-files))))
 
@@ -329,7 +377,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -357,7 +405,7 @@
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"
@@ -507,7 +555,7 @@
                                             (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
                                       grouped-files))
-                    updated-files    (apply conj files new-files)
+                    updated-files    (apply conj files (trace :io.perun/collection new-files))
                     updated-fileset  (perun/set-meta fileset updated-files)]
                   (commit updated-fileset tmp))))))
 
