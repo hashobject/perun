@@ -118,18 +118,25 @@
   '[[org.pegdown/pegdown "1.6.0"]
     [circleci/clj-yaml "0.5.5"]])
 
+(def ^:private +markdown-defaults+
+  {:meta {:original true
+          :include-rss true
+          :include-atom true}})
+
 (deftask markdown
   "Parse markdown files
 
    This task will look for files ending with `md` or `markdown`
    and add a `:content` key to their metadata containing the
    HTML resulting from processing markdown file's content"
-  [o options OPTS edn "options to be passed to the markdown parser"]
+  [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod       (create-pod markdown-deps)
         prev-meta (atom {})
         prev-fs   (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
+      (let [options  (merge +markdown-defaults+ *opts*)
+            md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           add-filedata)
@@ -452,30 +459,33 @@
    If permalink is not set, the original filename is used with file extension set to html."
   [o out-dir  OUTDIR   str  "the output directory (default: \"public\")"
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
-   r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"]
+   r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"
+   m meta     META     edn  "metadata to set on each entry"]
   (let [tmp     (boot/tmp-dir!)
         options (merge +render-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (filter (:filterer options) (perun/get-meta fileset))]
-        (pod/with-call-in @render-pod
-          (io.perun.render/update!))
-
-        (doseq [{:keys [path] :as file} files]
-          (let [render-data   {:meta    (perun/get-global-meta fileset)
-                               :entries (vec files)
-                               :entry   file}
-                html          (render-in-pod @render-pod renderer render-data)
-                page-filepath (perun/create-filepath
-                                (:out-dir options)
-                                ; If permalink ends in slash, append index.html as filename
-                                (or (some-> (:permalink file)
-                                            (string/replace #"/$" "/index.html")
-                                            perun/url-to-path)
-                                    (string/replace path #"(?i).[a-z]+$" ".html")))]
-            (perun/report-debug "render" "rendered page for path" path)
-            (perun/create-file tmp page-filepath html)))
+      (pod/with-call-in @render-pod
+        (io.perun.render/update!))
+      (let [files (filter (:filterer options) (perun/get-meta fileset))
+            updated-files (doall
+                           (for [{:keys [path] :as file} files]
+                             (let [entry         (merge meta file)
+                                   render-data   {:meta    (perun/get-global-meta fileset)
+                                                  :entries (vec files)
+                                                  :entry   entry}
+                                   html          (render-in-pod @render-pod renderer render-data)
+                                   page-filepath (perun/create-filepath
+                                                  (:out-dir options)
+                                                  ; If permalink ends in slash, append index.html as filename
+                                                  (or (some-> (:permalink file)
+                                                              (string/replace #"/$" "/index.html")
+                                                              perun/url-to-path)
+                                                      (string/replace path #"(?i).[a-z]+$" ".html")))]
+                               (perun/report-debug "render" "rendered page for path" path)
+                               (perun/create-file tmp page-filepath html)
+                               entry)))]
         (perun/report-info "render" "rendered %s pages" (count files))
-        (commit fileset tmp)))))
+        (perun/merge-meta (commit fileset tmp) updated-files)))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
@@ -502,7 +512,8 @@
    s sortby     SORTBY     code "sort entries by function"
    g groupby    GROUPBY    code "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code "sort by comparator function"
-   p page       PAGE       str  "collection result page path"]
+   p page       PAGE       str  "collection result page path"
+   m meta       META       edn  "metadata to set on each collection entry"]
   (let [tmp       (boot/tmp-dir!)
         options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
                                                         {:groupby (fn [_] p)}))]
@@ -534,10 +545,12 @@
                                                                :entries (vec sorted)}
                                                 html          (render-in-pod @render-pod renderer render-data)
                                                 page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     {:path page-filepath
-                                                               :canonical-url (str (:base-url global-meta) page)
-                                                               :content html
-                                                               :date-build (:date-build global-meta)}]
+                                                new-entry     (merge
+                                                               meta
+                                                               {:path page-filepath
+                                                                :canonical-url (str (:base-url global-meta) page)
+                                                                :content html
+                                                                :date-build (:date-build global-meta)})]
                                             (perun/create-file tmp page-filepath html)
                                             (perun/report-info "collection" "rendered collection %s" page)
                                             new-entry)))
