@@ -41,6 +41,8 @@
     fileset))
 
 (defn trace
+  "Helper function, conj `kw` onto the `:io.perun/trace` metadata
+  key of each entry in `entries`"
   [kw entries]
   (map #(update-in % [:io.perun/trace] (fnil conj []) kw) entries))
 
@@ -133,8 +135,7 @@
         prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
       (let [options  (merge +markdown-defaults+ *opts*)
-            md-files (->> fileset
-                          (boot/fileset-diff @prev-fs)
+            md-files (->> (boot/fileset-diff @prev-fs fileset :hash)
                           boot/user-files
                           (boot/by-ext ["md" "markdown"])
                           add-filedata)
@@ -360,7 +361,7 @@
 (deftask rss
   "Generate RSS feed"
   [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    p description DESCRIPTION str  "feed description"
@@ -388,7 +389,7 @@
 (deftask atom-feed
   "Generate Atom feed"
   [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:content`)"
+   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
    o out-dir     OUTDIR      str  "the output directory"
    t site-title  TITLE       str  "feed title"
    s subtitle    SUBTITLE    str  "feed subtitle"

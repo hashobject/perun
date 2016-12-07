@@ -78,8 +78,7 @@
 
 (defn parse-file-metadata [file-content]
   (when-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
-    (when-let [parsed-yaml (normal-colls (yaml/parse-string metadata-str))]
-      parsed-yaml)))
+    (normal-colls (yaml/parse-string metadata-str))))
 
 (defn remove-metadata [content]
   (let [splitted (str/split content *yaml-head* 3)]
