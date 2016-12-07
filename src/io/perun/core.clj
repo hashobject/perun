@@ -18,7 +18,7 @@
   (into {} (for [d data] [(:path d) d])))
 
 (defn set-meta
-  "Update `+meta-key+` metadata for files in `data` and return updates fileset"
+  "Update `+meta-key+` metadata for files in `data` and return updated fileset"
   [fileset data]
   (boot/add-meta fileset (into {} (for [d data] [(:path d) {+meta-key+ d}]))))
 
