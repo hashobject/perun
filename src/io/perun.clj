@@ -588,9 +588,6 @@
     - `:meta`, global perun metadata
     - `:entry`, the entry to be rendered
 
-   Entries can optionally be filtered by supplying a function
-   to the `filterer` option.
-
    Filename is determined as follows:
    If permalink is set for the file, it is used as the filepath.
    If permalink ends in slash, index.html is used as filename.
