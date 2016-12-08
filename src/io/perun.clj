@@ -575,6 +575,25 @@
                 paths))]
       (render-pre-wrap render-paths options :io.perun/render))))
 
+(def ^:private +static-defaults+
+  {:out-dir "public"
+   :page "index.html"
+   :meta {}})
+
+(deftask static
+  [o out-dir  OUTDIR   str "the output directory"
+   r renderer RENDERER sym "page renderer (fully qualified symbol resolving to a function)"
+   p page     PAGE     str "static result page path"
+   m meta     META     edn "metadata to set on the static entry"]
+  (let [options (merge +static-defaults+ *opts*)
+        path (make-path (:out-dir options) nil (:page options))
+        static-path (fn [fileset options]
+                      (perun/report-info "static" "rendered %s" path)
+                      {path {:render-data {:meta (perun/get-global-meta fileset)
+                                           :entry (:meta options)}
+                             :entry (:meta options)}})]
+    (render-pre-wrap static-path options :io.perun/static)))
+
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
