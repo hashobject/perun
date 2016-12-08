@@ -4,7 +4,6 @@
             [boot.pod :as pod]
             [boot.util :as u]
             [clojure.java.io :as io]
-            [clojure.set :as set]
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]))
@@ -114,6 +113,13 @@
       (perun/set-meta fileset updated-files)
       (commit fileset tmp))))
 
+(defn meta-by-ext
+  [fileset file-exts]
+  (->> fileset
+       boot/user-files
+       (boot/by-ext file-exts)
+       (keep perun/+meta-key+)))
+
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
   files with extensions in `file-exts`, adds `tracer` to `:io.perun/trace`
@@ -127,45 +133,39 @@
                                boot/user-files
                                (boot/by-ext file-exts)
                                add-filedata)
-            input-metadata (->>
-                            (if pod
-                              (pod/with-call-in @pod ~(parse-form changed-files))
-                              (eval (parse-form changed-files)))
-                            (trace tracer))
-            prev-fs-files (if @prev-fs
-                            (->> @prev-fs
-                                 boot/user-files
-                                 (boot/by-ext file-exts)
-                                 set)
-                            #{})
-            unchanged-metadata (->> changed-files
-                                    set
-                                    (set/difference prev-fs-files)
-                                    (filter #(boot/tmp-get fileset %))
-                                    (keep perun/+meta-key+))
-            output-metadata (doall
-                             (for [{:keys [path parsed filename] :as entry*} (concat input-metadata
-                                                                                     unchanged-metadata)]
-                               (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
-                                     entry (-> entry*
-                                               (assoc :has-content true)
-                                               (assoc :original-path path)
-                                               (assoc :path page-filepath)
-                                               (assoc :filename (string/replace filename
-                                                                                #"(?i).[a-z]+$" ".html"))
-                                               (dissoc :parsed :extension :file-type
-                                                       :full-path :mime-type :original))]
-                                 (perun/create-file tmp page-filepath parsed)
-                                 entry)))
-            input-metadata* (map #(-> %
-                                      (dissoc :include-rss)
-                                      (dissoc :include-atom))
-                                 input-metadata)
-            final-metadata (perun/merge-meta* (perun/get-meta @prev-fs)
-                                              (concat input-metadata* output-metadata))
-            new-fs (-> fileset
+            changed-meta (->> (if pod
+                                (pod/with-call-in @pod ~(parse-form changed-files))
+                                (eval (parse-form changed-files)))
+                              (map #(let [{:keys [include-rss include-atom]} %]
+                                      (-> %
+                                          (assoc :include-rss* include-rss
+                                                 :include-atom* include-atom)
+                                          (dissoc :include-rss :include-atom))))
+                              (trace tracer))
+            input-fs (-> (if @prev-fs
+                           (perun/set-meta fileset (meta-by-ext @prev-fs file-exts))
+                           fileset)
+                         (perun/set-meta changed-meta))
+            input-meta (meta-by-ext input-fs file-exts)
+            output-meta (doall
+                         (for [{:keys [path parsed filename
+                                       include-rss* include-atom*] :as entry*} input-meta]
+                           (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
+                                 entry (-> entry*
+                                           (assoc :has-content true
+                                                  :original-path path
+                                                  :path page-filepath
+                                                  :filename (string/replace filename
+                                                                            #"(?i).[a-z]+$" ".html")
+                                                  :include-rss include-rss*
+                                                  :include-atom include-atom*)
+                                           (dissoc :parsed :extension :file-type :full-path
+                                                   :mime-type :original :include-rss* :include-atom*))]
+                             (perun/create-file tmp page-filepath parsed)
+                             entry)))
+            new-fs (-> input-fs
                        (commit tmp)
-                       (perun/set-meta final-metadata))]
+                       (perun/set-meta output-meta))]
         (reset! prev-fs new-fs)
         new-fs))))
 
