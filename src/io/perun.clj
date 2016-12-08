@@ -586,12 +586,12 @@
    p page     PAGE     str "static result page path"
    m meta     META     edn "metadata to set on the static entry"]
   (let [options (merge +static-defaults+ *opts*)
-        path (make-path (:out-dir options) nil (:page options))
+        path (make-path (:out-dir options) (:permalink (:meta options)) (:page options))
         static-path (fn [fileset options]
                       (perun/report-info "static" "rendered %s" path)
                       {path {:render-data {:meta (perun/get-global-meta fileset)
                                            :entry (:meta options)}
-                             :entry (:meta options)}})]
+                             :entry (assoc (:meta options) :path path)}})]
     (render-pre-wrap static-path options :io.perun/static)))
 
 (defn- grouped-paths
