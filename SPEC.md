@@ -86,3 +86,6 @@ All posts have a path which is used as a key to identify the post.
 - **:include-rss**
     - Set by: *markdown*, true by default
     - Used by: *rss*
+- **:io.perun/trace**
+    - Conjed onto by every task that modifies metadata
+    - Serves as a record of tasks to touch a file
