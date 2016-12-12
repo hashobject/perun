@@ -136,34 +136,26 @@
                                boot/user-files
                                (boot/by-ext file-exts)
                                add-filedata)
-            changed-meta (->> (if pod
-                                (pod/with-call-in @pod ~(parse-form changed-files))
-                                (eval (parse-form changed-files)))
-                              (map #(let [{:keys [include-rss include-atom]} %]
-                                      (-> %
-                                          (assoc :include-rss* include-rss
-                                                 :include-atom* include-atom)
-                                          (dissoc :include-rss :include-atom))))
-                              (trace tracer))
+            changed-meta (trace tracer
+                                (if pod
+                                  (pod/with-call-in @pod ~(parse-form changed-files))
+                                  (eval (parse-form changed-files))))
             input-fs (-> (if @prev-fs
                            (pm/set-meta fileset (meta-by-ext @prev-fs file-exts))
                            fileset)
                          (pm/set-meta changed-meta))
             input-meta (meta-by-ext input-fs file-exts)
             output-meta (doall
-                         (for [{:keys [path parsed filename
-                                       include-rss* include-atom*] :as entry*} input-meta]
+                         (for [{:keys [path parsed filename] :as entry*} input-meta]
                            (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
                                  entry (-> entry*
                                            (assoc :has-content true
                                                   :original-path path
                                                   :path page-filepath
                                                   :filename (string/replace filename
-                                                                            #"(?i).[a-z]+$" ".html")
-                                                  :include-rss include-rss*
-                                                  :include-atom include-atom*)
+                                                                            #"(?i).[a-z]+$" ".html"))
                                            (dissoc :parsed :extension :file-type :full-path
-                                                   :mime-type :original :include-rss* :include-atom*))]
+                                                   :mime-type :original))]
                              (perun/create-file tmp page-filepath parsed)
                              entry)))
             new-fs (-> input-fs
@@ -406,22 +398,28 @@
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
    :filterer :include-rss
+   :extensions [".html"]
    :out-dir "public"})
 
 (deftask rss
   "Generate RSS feed"
-  [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
-   o out-dir     OUTDIR      str  "the output directory"
-   t site-title  TITLE       str  "feed title"
-   p description DESCRIPTION str  "feed description"
-   l base-url    LINK        str  "feed link"]
+  [f filename    FILENAME    str   "generated RSS feed filename"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-rss`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   p description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
-            files         (filter (:filterer options) (pm/get-meta fileset))]
+            files         (->> fileset
+                               boot/user-files
+                               (boot/by-ext (:extensions options))
+                               (keep pm/+meta-key+)
+                               (filter (:filterer options)))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
@@ -434,24 +432,28 @@
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
    :filterer :include-atom
+   :extensions [".html"]
    :out-dir "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
-  [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
-   o out-dir     OUTDIR      str  "the output directory"
-   t site-title  TITLE       str  "feed title"
-   s subtitle    SUBTITLE    str  "feed subtitle"
-   p description DESCRIPTION str  "feed description"
-   l base-url    LINK        str  "feed link"]
+  [f filename    FILENAME    str   "generated Atom feed filename"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-atom`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   s subtitle    SUBTITLE    str   "feed subtitle"
+   p description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (->> fileset
-                               pm/get-meta
+                               boot/output-files
+                               (boot/by-ext (:extensions options))
+                               (keep pm/+meta-key+)
                                (filter (:filterer options))
                                (map #(let [file (if-let [original-path (:original-path %)]
                                                   (boot/tmp-get fileset original-path)
