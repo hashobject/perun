@@ -582,7 +582,7 @@
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
   [task-name fileset options]
-  (let [global-meta (perun/get-global-meta fileset)
+  (let [global-meta (pm/get-global-meta fileset)
         grouper (:grouper options)
         paths (->> fileset
                    pm/get-meta
