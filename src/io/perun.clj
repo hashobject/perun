@@ -209,6 +209,15 @@
          (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
          (pm/set-global-meta fileset global-meta))))
 
+(defn- set-content-from-meta
+  [fileset meta]
+  (let [content (->> meta
+                     :path
+                     (boot/tmp-get fileset)
+                     boot/tmp-file
+                     slurp)]
+    (assoc meta :content content)))
+
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
@@ -221,7 +230,10 @@
   (let [pod     (create-pod ttr-deps)
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (filter (:filterer options) (pm/get-meta fileset))
+      (let [files (->> fileset
+                       pm/get-meta
+                       (filter (:filterer options))
+                       (map #(set-content-from-meta fileset %)))
             updated-files (trace :io.perun/ttr
                                  (pod/with-call-in @pod
                                    (io.perun.ttr/calculate-ttr ~files)))]
@@ -237,7 +249,10 @@
   (let [pod (create-pod ttr-deps)
         options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (filter (:filterer options) (pm/get-meta fileset))
+      (let [files (->> fileset
+                       pm/get-meta
+                       (filter (:filterer options))
+                       (map #(set-content-from-meta fileset %)))
             updated-files (trace :io.perun/word-count
                                  (pod/with-call-in @pod
                                    (io.perun.word-count/count-words ~files)))]
