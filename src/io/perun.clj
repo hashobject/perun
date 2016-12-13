@@ -431,7 +431,7 @@
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
             files         (->> fileset
-                               boot/user-files
+                               boot/output-files
                                (boot/by-ext (:extensions options))
                                (keep pm/+meta-key+)
                                (filter (:filterer options)))]
