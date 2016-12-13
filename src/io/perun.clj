@@ -81,7 +81,7 @@
     (let [pod (create-pod images-dimensions-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-dimensions))
           updated-files (pod/with-call-in @pod
@@ -107,7 +107,7 @@
           pod (create-pod images-resize-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-resize))
           updated-files (pod/with-call-in @pod
@@ -185,7 +185,7 @@
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
      (fn [files] `(io.perun.markdown/parse-markdown ~files ~options))
-     ["md" "markdown"]
+     [".md" ".markdown"]
      :io.perun/markdown
      pod)))
 
