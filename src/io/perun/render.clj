@@ -1,8 +1,6 @@
 (ns io.perun.render
   (:require [boot.pod :as pod]
             [boot.util :as util]
-            [clojure.string :as string]
-            [clojure.java.io :as io]
             [clojure.tools.namespace.dir :as dir]
             [clojure.tools.namespace.track :as track]
             [clojure.tools.namespace.reload :as reload]))
