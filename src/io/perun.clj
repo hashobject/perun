@@ -81,7 +81,7 @@
     (let [pod (create-pod images-dimensions-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-dimensions))
           updated-files (pod/with-call-in @pod
@@ -107,7 +107,7 @@
           pod (create-pod images-resize-deps)
           files (->> fileset
                      boot/user-files
-                     (boot/by-ext ["png" "jpeg" "jpg"])
+                     (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-resize))
           updated-files (pod/with-call-in @pod
@@ -136,34 +136,26 @@
                                boot/user-files
                                (boot/by-ext file-exts)
                                add-filedata)
-            changed-meta (->> (if pod
-                                (pod/with-call-in @pod ~(parse-form changed-files))
-                                (eval (parse-form changed-files)))
-                              (map #(let [{:keys [include-rss include-atom]} %]
-                                      (-> %
-                                          (assoc :include-rss* include-rss
-                                                 :include-atom* include-atom)
-                                          (dissoc :include-rss :include-atom))))
-                              (trace tracer))
+            changed-meta (trace tracer
+                                (if pod
+                                  (pod/with-call-in @pod ~(parse-form changed-files))
+                                  (eval (parse-form changed-files))))
             input-fs (-> (if @prev-fs
                            (pm/set-meta fileset (meta-by-ext @prev-fs file-exts))
                            fileset)
                          (pm/set-meta changed-meta))
             input-meta (meta-by-ext input-fs file-exts)
             output-meta (doall
-                         (for [{:keys [path parsed filename
-                                       include-rss* include-atom*] :as entry*} input-meta]
+                         (for [{:keys [path parsed filename] :as entry*} input-meta]
                            (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
                                  entry (-> entry*
                                            (assoc :has-content true
                                                   :original-path path
                                                   :path page-filepath
                                                   :filename (string/replace filename
-                                                                            #"(?i).[a-z]+$" ".html")
-                                                  :include-rss include-rss*
-                                                  :include-atom include-atom*)
+                                                                            #"(?i).[a-z]+$" ".html"))
                                            (dissoc :parsed :extension :file-type :full-path
-                                                   :mime-type :original :include-rss* :include-atom*))]
+                                                   :mime-type :original))]
                              (perun/create-file tmp page-filepath parsed)
                              entry)))
             new-fs (-> input-fs
@@ -193,7 +185,7 @@
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
      (fn [files] `(io.perun.markdown/parse-markdown ~files ~options))
-     ["md" "markdown"]
+     [".md" ".markdown"]
      :io.perun/markdown
      pod)))
 
@@ -217,6 +209,15 @@
          (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
          (pm/set-global-meta fileset global-meta))))
 
+(defn- set-content-from-meta
+  [fileset meta]
+  (let [content (->> meta
+                     :path
+                     (boot/tmp-get fileset)
+                     boot/tmp-file
+                     slurp)]
+    (assoc meta :content content)))
+
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
@@ -229,7 +230,10 @@
   (let [pod     (create-pod ttr-deps)
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (filter (:filterer options) (pm/get-meta fileset))
+      (let [files (->> fileset
+                       pm/get-meta
+                       (filter (:filterer options))
+                       (map #(set-content-from-meta fileset %)))
             updated-files (trace :io.perun/ttr
                                  (pod/with-call-in @pod
                                    (io.perun.ttr/calculate-ttr ~files)))]
@@ -245,7 +249,10 @@
   (let [pod (create-pod ttr-deps)
         options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files         (filter (:filterer options) (pm/get-meta fileset))
+      (let [files (->> fileset
+                       pm/get-meta
+                       (filter (:filterer options))
+                       (map #(set-content-from-meta fileset %)))
             updated-files (trace :io.perun/word-count
                                  (pod/with-call-in @pod
                                    (io.perun.word-count/count-words ~files)))]
@@ -406,22 +413,28 @@
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
    :filterer :include-rss
+   :extensions [".html"]
    :out-dir "public"})
 
 (deftask rss
   "Generate RSS feed"
-  [f filename    FILENAME    str  "generated RSS feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-rss`)"
-   o out-dir     OUTDIR      str  "the output directory"
-   t site-title  TITLE       str  "feed title"
-   p description DESCRIPTION str  "feed description"
-   l base-url    LINK        str  "feed link"]
+  [f filename    FILENAME    str   "generated RSS feed filename"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-rss`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   p description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
   (let [pod (create-pod rss-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +rss-defaults+ global-meta *opts*)
-            files         (filter (:filterer options) (pm/get-meta fileset))]
+            files         (->> fileset
+                               boot/output-files
+                               (boot/by-ext (:extensions options))
+                               (keep pm/+meta-key+)
+                               (filter (:filterer options)))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
           (io.perun.rss/generate-rss ~(.getPath tmp) ~files ~(dissoc options :filterer)))
@@ -434,24 +447,28 @@
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
    :filterer :include-atom
+   :extensions [".html"]
    :out-dir "public"})
 
 (deftask atom-feed
   "Generate Atom feed"
-  [f filename    FILENAME    str  "generated Atom feed filename"
-   _ filterer    FILTER      code "predicate to use for selecting entries (default: `:include-atom`)"
-   o out-dir     OUTDIR      str  "the output directory"
-   t site-title  TITLE       str  "feed title"
-   s subtitle    SUBTITLE    str  "feed subtitle"
-   p description DESCRIPTION str  "feed description"
-   l base-url    LINK        str  "feed link"]
+  [f filename    FILENAME    str   "generated Atom feed filename"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-atom`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   s subtitle    SUBTITLE    str   "feed subtitle"
+   p description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
   (let [pod (create-pod atom-deps)
         tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
             files         (->> fileset
-                               pm/get-meta
+                               boot/output-files
+                               (boot/by-ext (:extensions options))
+                               (keep pm/+meta-key+)
                                (filter (:filterer options))
                                (map #(let [file (if-let [original-path (:original-path %)]
                                                   (boot/tmp-get fileset original-path)
@@ -488,9 +505,9 @@
   the result to `tmp`.
 
   `data` should be a map with keys that are fileset paths, and
-  values that are themselves maps with these keys:
-   - `:render-data` the map argument that `renderer` will be called with
-   - `:entry` the metadata for the item being rendered
+  values that are the map argument that `renderer` will be called with.
+  The values must be maps, with the required key `:entry`, representing
+  the page being rendered.
 
   All `:entry`s will be returned, with their `:path`s set, `:has-content`
   set to `true`, and `tracer` added to `io.perun/trace`."
@@ -499,10 +516,10 @@
     (io.perun.render/update!))
   (doall
    (trace tracer
-          (for [[path {:keys [render-data entry]}] data]
+          (for [[path render-data] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
-              (assoc entry
+              (assoc (:entry render-data)
                      :path path
                      :has-content true))))))
 
@@ -565,13 +582,11 @@
                              (let [content (slurp (boot/tmp-file (boot/tmp-get fileset path)))
                                    new-path (make-path (:out-dir options) permalink path)
                                    meta-entry (merge meta entry)
-                                   content-entry (assoc meta-entry :content content)
-                                   render-data   {:meta    (pm/get-global-meta fileset)
-                                                  :entries (vec entries)
-                                                  :entry   content-entry}]
+                                   content-entry (assoc meta-entry :content content)]
                                (perun/report-debug "render" "rendered page for path" path)
-                               (assoc result new-path {:render-data render-data
-                                                       :entry       meta-entry})))
+                               (assoc result new-path {:meta    (pm/get-global-meta fileset)
+                                                       :entries (vec entries)
+                                                       :entry   content-entry})))
                            {}
                            entries)]
                 (perun/report-info "render" "rendered %s pages" (count paths))
@@ -591,16 +606,19 @@
     (if (seq paths)
       (reduce
        (fn [result [path {:keys [entries group-meta permalink]}]]
-         (let [sorted      (sort-by (:sortby options) (:comparator options) entries)
+         (let [sorted      (->> entries
+                                (sort-by (:sortby options) (:comparator options))
+                                (map #(assoc % :content (->> (:path %)
+                                                             (boot/tmp-get fileset)
+                                                             boot/tmp-file
+                                                             slurp))))
                new-path    (make-path (:out-dir options) permalink path)
                new-entry   (merge group-meta {:path new-path
-                                              :filename path})
-               render-data {:meta    global-meta
-                            :entry   new-entry
-                            :entries (vec sorted)}]
+                                              :filename path})]
            (perun/report-info task-name (str "rendered " task-name " " path))
-           (assoc result new-path {:render-data render-data
-                                   :entry       new-entry})))
+           (assoc result new-path {:meta    global-meta
+                                   :entry   new-entry
+                                   :entries (vec sorted)})))
        {}
        paths)
       (do
