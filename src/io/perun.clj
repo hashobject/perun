@@ -505,9 +505,9 @@
   the result to `tmp`.
 
   `data` should be a map with keys that are fileset paths, and
-  values that are themselves maps with these keys:
-   - `:render-data` the map argument that `renderer` will be called with
-   - `:entry` the metadata for the item being rendered
+  values that are the map argument that `renderer` will be called with.
+  The values must be maps, with the required key `:entry`, representing
+  the page being rendered.
 
   All `:entry`s will be returned, with their `:path`s set, `:has-content`
   set to `true`, and `tracer` added to `io.perun/trace`."
@@ -516,10 +516,10 @@
     (io.perun.render/update!))
   (doall
    (trace tracer
-          (for [[path {:keys [render-data entry]}] data]
+          (for [[path render-data] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
-              (assoc entry
+              (assoc (:entry render-data)
                      :path path
                      :has-content true))))))
 
@@ -582,13 +582,11 @@
                              (let [content (slurp (boot/tmp-file (boot/tmp-get fileset path)))
                                    new-path (make-path (:out-dir options) permalink path)
                                    meta-entry (merge meta entry)
-                                   content-entry (assoc meta-entry :content content)
-                                   render-data   {:meta    (pm/get-global-meta fileset)
-                                                  :entries (vec entries)
-                                                  :entry   content-entry}]
+                                   content-entry (assoc meta-entry :content content)]
                                (perun/report-debug "render" "rendered page for path" path)
-                               (assoc result new-path {:render-data render-data
-                                                       :entry       meta-entry})))
+                               (assoc result new-path {:meta    (pm/get-global-meta fileset)
+                                                       :entries (vec entries)
+                                                       :entry   content-entry})))
                            {}
                            entries)]
                 (perun/report-info "render" "rendered %s pages" (count paths))
@@ -616,13 +614,11 @@
                                                              slurp))))
                new-path    (make-path (:out-dir options) permalink path)
                new-entry   (merge group-meta {:path new-path
-                                              :filename path})
-               render-data {:meta    global-meta
-                            :entry   new-entry
-                            :entries (vec sorted)}]
+                                              :filename path})]
            (perun/report-info task-name (str "rendered " task-name " " path))
-           (assoc result new-path {:render-data render-data
-                                   :entry       new-entry})))
+           (assoc result new-path {:meta    global-meta
+                                   :entry   new-entry
+                                   :entries (vec sorted)})))
        {}
        paths)
       (do
