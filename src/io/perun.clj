@@ -600,24 +600,34 @@
   on the provided `fileset` and `options`."
   [task-name fileset options]
   (let [global-meta (pm/get-global-meta fileset)
-        grouper (:grouper options)]
-    (->> fileset
-         pm/get-meta
-         (filter (:filterer options))
-         grouper
-         (reduce
-          (fn [result [path {:keys [entries group-meta permalink]}]]
-            (let [sorted      (sort-by (:sortby options) (:comparator options) entries)
-                  new-path    (make-path (:out-dir options) permalink path)
-                  new-entry   (merge group-meta {:path new-path
-                                                 :filename path})
-                  render-data {:meta    global-meta
-                               :entry   new-entry
-                               :entries (vec sorted)}]
-              (perun/report-info task-name (str "rendered " task-name " " path))
-              (assoc result new-path {:render-data render-data
-                                      :entry       new-entry})))
-          {}))))
+        grouper (:grouper options)
+        paths (->> fileset
+                   pm/get-meta
+                   (filter (:filterer options))
+                   grouper)]
+    (if (seq paths)
+      (reduce
+       (fn [result [path {:keys [entries group-meta permalink]}]]
+         (let [sorted      (->> entries
+                                (sort-by (:sortby options) (:comparator options))
+                                (map #(assoc % :content (->> (:path %)
+                                                             (boot/tmp-get fileset)
+                                                             boot/tmp-file
+                                                             slurp))))
+               new-path    (make-path (:out-dir options) permalink path)
+               new-entry   (merge group-meta {:path new-path
+                                              :filename path})
+               render-data {:meta    global-meta
+                            :entry   new-entry
+                            :entries (vec sorted)}]
+           (perun/report-info task-name (str "rendered " task-name " " path))
+           (assoc result new-path {:render-data render-data
+                                   :entry       new-entry})))
+       {}
+       paths)
+      (do
+        (perun/report-info task-name (str task-name " found nothing to render"))
+        []))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
