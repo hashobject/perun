@@ -463,7 +463,7 @@
                              (render-to-paths (:renderer options) tmp tracer))]
         (-> fileset
             (commit tmp)
-            (perun/merge-meta new-metadata))))))
+            (pm/merge-meta new-metadata))))))
 
 (deftask render
   "Render individual pages for entries in perun data.
@@ -487,11 +487,11 @@
    m meta     META     edn  "metadata to set on each entry"]
   (let [options (merge +render-defaults+ *opts*)]
     (letfn [(render-paths [fileset options]
-              (let [entries (filter (:filterer options) (perun/get-meta fileset))
+              (let [entries (filter (:filterer options) (pm/get-meta fileset))
                     paths (reduce
                            (fn [result {:keys [path] :as entry*}]
                              (let [entry (merge meta entry*)
-                                   render-data   {:meta    (perun/get-global-meta fileset)
+                                   render-data   {:meta    (pm/get-global-meta fileset)
                                                   :entries (vec entries)
                                                   :entry   entry}
                                    page-filepath (perun/create-filepath
@@ -514,10 +514,10 @@
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
   [task-name fileset options]
-  (let [global-meta (perun/get-global-meta fileset)
+  (let [global-meta (pm/get-global-meta fileset)
         grouper (:grouper options)]
     (->> fileset
-         perun/get-meta
+         pm/get-meta
          (filter (:filterer options))
          grouper
          (reduce
