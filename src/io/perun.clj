@@ -143,8 +143,9 @@
             updated-files (trace :io.perun/markdown
                                  (pod/with-call-in @pod
                                    (io.perun.markdown/parse-markdown ~md-files ~options)))
-            final-metadata (pm/merge-meta* (pm/get-meta @prev-fs) updated-files)
-            new-fs (pm/set-meta fileset final-metadata)]
+            new-fs (-> fileset
+                       (pm/set-meta (pm/get-meta @prev-fs))
+                       (pm/set-meta updated-files))]
         (reset! prev-fs new-fs)
         new-fs))))
 
@@ -229,12 +230,9 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files         (pm/get-meta fileset)
-          updated-files (->> files
-                             (remove #(true? (:draft %)))
-                             (trace :io.perun/draft))]
-      (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
-      (pm/set-meta fileset updated-files))))
+    (let [draft-files (filter #(-> % pm/+meta-key+ :draft) (vals (:tree fileset)))]
+      (perun/report-info "draft" "removed %s draft files" (count draft-files))
+      (boot/rm fileset draft-files))))
 
 (def ^:private +build-date-defaults+
   {:filterer :content})
