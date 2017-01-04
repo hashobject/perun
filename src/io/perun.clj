@@ -144,8 +144,9 @@
             updated-files (trace :io.perun/markdown
                                  (pod/with-call-in @pod
                                    (io.perun.markdown/parse-markdown ~md-files ~options)))
-            final-metadata (pm/merge-meta* (pm/get-meta @prev-fs) updated-files)
-            new-fs (pm/set-meta fileset final-metadata)]
+            new-fs (-> fileset
+                       (pm/set-meta (pm/get-meta @prev-fs))
+                       (pm/set-meta updated-files))]
         (reset! prev-fs new-fs)
         new-fs))))
 
@@ -230,12 +231,9 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files         (pm/get-meta fileset)
-          updated-files (->> files
-                             (remove #(true? (:draft %)))
-                             (trace :io.perun/draft))]
-      (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
-      (pm/set-meta fileset updated-files))))
+    (let [draft-files (filter #(-> % pm/+meta-key+ :draft) (vals (:tree fileset)))]
+      (perun/report-info "draft" "removed %s draft files" (count draft-files))
+      (boot/rm fileset draft-files))))
 
 (def ^:private +build-date-defaults+
   {:filterer :content})
@@ -427,6 +425,45 @@
 
 (def render-pod (delay (create-pod' render-deps)))
 
+(defn render-to-paths
+  "Renders paths in `data`, using `renderer` in `pod`, and writes
+  the result to `tmp`.
+
+  `data` should be a map with keys that are fileset paths, and
+  values that are themselves maps with these keys:
+   - `:render-data` the map argument that `renderer` will be called with
+   - `:entry` the metadata for the item being rendered
+
+  All `:entry`s will be returned, after having their `:content` set to the
+  rendering result"
+  [data renderer tmp tracer]
+  (pod/with-call-in @render-pod
+    (io.perun.render/update!))
+  (doall
+   (trace tracer
+          (for [[path {:keys [render-data entry]}] data]
+            (let [content (render-in-pod @render-pod renderer render-data)]
+              (perun/create-file tmp path content)
+              (assoc entry :content content))))))
+
+(defn render-pre-wrap
+  "Handles common rendering task orchestration
+
+  `render-paths-fn` takes two arguments: a fileset, and a map of task options.
+  `options` is a map that must have a `:renderer` key, and any other keys
+  that are required by `render-paths-fn`.
+
+  Returns a boot `with-pre-wrap` result"
+  [render-paths-fn options tracer]
+  (let [tmp  (boot/tmp-dir!)]
+    (boot/with-pre-wrap fileset
+      (let [new-metadata (-> fileset
+                             (render-paths-fn options)
+                             (render-to-paths (:renderer options) tmp tracer))]
+        (-> fileset
+            (commit tmp)
+            (pm/merge-meta new-metadata))))))
+
 (deftask render
   "Render individual pages for entries in perun data.
 
@@ -447,36 +484,60 @@
    _ filterer FILTER   code "predicate to use for selecting entries (default: `:content`)"
    r renderer RENDERER sym  "page renderer (fully qualified symbol which resolves to a function)"
    m meta     META     edn  "metadata to set on each entry"]
-  (let [tmp     (boot/tmp-dir!)
-        options (merge +render-defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (pod/with-call-in @render-pod
-        (io.perun.render/update!))
-      (let [files (filter (:filterer options) (pm/get-meta fileset))
-            updated-files (doall
-                           (for [{:keys [path] :as file} files]
-                             (let [entry         (merge meta file)
+  (let [options (merge +render-defaults+ *opts*)]
+    (letfn [(render-paths [fileset options]
+              (let [entries (filter (:filterer options) (pm/get-meta fileset))
+                    paths (reduce
+                           (fn [result {:keys [path] :as entry*}]
+                             (let [entry (merge meta entry*)
                                    render-data   {:meta    (pm/get-global-meta fileset)
-                                                  :entries (vec files)
+                                                  :entries (vec entries)
                                                   :entry   entry}
-                                   html          (render-in-pod @render-pod renderer render-data)
                                    page-filepath (perun/create-filepath
                                                   (:out-dir options)
                                                   ; If permalink ends in slash, append index.html as filename
-                                                  (or (some-> (:permalink file)
+                                                  (or (some-> (:permalink entry)
                                                               (string/replace #"/$" "/index.html")
                                                               perun/url-to-path)
                                                       (string/replace path #"(?i).[a-z]+$" ".html")))]
                                (perun/report-debug "render" "rendered page for path" path)
-                               (perun/create-file tmp page-filepath html)
-                               entry)))]
-        (perun/report-info "render" "rendered %s pages" (count files))
-        (pm/merge-meta (commit fileset tmp) updated-files)))))
+                               (assoc result page-filepath {:render-data render-data
+                                                            :entry       entry})))
+                           {}
+                           entries)]
+                (perun/report-info "render" "rendered %s pages" (count paths))
+                paths))]
+      (render-pre-wrap render-paths options :io.perun/render))))
+
+(defn- grouped-paths
+  "Produces path maps of the shape required by `render-to-paths`, based
+  on the provided `fileset` and `options`."
+  [task-name fileset options]
+  (let [global-meta (pm/get-global-meta fileset)
+        grouper (:grouper options)]
+    (->> fileset
+         pm/get-meta
+         (filter (:filterer options))
+         grouper
+         (reduce
+          (fn [result [path {:keys [entries group-meta]}]]
+            (let [sorted        (sort-by (:sortby options) (:comparator options) entries)
+                  page-filepath (perun/create-filepath (:out-dir options) path)
+                  new-entry     (merge {:path          page-filepath
+                                        :canonical-url (str (:base-url global-meta) path)
+                                        :date-build    (:date-build global-meta)}
+                                       group-meta)
+                  render-data   {:meta    global-meta
+                                 :entry   new-entry
+                                 :entries (vec sorted)}]
+              (perun/report-info task-name (str "rendered " task-name " " path))
+              (assoc result page-filepath {:render-data render-data
+                                           :entry       new-entry})))
+          {}))))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
    :filterer :content
-   :groupby (fn [data] "index.html")
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -500,50 +561,33 @@
    c comparator COMPARATOR code "sort by comparator function"
    p page       PAGE       str  "collection result page path"
    m meta       META       edn  "metadata to set on each collection entry"]
-  (let [tmp       (boot/tmp-dir!)
-        options   (merge +collection-defaults+ *opts* (if-let [p (:page *opts*)]
-                                                        {:groupby (fn [_] p)}))]
+  (let [options (merge +collection-defaults+
+                       (dissoc *opts* :page)
+                       (if-let [p (:page *opts*)]
+                         {:grouper #(-> {p {:entries %
+                                            :group-meta (:meta *opts*)}})}
+                         (if-let [gb (:groupby *opts*)]
+                           {:grouper #(->> %
+                                           (group-by gb)
+                                           (map (fn [[page entries]]
+                                                  [page {:entries entries
+                                                         :group-meta (:meta *opts*)}]))
+                                           (into {}))}
+                           {:grouper #(-> {"index.html" {:entries %
+                                                         :group-meta (:meta *opts*)}})})))]
     (cond (not (fn? (:comparator options)))
-          (u/fail "collection task :comparator option should implement IFn\n")
+          (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
           (u/fail "collection task :filterer option value should implement IFn\n")
           (and (:page options) (:groupby *opts*))
           (u/fail "using the :page option will render any :groupby option setting effectless\n")
-          (not (ifn? (:groupby options)))
+          (and (:groupby options) (not (ifn? (:groupby options))))
           (u/fail "collection task :groupby option value should implement IFn\n")
           (not (ifn? (:sortby options)))
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
-            (boot/with-pre-wrap fileset
-              (pod/with-call-in @render-pod
-                (io.perun.render/update!))
-
-              (let [files          (pm/get-meta fileset)
-                    filtered-files (filter (:filterer options) files)
-                    grouped-files  (group-by (:groupby options) filtered-files)
-                    global-meta    (pm/get-global-meta fileset)
-                    new-files      (doall
-                                    (map
-                                      (fn [[page page-files]]
-                                        (do
-                                          (let [sorted        (sort-by (:sortby options) (:comparator options) page-files)
-                                                render-data   {:meta    global-meta
-                                                               :entries (vec sorted)}
-                                                html          (render-in-pod @render-pod renderer render-data)
-                                                page-filepath (perun/create-filepath (:out-dir options) page)
-                                                new-entry     (merge
-                                                               meta
-                                                               {:path page-filepath
-                                                                :canonical-url (str (:base-url global-meta) page)
-                                                                :content html
-                                                                :date-build (:date-build global-meta)})]
-                                            (perun/create-file tmp page-filepath html)
-                                            (perun/report-info "collection" "rendered collection %s" page)
-                                            new-entry)))
-                                      grouped-files))
-                    updated-files    (apply conj files (trace :io.perun/collection new-files))
-                    updated-fileset  (pm/set-meta fileset updated-files)]
-                  (commit updated-fileset tmp))))))
+          (let [collection-paths (partial grouped-paths "collection")]
+            (render-pre-wrap collection-paths options :io.perun/collection)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
