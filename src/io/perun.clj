@@ -715,6 +715,44 @@
         grouper #(-> {p {:entries %}})]
     (assortment-impl "collection" :io.perun/collection grouper options)))
 
+(def ^:private +paginate-defaults+
+  {:out-dir "public"
+   :prefix "page-"
+   :page-size 10
+   :filterer :has-content
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask paginate
+  "Render multiple collections
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str  "the output directory"
+   f prefix     PREFIX     str  "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
+   p page-size  PAGESIZE   int  "the number of entries to include in each page (default: `10`)"
+   r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:has-content`)"
+   s sortby     SORTBY     code "sort entries by function"
+   c comparator COMPARATOR code "sort by comparator function"
+   m meta       META       edn  "metadata to set on each collection entry"]
+  (let [options (merge +paginate-defaults+ *opts*)
+        grouper (fn [entries]
+                  (->> entries
+                       (sort-by (:sortby options) (:comparator options))
+                       (partition-all (:page-size options))
+                       (map-indexed #(-> [(str (:prefix options) (inc %1) ".html")
+                                          {:entries %2}]))
+                       (into {})))]
+    (assortment-impl "paginate" :io.perun/paginate grouper options)))
+
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
    Use either filter to include only files matching or remove to
