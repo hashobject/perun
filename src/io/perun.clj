@@ -55,7 +55,8 @@
 
 (defn add-filedata [tmp-files]
   (pod/with-call-in @filedata-pod
-    (io.perun.filedata/filedatas ~(vec (map (juxt boot/tmp-path #(.getPath (boot/tmp-file %))) tmp-files)))))
+    (io.perun.filedata/filedatas
+     ~(vec (map (juxt boot/tmp-path #(.getPath (boot/tmp-file %)) pm/+meta-key+) tmp-files)))))
 
 (deftask base
   "Add some basic information to the perun metadata and
