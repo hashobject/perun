@@ -56,7 +56,7 @@
 (defn add-filedata [tmp-files]
   (pod/with-call-in @filedata-pod
     (io.perun.filedata/filedatas
-     ~(vec (map (juxt boot/tmp-path #(.getPath (boot/tmp-file %)) pm/+meta-key+) tmp-files)))))
+     ~(vec (map (juxt boot/tmp-path #(.getPath (boot/tmp-file %)) pm/meta-from-file) tmp-files)))))
 
 (deftask base
   "Add some basic information to the perun metadata and
@@ -121,7 +121,7 @@
   (->> fileset
        boot/user-files
        (boot/by-ext file-exts)
-       (keep pm/+meta-key+)))
+       (keep pm/meta-from-file)))
 
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
@@ -222,8 +222,8 @@
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [meta-contents (->> (vals (:tree fileset))
-                               (filter (comp (:filterer options) pm/+meta-key+))
-                               (map (juxt pm/+meta-key+ (comp slurp boot/tmp-file))))
+                               (filter (comp (:filterer options) pm/meta-from-file))
+                               (map (juxt pm/meta-from-file (comp slurp boot/tmp-file))))
             updated-metas (trace :io.perun/ttr
                                  (pod/with-call-in @pod
                                    (io.perun.ttr/calculate-ttr ~meta-contents)))]
@@ -239,8 +239,8 @@
   (let [options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
       (let [meta-contents (->> (vals (:tree fileset))
-                               (filter (comp (:filterer options) pm/+meta-key+))
-                               (map #(let [meta (pm/+meta-key+ %)
+                               (filter (comp (:filterer options) pm/meta-from-file))
+                               (map #(let [meta (pm/meta-from-file %)
                                            file (if-let [original-path (:original-path meta)]
                                                   (boot/tmp-get fileset original-path)
                                                   %)
@@ -280,7 +280,7 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [draft-files (filter #(-> % pm/+meta-key+ :draft) (vals (:tree fileset)))]
+    (let [draft-files (filter #(-> % pm/meta-from-file :draft) (vals (:tree fileset)))]
       (perun/report-info "draft" "removed %s draft files" (count draft-files))
       (boot/rm fileset draft-files))))
 
@@ -425,7 +425,7 @@
             files         (->> fileset
                                boot/output-files
                                (boot/by-ext (:extensions options))
-                               (keep pm/+meta-key+)
+                               (keep pm/meta-from-file)
                                (filter (:filterer options)))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
@@ -460,12 +460,12 @@
             meta-contents (->> fileset
                                boot/output-files
                                (boot/by-ext (:extensions options))
-                               (filter (comp (:filterer options) pm/+meta-key+))
-                               (map #(let [meta (pm/+meta-key+ %)
+                               (filter (comp (:filterer options) pm/meta-from-file))
+                               (map #(let [meta (pm/meta-from-file %)
                                            file (if-let [original-path (:original-path meta)]
                                                   (boot/tmp-get fileset original-path)
                                                   %)
-                                           content (or (-> file pm/+meta-key+ :parsed)
+                                           content (or (-> file pm/meta-from-file :parsed)
                                                        (-> file boot/tmp-file slurp))]
                                        [meta content])))]
         (perun/assert-base-url (:base-url options))

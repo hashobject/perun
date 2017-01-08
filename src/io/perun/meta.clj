@@ -4,11 +4,16 @@
 
 (def +meta-key+ :io.perun)
 
+(defn meta-from-file
+  [tmpfile]
+  (when-let [meta (+meta-key+ tmpfile)]
+    (assoc meta :path (:path tmpfile))))
+
 (defn get-meta
   "Return metadata on files. Files metadata is a list.
    Internally it's stored as a map indexed by `:path`"
   [fileset]
-  (keep +meta-key+ (vals (:tree fileset))))
+  (keep meta-from-file (vals (:tree fileset))))
 
 (defn key-meta [data]
   (into {} (for [d data] [(:path d) d])))
@@ -16,7 +21,7 @@
 (defn set-meta
   "Update `+meta-key+` metadata for files in `data` and return updated fileset"
   [fileset data]
-  (boot/add-meta fileset (into {} (for [d data] [(:path d) {+meta-key+ d}]))))
+  (boot/add-meta fileset (into {} (for [d data] [(:path d) {+meta-key+ (dissoc d :path)}]))))
 
 (defn merge-meta* [m1 m2]
   (vals (merge-with merge (key-meta m1) (key-meta m2))))
