@@ -277,12 +277,9 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files         (pm/get-meta fileset)
-          updated-files (->> files
-                             (remove #(true? (:draft %)))
-                             (trace :io.perun/draft))]
-      (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
-      (pm/set-meta fileset updated-files))))
+    (let [draft-files (filter #(-> % pm/+meta-key+ :draft) (vals (:tree fileset)))]
+      (perun/report-info "draft" "removed %s draft files" (count draft-files))
+      (boot/rm fileset draft-files))))
 
 (def ^:private +build-date-defaults+
   {:filterer :has-content})
