@@ -209,15 +209,6 @@
          (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
          (pm/set-global-meta fileset global-meta))))
 
-(defn- set-content-from-meta
-  [fileset meta]
-  (let [content (->> meta
-                     :path
-                     (boot/tmp-get fileset)
-                     boot/tmp-file
-                     slurp)]
-    (assoc meta :content content)))
-
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
@@ -230,15 +221,14 @@
   (let [pod     (create-pod ttr-deps)
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (->> fileset
-                       pm/get-meta
-                       (filter (:filterer options))
-                       (map #(set-content-from-meta fileset %)))
-            updated-files (trace :io.perun/ttr
+      (let [meta-contents (->> (vals (:tree fileset))
+                               (filter (comp (:filterer options) pm/+meta-key+))
+                               (map (juxt pm/+meta-key+ (comp slurp boot/tmp-file))))
+            updated-metas (trace :io.perun/ttr
                                  (pod/with-call-in @pod
-                                   (io.perun.ttr/calculate-ttr ~files)))]
-        (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-files))
-        (pm/set-meta fileset updated-files)))))
+                                   (io.perun.ttr/calculate-ttr ~meta-contents)))]
+        (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-metas))
+        (pm/set-meta fileset updated-metas)))))
 
 (def ^:private +word-count-defaults+
   {:filterer :has-content})
@@ -246,18 +236,23 @@
 (deftask word-count
   "Count words in each file. Add `:word-count` key to the files' meta"
   [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
-  (let [pod (create-pod ttr-deps)
-        options (merge +word-count-defaults+ *opts*)]
+  (let [options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [files (->> fileset
-                       pm/get-meta
-                       (filter (:filterer options))
-                       (map #(set-content-from-meta fileset %)))
-            updated-files (trace :io.perun/word-count
-                                 (pod/with-call-in @pod
-                                   (io.perun.word-count/count-words ~files)))]
-        (perun/report-debug "word-count" "counted words" (map :word-count updated-files))
-        (pm/set-meta fileset updated-files)))))
+      (let [meta-contents (->> (vals (:tree fileset))
+                               (filter (comp (:filterer options) pm/+meta-key+))
+                               (map #(let [meta (pm/+meta-key+ %)
+                                           file (if-let [original-path (:original-path meta)]
+                                                  (boot/tmp-get fileset original-path)
+                                                  %)
+                                           content (-> file boot/tmp-file slurp)]
+                                       [meta content])))
+            updated-metas (trace :io.perun/word-count
+                                 ;; word count doesn't have any special dependencies,
+                                 ;; so we can just reuse the filedata pod
+                                 (pod/with-call-in @filedata-pod
+                                   (io.perun.word-count/count-words ~meta-contents)))]
+        (perun/report-debug "word-count" "counted words" (map :word-count updated-metas))
+        (pm/set-meta fileset updated-metas)))))
 
 (def ^:private gravatar-deps
   '[[gravatar "0.1.0"]])
@@ -285,12 +280,9 @@
   "Exclude draft files"
   []
   (boot/with-pre-wrap fileset
-    (let [files         (pm/get-meta fileset)
-          updated-files (->> files
-                             (remove #(true? (:draft %)))
-                             (trace :io.perun/draft))]
-      (perun/report-info "draft" "removed draft files. Remaining %s files" (count updated-files))
-      (pm/set-meta fileset updated-files))))
+    (let [draft-files (filter #(-> % pm/+meta-key+ :draft) (vals (:tree fileset)))]
+      (perun/report-info "draft" "removed %s draft files" (count draft-files))
+      (boot/rm fileset draft-files))))
 
 (def ^:private +build-date-defaults+
   {:filterer :has-content})
@@ -465,20 +457,20 @@
     (boot/with-pre-wrap fileset
       (let [global-meta   (pm/get-global-meta fileset)
             options       (merge +atom-defaults+ global-meta *opts*)
-            files         (->> fileset
+            meta-contents (->> fileset
                                boot/output-files
                                (boot/by-ext (:extensions options))
-                               (keep pm/+meta-key+)
-                               (filter (:filterer options))
-                               (map #(let [file (if-let [original-path (:original-path %)]
+                               (filter (comp (:filterer options) pm/+meta-key+))
+                               (map #(let [meta (pm/+meta-key+ %)
+                                           file (if-let [original-path (:original-path meta)]
                                                   (boot/tmp-get fileset original-path)
-                                                  (boot/tmp-get fileset (:path %)))
+                                                  %)
                                            content (or (-> file pm/+meta-key+ :parsed)
                                                        (-> file boot/tmp-file slurp))]
-                                       (assoc % :content content))))]
+                                       [meta content])))]
         (perun/assert-base-url (:base-url options))
         (pod/with-call-in @pod
-          (io.perun.atom/generate-atom ~(.getPath tmp) ~files ~(dissoc options :filterer)))
+          (io.perun.atom/generate-atom ~(.getPath tmp) ~meta-contents ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
 (defn- assert-renderer [sym]
@@ -519,7 +511,7 @@
           (for [[path render-data] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
-              (assoc (:entry render-data)
+              (assoc (dissoc (:entry render-data) :content)
                      :path path
                      :has-content true))))))
 
