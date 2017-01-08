@@ -209,12 +209,6 @@
          (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
          (pm/set-global-meta fileset global-meta))))
 
-(defn- get-meta-contents
-  [fileset filterer]
-  (->> (vals (:tree fileset))
-       (filter (comp filterer pm/+meta-key+))
-       (map (juxt pm/+meta-key+ (comp slurp boot/tmp-file)))))
-
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
 
@@ -227,7 +221,9 @@
   (let [pod     (create-pod ttr-deps)
         options (merge +ttr-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [meta-contents (get-meta-contents fileset (:filterer options))
+      (let [meta-contents (->> (vals (:tree fileset))
+                               (filter (comp (:filterer options) pm/+meta-key+))
+                               (map (juxt pm/+meta-key+ (comp slurp boot/tmp-file))))
             updated-metas (trace :io.perun/ttr
                                  (pod/with-call-in @pod
                                    (io.perun.ttr/calculate-ttr ~meta-contents)))]
@@ -242,7 +238,14 @@
   [_ filterer FILTER code "predicate to use for selecting entries (default: `:has-content`)"]
   (let [options (merge +word-count-defaults+ *opts*)]
     (boot/with-pre-wrap fileset
-      (let [meta-contents (get-meta-contents fileset (:filterer options))
+      (let [meta-contents (->> (vals (:tree fileset))
+                               (filter (comp (:filterer options) pm/+meta-key+))
+                               (map #(let [meta (pm/+meta-key+ %)
+                                           file (if-let [original-path (:original-path meta)]
+                                                  (boot/tmp-get fileset original-path)
+                                                  %)
+                                           content (-> file boot/tmp-file slurp)]
+                                       [meta content])))
             updated-metas (trace :io.perun/word-count
                                  ;; word count doesn't have any special dependencies,
                                  ;; so we can just reuse the filedata pod
