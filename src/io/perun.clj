@@ -689,7 +689,8 @@
   {:out-dir "public"
    :prefix "page-"
    :page-size 10
-   :filterer :has-content
+   :filterer identity
+   :extensions [".html"]
    :sortby (fn [file] (:date-published file))
    :comparator (fn [i1 i2] (compare i2 i1))})
 
@@ -705,14 +706,15 @@
    to the `filterer` option.
 
    The `sortby` function can be used for ordering entries before rendering."
-  [o out-dir    OUTDIR     str  "the output directory"
-   f prefix     PREFIX     str  "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
-   p page-size  PAGESIZE   int  "the number of entries to include in each page (default: `10`)"
-   r renderer   RENDERER   sym  "page renderer (fully qualified symbol resolving to a function)"
-   _ filterer   FILTER     code "predicate to use for selecting entries (default: `:has-content`)"
-   s sortby     SORTBY     code "sort entries by function"
-   c comparator COMPARATOR code "sort by comparator function"
-   m meta       META       edn  "metadata to set on each collection entry"]
+  [o out-dir    OUTDIR     str   "the output directory"
+   f prefix     PREFIX     str   "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
+   p page-size  PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
   (let [options (merge +paginate-defaults+ *opts*)
         grouper (fn [entries]
                   (->> entries
