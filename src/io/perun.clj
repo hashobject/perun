@@ -83,9 +83,6 @@
 (def ^:private mime-type-deps
   '[[com.novemberain/pantomime "2.8.0"]])
 
-(defn add-filedata [tmp-files]
-  )
-
 (def ^:private +mime-type-defaults+
   {:filterer identity
    :extensions []})
