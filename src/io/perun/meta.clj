@@ -13,8 +13,9 @@
 (defn path-meta
   [path out-dir & [file]]
   (let [file (or file (io/file path))
-        match-out-dir (re-pattern (str "^" out-dir))
         filename (.getName file)
+        slug (slug filename)
+        match-out-dir (re-pattern (str "^" out-dir))
         permalink (-> path
                       (string/replace match-out-dir "")
                       (string/replace #"(^|/)index\.html$" "/")
@@ -24,7 +25,8 @@
      :full-path (.getPath file)
      :permalink permalink
      :filename filename
-     :slug (slug filename)
+     :slug slug
+     :short-filename slug ;; for backwards compatibility
      :extension (perun/extension filename)}))
 
 (defn meta-from-file
