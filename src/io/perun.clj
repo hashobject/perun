@@ -80,6 +80,28 @@
     (u/warn (str "The `base` task is deprecated. Metadata based on a files' path is now "
                  "automatically set when other tasks access metadata\n"))))
 
+(def ^:private mime-type-deps
+  '[[com.novemberain/pantomime "2.8.0"]])
+
+(defn add-filedata [tmp-files]
+  )
+
+(def ^:private +mime-type-defaults+
+  {:filterer identity
+   :extensions []})
+
+(deftask mime-type
+  "Adds `:mime-type` and `:file-type` keys to each file's metadata"
+  [_ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+  (let [pod (create-pod mime-type-deps)
+        options (merge +mime-type-defaults+ *opts*)]
+    (boot/with-pre-wrap fileset
+      (let [metas (trace :io.perun/mime-type (filter-meta-by-ext fileset options))
+            updated-metas (pod/with-call-in @pod (io.perun.mime-type/mime-type ~metas))]
+        (perun/report-info "mime-type" "set `:mime-type` and `:file-type` on %s files" (count updated-metas))
+        (pm/set-meta fileset updated-metas)))))
+
 (def ^:private images-dimensions-deps
   '[[image-resizer "0.1.8"]])
 
@@ -191,15 +213,15 @@
   (boot/with-pre-wrap fileset
     (let [meta-file (or filename "perun.base.edn")
           global-meta
-            (some->> fileset
-                     boot/user-files
-                     (boot/by-name [meta-file])
-                     first
-                     boot/tmp-file
-                     slurp
-                     read-string)]
-         (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
-         (pm/set-global-meta fileset global-meta))))
+          (some->> fileset
+                   boot/user-files
+                   (boot/by-name [meta-file])
+                   first
+                   boot/tmp-file
+                   slurp
+                   read-string)]
+      (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
+      (pm/set-global-meta fileset global-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
