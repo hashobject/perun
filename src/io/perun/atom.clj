@@ -32,8 +32,7 @@
        [:link {:href (str base-url filename) :rel "self"}]
        [:link {:href base-url :type "text/html"}]
        [:updated (->> (take 10 posts)
-                      (map updated)
-                      (map iso-datetime)
+                      (map (comp iso-datetime updated first))
                       sort
                       reverse
                       first)]
@@ -44,7 +43,7 @@
           [:name (:author global-metadata)]
           [:email (:author-email global-metadata)]])
 
-       (for [{:keys [uuid canonical-url content title author author-email] :as post} (take 10 posts)
+       (for [[{:keys [uuid canonical-url title author author-email] :as post} content] (take 10 posts)
              :let [author (or author (:author global-metadata))
                    author-email (or author-email (:author-email global-metadata))]]
          (do
