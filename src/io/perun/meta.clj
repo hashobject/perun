@@ -1,14 +1,44 @@
 (ns io.perun.meta
   "Utilies for dealing with perun metadata"
-  (:require [boot.core :as boot]))
+  (:require [boot.core :as boot]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [io.perun.core :as perun]))
 
 (def +meta-key+ :io.perun)
+
+(defn slug [name]
+  (second (re-find #"(.+?)(\.[^.]*$|$)" name)))
+
+(defn path-meta
+  [path out-dir & [file]]
+  (let [file (or file (io/file path))
+        match-out-dir (re-pattern (str "^" out-dir))
+        filename (.getName file)
+        permalink (-> path
+                      (string/replace match-out-dir "")
+                      (string/replace #"(^|/)index\.html$" "/")
+                      perun/absolutize-url)]
+    {:path path
+     :parent-path (perun/parent-path path filename)
+     :full-path (.getPath file)
+     :permalink permalink
+     :filename filename
+     :slug (slug filename)
+     :extension (perun/extension filename)}))
+
+(defn meta-from-file
+  [tmpfile]
+  (let [path (boot/tmp-path tmpfile)
+        file (boot/tmp-file tmpfile)
+        perun-meta (+meta-key+ tmpfile)]
+    (merge perun-meta (path-meta path (:out-dir perun-meta) file))))
 
 (defn get-meta
   "Return metadata on files. Files metadata is a list.
    Internally it's stored as a map indexed by `:path`"
   [fileset]
-  (keep +meta-key+ (vals (:tree fileset))))
+  (map meta-from-file (vals (:tree fileset))))
 
 (defn key-meta [data]
   (into {} (for [d data] [(:path d) d])))
@@ -16,13 +46,13 @@
 (defn set-meta
   "Update `+meta-key+` metadata for files in `data` and return updated fileset"
   [fileset data]
-  (boot/add-meta fileset (into {} (for [d data] [(:path d) {+meta-key+ d}]))))
-
-(defn merge-meta* [m1 m2]
-  (vals (merge-with merge (key-meta m1) (key-meta m2))))
-
-(defn merge-meta [fileset data]
-  (set-meta fileset (merge-meta* (get-meta fileset) data)))
+  (boot/add-meta fileset
+                 (into {} (for [d data]
+                            [(:path d)
+                             {+meta-key+
+                              (dissoc d
+                                      :path :parent-path :full-path :permalink
+                                      :filename :slug :extension :content)}]))))
 
 (def +global-meta-key+ :io.perun.global)
 
