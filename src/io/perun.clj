@@ -648,23 +648,23 @@
    m meta       META       edn   "metadata to set on each collection entry"]
   (let [options (merge +collection-defaults+
                        (dissoc *opts* :page)
-                       (if-let [p (:page *opts*)]
-                         {:grouper #(-> {p {:entries %
-                                            :group-meta (:meta *opts*)}})}
-                         (if-let [gb (:groupby *opts*)]
+                       (if page
+                         {:grouper #(-> {page {:entries %
+                                               :group-meta meta}})}
+                         (if groupby
                            {:grouper #(->> %
-                                           (group-by gb)
+                                           (group-by groupby)
                                            (map (fn [[page entries]]
                                                   [page {:entries entries
-                                                         :group-meta (:meta *opts*)}]))
+                                                         :group-meta meta}]))
                                            (into {}))}
                            {:grouper #(-> {"index.html" {:entries %
-                                                         :group-meta (:meta *opts*)}})})))]
+                                                         :group-meta meta}})})))]
     (cond (not (fn? (:comparator options)))
           (u/fail "collection task :comparator option should implement Fn\n")
           (not (ifn? (:filterer options)))
           (u/fail "collection task :filterer option value should implement IFn\n")
-          (and (:page options) (:groupby *opts*))
+          (and (:page options) groupby)
           (u/fail "using the :page option will render any :groupby option setting effectless\n")
           (and (:groupby options) (not (ifn? (:groupby options))))
           (u/fail "collection task :groupby option value should implement IFn\n")
