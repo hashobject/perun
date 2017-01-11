@@ -43,15 +43,14 @@ All posts have a path which is used as a key to identify the post.
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
-    - Set by: slug
+    - Set implicitly based on a file's path
     - Required by: *permalink* default fn
 - **:permalink** relative url for the post
-    - Set by: *permalink*
-    - Used by: *render* as first option for output file name
+    - Set implicitly based on a file's path
     - Required by: *atom-feed*
     - Required by: *canonical-url*
 - **:canonical-url** full url for the post
-    - Set by: *canonical-url*
+    - Set implicitly based on a file's path, if a `:base-url` is present in global metadata
     - Used by: *atom-feed*
     - Used by: *rss*
 - **:author**
