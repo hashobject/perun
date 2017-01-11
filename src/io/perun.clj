@@ -145,11 +145,12 @@
   files with extensions in `extensions`, adds `tracer` to `:io.perun/trace`
   and writes files for subsequent tasks to process, if desired. Pass
   `pod` if one is needed for parsing"
-  [parse-form extensions output-extension tracer & [pod]]
+  [parse-form extensions output-extension tracer options & [pod]]
   (let [tmp     (boot/tmp-dir!)
         prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
-      (let [changed-meta* (meta-by-ext (boot/fileset-diff @prev-fs fileset :hash) extensions)
+      (let [global-meta (pm/get-global-meta fileset)
+            changed-meta* (meta-by-ext (boot/fileset-diff @prev-fs fileset :hash) extensions)
             changed-meta (trace tracer
                                 (if pod
                                   (pod/with-call-in @pod ~(parse-form changed-meta*))
@@ -161,12 +162,15 @@
             input-meta (meta-by-ext input-fs extensions)
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
-                           (let [page-filepath (string/replace path #"(?i).[a-z]+$" output-extension)
+                           (let [new-path (->> output-extension
+                                               (string/replace path #"(?i).[a-z]+$")
+                                               (perun/create-filepath (:out-dir options)))
                                  entry (-> entry*
-                                           (assoc :path page-filepath
-                                                  :original-path path)
-                                           (dissoc :parsed :original))]
-                             (perun/create-file tmp page-filepath parsed)
+                                           (dissoc :parsed :original)
+                                           (merge {:original-path path
+                                                   :out-dir (:out-dir options)}
+                                                  (pm/path-meta new-path global-meta)))]
+                             (perun/create-file tmp new-path parsed)
                              entry)))
             new-fs (-> input-fs
                        (commit tmp)
@@ -179,7 +183,8 @@
     [circleci/clj-yaml "0.5.5"]])
 
 (def ^:private +markdown-defaults+
-  {:meta {:original true
+  {:out-dir "public"
+   :meta {:original true
           :include-rss true
           :include-atom true}})
 
@@ -189,8 +194,9 @@
    This task will look for files ending with `md` or `markdown`
    and add a `:parsed` key to their metadata containing the
    HTML resulting from processing markdown file's content"
-  [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
-   o options OPTS edn "options to be passed to the markdown parser"]
+  [d out-dir  OUTDIR  str "the output directory"
+   m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options  OPTS    edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
@@ -198,6 +204,7 @@
      [".md" ".markdown"]
      ".html"
      :io.perun/markdown
+     options
      pod)))
 
 (deftask global-metadata
