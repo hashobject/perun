@@ -226,6 +226,12 @@
    :extensions []})
 
 (deftask yaml-metadata
+  "Parse YAML metadata at the beginning of files
+
+  This task is primarily intended for composing with other tasks.
+  It will extract and parse any YAML data from the beginning of
+  a file, and then overwrite that file with the YAML removed, and
+  with the parsed data added as perun metadata."
   [e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
   (let [pod     (create-pod yaml-metadata-deps)
         options (merge +yaml-metadata-defaults+ *opts*)]
@@ -249,9 +255,10 @@
 (deftask markdown*
   "Parse markdown files
 
-   This task will look for files ending with `md` or `markdown`
-   and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
+  This task will look for files ending with `md` or `markdown`
+  and add a `:parsed` key to their metadata containing the
+  HTML resulting from processing markdown file's content. It
+  will not parse YAML metadata at the head of the file."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
@@ -268,9 +275,11 @@
 (deftask markdown
   "Parse markdown files
 
-   This task will look for files ending with `md` or `markdown`
-   and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
+  This task will look for files ending with `md` or `markdown`
+  and add a `:parsed` key to their metadata containing the
+  HTML resulting from processing markdown file's content. It
+  will parse YAML metadata at the head of the file, and add
+  any data found to the output's metadata."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
