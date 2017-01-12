@@ -3,7 +3,9 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.pod :as pod]
             [boot.util :as u]
+            [clojure.data :as data]
             [clojure.java.io :as io]
+            [clojure.set :as set]
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
@@ -140,42 +142,80 @@
       (pm/set-meta fileset updated-metas)
       (commit fileset tmp))))
 
+;; These are modified diff functions from boot. They can be removed if/when
+;; this PR is merged: https://github.com/boot-clj/boot/pull/566
+(defn- diff-tree
+  [tree props]
+  (let [->map #(select-keys % props)]
+    (reduce-kv #(assoc %1 %2 (->map %3)) {} tree)))
+
+(defn- diff*
+  [{t1 :tree :as before} {t2 :tree :as after} props]
+  (if-not before
+    {:added   after
+     :removed (assoc after :tree {})
+     :changed (assoc after :tree {})}
+    (let [props        (or (seq props) [:id])
+          d1           (diff-tree t1 props)
+          d2           (diff-tree t2 props)
+          [x y z]      (map (comp set keys) (data/diff d1 d2))
+          changed-keys (set/union (set/intersection x y)
+                                  (set/intersection (set/union x y) z))]
+      {:added   (->> (set/difference y x changed-keys) (select-keys t2) (assoc after :tree))
+       :removed (->> (set/difference x y changed-keys) (select-keys t1) (assoc after :tree))
+       :changed (->> changed-keys                      (select-keys t2) (assoc after :tree))})))
+
+(defn- diff
+  [before after & props]
+  (let [{:keys [added changed]}
+        (diff* before after props)]
+    (update-in added [:tree] merge (:tree changed))))
+
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
   files with extensions in `extensions`, adds `tracer` to `:io.perun/trace`
-  and writes files for subsequent tasks to process, if desired. Pass
+  and writes files for subsequent tasks to process, if desired.
+  `output-extension` can be used to indicate the type of file the task produces,
+  or pass `nil` to overwrite with a file of the same name and extension. Pass
   `pod` if one is needed for parsing"
-  [parse-form extensions output-extension tracer options & [pod]]
-  (let [tmp     (boot/tmp-dir!)
-        prev-fs (atom nil)]
+  [parse-form-fn extensions output-extension tracer options & [pod]]
+  (let [tmp  (boot/tmp-dir!)
+        prev (atom {})]
     (boot/with-pre-wrap fileset
       (let [global-meta (pm/get-global-meta fileset)
-            changed-meta* (meta-by-ext (boot/fileset-diff @prev-fs fileset :hash) extensions)
+            prev-fs (:fs @prev)
+            parse-form (parse-form-fn (meta-by-ext (boot/fileset-diff prev-fs fileset :hash) extensions))
             changed-meta (trace tracer
-                                (if pod
-                                  (pod/with-call-in @pod ~(parse-form changed-meta*))
-                                  (eval (parse-form changed-meta*))))
-            input-fs (-> (if @prev-fs
-                           (pm/set-meta fileset (meta-by-ext @prev-fs extensions))
-                           fileset)
+                                ;; Change `diff` to boot/fileset-diff when
+                                ;; https://github.com/boot-clj/boot/pull/566 is merged
+                                (into (meta-by-ext (diff prev-fs fileset pm/+meta-key+) extensions)
+                                      (if pod
+                                        (pod/with-call-in @pod ~parse-form)
+                                        (eval parse-form))))
+            input-fs (-> fileset
+                         (pm/set-meta (:meta @prev))
                          (pm/set-meta changed-meta))
             input-meta (meta-by-ext input-fs extensions)
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
-                           (let [new-path (->> output-extension
-                                               (string/replace path #"(?i).[a-z]+$")
-                                               (perun/create-filepath (:out-dir options)))
+                           (let [out-dir (:out-dir options)
+                                 new-path (if output-extension
+                                            (->> output-extension
+                                                 (string/replace path #"(?i).[a-z]+$")
+                                                 (perun/create-filepath out-dir))
+                                            (perun/create-filepath out-dir path))
                                  entry (-> entry*
                                            (dissoc :parsed :original)
-                                           (merge {:original-path path
-                                                   :out-dir (:out-dir options)}
+                                           (merge {:original-path path}
+                                                  (when out-dir
+                                                    {:out-dir out-dir})
                                                   (pm/path-meta new-path global-meta)))]
                              (perun/create-file tmp new-path parsed)
                              entry)))
             new-fs (-> input-fs
                        (commit tmp)
                        (pm/set-meta output-meta))]
-        (reset! prev-fs new-fs)
+        (reset! prev {:fs fileset :meta input-meta})
         new-fs))))
 
 (def ^:private markdown-deps
