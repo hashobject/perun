@@ -30,20 +30,31 @@
       boot/commit!))
 
 (defn tmp-by-ext
+  "Returns boot tmpfiles from `fileset` that end with `extensions`.
+  If `extensions` is empty, returns all files."
   [fileset extensions]
   (cond->> (vals (:tree fileset))
     (> (count extensions) 0) (boot/by-ext extensions)))
 
 (defn meta-by-ext
+  "Returns perun metadata from `fileset`, filtered by `extensions`.
+  If `extensions` is empty, returns metadata for all files."
   [fileset extensions]
   (map (partial pm/meta-from-file fileset) (tmp-by-ext fileset extensions)))
 
 (defn filter-tmp-by-ext
+  "Returns boot tmpfiles from `fileset`. `options` selects files
+  that end with values in the `:extensions` key, filtered by the
+  `:filterer` predicate. If `:extensions` is empty, returns all files."
   [fileset options]
   (filter (comp (:filterer options) (partial pm/meta-from-file fileset))
           (tmp-by-ext fileset (:extensions options))))
 
 (defn filter-meta-by-ext
+  "Returns perun metadata from `fileset`. `options` selects files
+  that end with values in the `:extensions` key, filtered by the
+  `:filterer` predicate. If `:extensions` is empty, returns
+  metadata for all files."
   [fileset options]
   (filter (:filterer options) (meta-by-ext fileset (:extensions options))))
 
@@ -368,6 +379,7 @@
       (pm/set-global-meta updated-fs new-global-meta))))
 
 (defn mv-impl
+  "Abstraction for tasks that move files in the fileset"
   [task-name path-fn tracer options]
   (boot/with-pre-wrap fileset
     (let [metas (filter-meta-by-ext fileset options)
