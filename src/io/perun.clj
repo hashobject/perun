@@ -218,9 +218,27 @@
         (reset! prev {:fs fileset :meta input-meta})
         new-fs))))
 
+(def ^:private yaml-metadata-deps
+  '[[circleci/clj-yaml "0.5.5"]])
+
+(def ^:private +yaml-metadata-defaults+
+  {:filterer identity
+   :extensions []})
+
+(deftask yaml-metadata
+  [e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+  (let [pod     (create-pod yaml-metadata-deps)
+        options (merge +yaml-metadata-defaults+ *opts*)]
+    (content-pre-wrap
+     (fn [metas] `(io.perun.yaml/parse-yaml ~metas))
+     (:extensions options)
+     nil
+     :io.perun/yaml-metadata
+     options
+     pod)))
+
 (def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.5"]])
+  '[[org.pegdown/pegdown "1.6.0"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"
@@ -228,7 +246,7 @@
           :include-rss true
           :include-atom true}})
 
-(deftask markdown
+(deftask markdown*
   "Parse markdown files
 
    This task will look for files ending with `md` or `markdown`
@@ -240,12 +258,25 @@
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
+     (fn [metas] `(io.perun.markdown/parse-markdown ~metas ~options))
      [".md" ".markdown"]
      ".html"
      :io.perun/markdown
      options
      pod)))
+
+(deftask markdown
+  "Parse markdown files
+
+   This task will look for files ending with `md` or `markdown`
+   and add a `:parsed` key to their metadata containing the
+   HTML resulting from processing markdown file's content"
+  [d out-dir  OUTDIR  str "the output directory"
+   m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options  OPTS    edn "options to be passed to the markdown parser"]
+  (let [{:keys [out-dir meta options]} (merge +markdown-defaults+ *opts*)]
+    (comp (yaml-metadata :extensions [".md" ".markdown"])
+          (markdown* :out-dir out-dir :meta meta :options options))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
