@@ -17,9 +17,10 @@
       (perun/extension file-path)))
 
 (defn ^String new-image-filepath [file-path filename new-filename]
-  (str (perun/parent-path file-path filename)
-       "/"
-       new-filename))
+  (perun/relativize-url
+   (str (perun/parent-path file-path filename)
+        "/"
+        new-filename)))
 
 (defn write-file [options tmp file ^BufferedImage buffered-file resolution]
   (let [filepath (:path file)

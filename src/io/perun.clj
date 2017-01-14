@@ -456,7 +456,7 @@
 
   Returns a boot `with-pre-wrap` result"
   [render-paths-fn options tracer]
-  (let [tmp  (boot/tmp-dir!)]
+  (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [new-metadata (-> fileset
                              (render-paths-fn options)
