@@ -147,13 +147,14 @@
             input-meta (meta-by-ext input-fs file-exts)
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
-                           (let [page-filepath (string/replace path #"(?i).[a-z]+$" ".html")
+                           (let [ext-pattern (re-pattern (str "(" (string/join "|" file-exts) ")$"))
+                                 page-filepath (string/replace path ext-pattern ".html")
                                  entry (-> entry*
                                            (assoc :has-content true
                                                   :original-path path
                                                   :path page-filepath
                                                   :filename (string/replace filename
-                                                                            #"(?i).[a-z]+$" ".html"))
+                                                                            ext-pattern ".html"))
                                            (dissoc :parsed :extension :file-type :full-path
                                                    :mime-type :original))]
                              (perun/create-file tmp page-filepath parsed)
