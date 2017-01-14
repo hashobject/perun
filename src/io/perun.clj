@@ -33,7 +33,7 @@
   "Returns boot tmpfiles from `fileset` that end with `extensions`.
   If `extensions` is empty, returns all files."
   [fileset extensions]
-  (cond->> (vals (:tree fileset))
+  (cond->> (boot/ls fileset)
     (> (count extensions) 0) (boot/by-ext extensions)))
 
 (defn meta-by-ext
@@ -138,7 +138,7 @@
 (deftask images-resize
   "Resize images to the provided resolutions.
    Each image file would have resolution appended to it's name:
-   e.x. san-francisco.jpg would become san-francisco-3840.jpg"
+   e.x. san-francisco.jpg would become san-francisco_3840.jpg"
   [o out-dir     OUTDIR       str    "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
@@ -150,8 +150,9 @@
           updated-metas (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~metas ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-metas)
-      (pm/set-meta fileset updated-metas)
-      (commit fileset tmp))))
+      (-> fileset
+          (commit tmp)
+          (pm/set-meta updated-metas)))))
 
 ;; These are modified diff functions from boot. They can be removed if/when
 ;; this PR is merged: https://github.com/boot-clj/boot/pull/566
@@ -196,13 +197,17 @@
       (let [global-meta (pm/get-global-meta fileset)
             prev-fs (:fs @prev)
             parse-form (parse-form-fn (meta-by-ext (boot/fileset-diff prev-fs fileset :hash) extensions))
-            changed-meta (trace tracer
-                                ;; Change `diff` to boot/fileset-diff when
-                                ;; https://github.com/boot-clj/boot/pull/566 is merged
-                                (into (meta-by-ext (diff prev-fs fileset pm/+meta-key+) extensions)
-                                      (if pod
+            ;; Change `diff` to boot/fileset-diff when
+            ;; https://github.com/boot-clj/boot/pull/566 is merged
+            changed-from-prev-meta (meta-by-ext (diff prev-fs fileset pm/+meta-key+) extensions)
+            changed-from-parsing-meta (if pod
                                         (pod/with-call-in @pod ~parse-form)
-                                        (eval parse-form))))
+                                        (eval parse-form))
+            changed-meta (->> (merge-with merge
+                                          (pm/key-meta changed-from-prev-meta)
+                                          (pm/key-meta changed-from-parsing-meta))
+                              vals
+                              (trace tracer))
             input-fs (-> fileset
                          (pm/set-meta (:meta @prev))
                          (pm/set-meta changed-meta))
@@ -210,9 +215,10 @@
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
                            (let [out-dir (:out-dir options)
+                                 ext-pattern (re-pattern (str "(" (string/join "|" extensions) ")$"))
                                  new-path (if output-extension
                                             (->> output-extension
-                                                 (string/replace path #"(?i).[a-z]+$")
+                                                 (string/replace path ext-pattern)
                                                  (perun/create-filepath out-dir))
                                             (perun/create-filepath out-dir path))
                                  entry (-> entry*
@@ -244,7 +250,8 @@
 
    This task will look for files ending with `md` or `markdown`
    and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
+   HTML resulting from processing markdown file's content. Also
+   writes an HTML file that contains the same content as `:parsed`"
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
@@ -267,14 +274,13 @@
   [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
     (let [meta-file (or filename "perun.base.edn")
-          global-meta
-          (some->> fileset
-                   boot/user-files
-                   (boot/by-name [meta-file])
-                   first
-                   boot/tmp-file
-                   slurp
-                   read-string)]
+          global-meta (some->> fileset
+                               boot/ls
+                               (boot/by-name [meta-file])
+                               first
+                               boot/tmp-file
+                               slurp
+                               read-string)]
       (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
       (pm/set-global-meta fileset global-meta))))
 
@@ -345,7 +351,7 @@
                                  (pod/with-call-in @pod
                                    (io.perun.gravatar/find-gravatar ~metas ~source-key ~target-key)))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-metas))
-       (pm/set-meta fileset updated-metas)))))
+        (pm/set-meta fileset updated-metas)))))
 
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
@@ -353,7 +359,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [meta-fn (partial pm/meta-from-file fileset)
-          draft-files (filter #(-> % meta-fn :draft) (vals (:tree fileset)))]
+          draft-files (filter #(-> % meta-fn :draft) (boot/ls fileset))]
       (perun/report-info "draft" "removed %s draft files" (count draft-files))
       (boot/rm fileset draft-files))))
 
@@ -418,7 +424,7 @@
     (mv-impl "slug" path-fn :io.perun/slug options)))
 
 (def ^:private +permalink-defaults+
-  {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
+  {:permalink-fn (fn [m] (perun/absolutize-url (str (:parent-path m) (:slug m) "/index.html")))
    :filterer identity
    :extensions [".html"]})
 
@@ -566,7 +572,7 @@
   All `:entry`s will be returned, with their `:path`s and `:canonical-url`s
   (if there is a valid `:base-url` in global metadata) set, and `tracer`
   added to `io.perun/trace`."
-  [data renderer tmp tracer global-meta]
+  [task-name data renderer tmp tracer global-meta]
   (pod/with-call-in @render-pod
     (io.perun.render/update!))
   (doall
@@ -574,6 +580,7 @@
           (for [[path {:keys [entry] :as render-data}] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
+              (perun/report-debug task-name "rendered page for path" path)
               (merge entry (pm/path-meta path global-meta)))))))
 
 (defn render-pre-wrap
@@ -584,13 +591,15 @@
   that are required by `render-paths-fn`.
 
   Returns a boot `with-pre-wrap` result"
-  [render-paths-fn options tracer]
+  [task-name render-paths-fn options tracer]
   (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [render-paths (render-paths-fn fileset options)
             global-meta (pm/get-global-meta fileset)
-            new-metadata (render-to-paths render-paths (:renderer options) tmp tracer global-meta)
+            new-metadata (render-to-paths task-name render-paths (:renderer options) tmp tracer global-meta)
             rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
+        (perun/report-info task-name "rendered %s pages" (count render-paths))
+        (perun/report-debug task-name "removing files" rm-files)
         (-> fileset
             (boot/rm rm-files)
             (commit tmp)
@@ -631,15 +640,13 @@
                                                     meta
                                                     {:content content
                                                      :out-dir (:out-dir options)})]
-                               (perun/report-debug "render" "rendered page for path" path)
                                (assoc result new-path {:meta    (pm/get-global-meta fileset)
                                                        :entries entries
                                                        :entry   new-entry})))
                            {}
                            entries)]
-                (perun/report-info "render" "rendered %s pages" (count paths))
                 paths))]
-      (render-pre-wrap render-paths options :io.perun/render))))
+      (render-pre-wrap "render" render-paths options :io.perun/render))))
 
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
@@ -724,7 +731,7 @@
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
           (let [collection-paths (partial grouped-paths "collection")]
-            (render-pre-wrap collection-paths options :io.perun/collection)))))
+            (render-pre-wrap "collection" collection-paths options :io.perun/collection)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
@@ -742,13 +749,12 @@
                   :else identity)]
      (fn [next-task]
        (fn [fileset]
-         (let [files (->> fileset
-                          (boot/fileset-diff @prev)
-                          boot/input-files
+         (let [files (->> (boot/fileset-diff @prev fileset :hash)
+                          boot/ls
                           filter
                           (boot/by-ext [".html"]))
                 scripts-contents (->> fileset
-                                      boot/input-files
+                                      boot/ls
                                       (boot/by-path scripts)
                                       (map (comp slurp boot/tmp-file)))]
            (doseq [file files
@@ -760,6 +766,9 @@
                  ~scripts-contents
                  ~(.getPath (boot/tmp-file file))
                  ~(.getPath new-file))))
-           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files" (count scripts-contents) (count files)))
-         (reset! prev fileset)
-         (next-task (-> fileset (boot/add-resource out) boot/commit!))))))
+           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files" (count scripts-contents) (count files))
+           (reset! prev fileset)
+           (next-task (-> fileset
+                          (boot/add-resource out)
+                          boot/commit!
+                          (pm/set-meta (map (partial pm/meta-from-file fileset) files)))))))))

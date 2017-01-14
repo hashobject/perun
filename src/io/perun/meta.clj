@@ -58,7 +58,7 @@
   "Return metadata on files. Files metadata is a list.
    Internally it's stored as a map indexed by `:path`"
   [fileset]
-  (map (partial meta-from-file fileset) (vals (:tree fileset))))
+  (map (partial meta-from-file fileset) (boot/ls fileset)))
 
 (defn key-meta [data]
   (into {} (for [d data] [(:path d) d])))
