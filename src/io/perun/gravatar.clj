@@ -1,6 +1,6 @@
 (ns io.perun.gravatar
   (:require [io.perun.core :as perun]
-            [gravatar      :as gr]))
+            [gravatar.core :as gr]))
 
 (defn add-gravatar [file source-prop target-prop]
   (if-let [email (get file source-prop)]
