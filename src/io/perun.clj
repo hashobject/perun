@@ -98,7 +98,7 @@
 (deftask images-resize
   "Resize images to the provided resolutions.
    Each image file would have resolution appended to it's name:
-   e.x. san-francisco.jpg would become san-francisco-3840.jpg"
+   e.x. san-francisco.jpg would become san-francisco_3840.jpg"
   [o out-dir     OUTDIR       str    "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
@@ -113,8 +113,9 @@
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-files)
-      (pm/set-meta fileset updated-files)
-      (commit fileset tmp))))
+      (-> fileset
+          (commit tmp)
+          (pm/set-meta updated-files)))))
 
 (defn meta-by-ext
   [fileset file-exts]
