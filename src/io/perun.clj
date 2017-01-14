@@ -113,8 +113,9 @@
           updated-files (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~files ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-files)
-      (pm/set-meta fileset updated-files)
-      (commit fileset tmp))))
+      (-> fileset
+          (commit tmp)
+          (pm/set-meta updated-files)))))
 
 (def ^:private markdown-deps
   '[[org.pegdown/pegdown "1.6.0"]
