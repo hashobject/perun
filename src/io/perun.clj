@@ -80,7 +80,7 @@
   (boot/with-pre-wrap fileset
     (let [pod (create-pod images-dimensions-deps)
           files (->> fileset
-                     boot/user-files
+                     boot/ls
                      (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-dimensions))
@@ -106,7 +106,7 @@
           tmp (boot/tmp-dir!)
           pod (create-pod images-resize-deps)
           files (->> fileset
-                     boot/user-files
+                     boot/ls
                      (boot/by-ext [".png" ".jpeg" ".jpg"])
                      add-filedata
                      (trace :io.perun/images-resize))
@@ -120,7 +120,7 @@
 (defn meta-by-ext
   [fileset file-exts]
   (->> fileset
-       boot/user-files
+       boot/ls
        (boot/by-ext file-exts)
        (keep pm/meta-from-file)))
 
@@ -134,7 +134,7 @@
         prev-fs (atom nil)]
     (boot/with-pre-wrap fileset
       (let [changed-files (->> (boot/fileset-diff @prev-fs fileset :hash)
-                               boot/user-files
+                               boot/ls
                                (boot/by-ext file-exts)
                                add-filedata)
             changed-meta (trace tracer
@@ -202,16 +202,15 @@
   [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
     (let [meta-file (or filename "perun.base.edn")
-          global-meta
-            (some->> fileset
-                     boot/user-files
-                     (boot/by-name [meta-file])
-                     first
-                     boot/tmp-file
-                     slurp
-                     read-string)]
-         (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
-         (pm/set-global-meta fileset global-meta))))
+          global-meta (some->> fileset
+                               boot/ls
+                               (boot/by-name [meta-file])
+                               first
+                               boot/tmp-file
+                               slurp
+                               read-string)]
+      (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
+      (pm/set-global-meta fileset global-meta))))
 
 (def ^:private ttr-deps
   '[[time-to-read "0.1.0"]])
@@ -695,11 +694,11 @@
        (fn [fileset]
          (let [files (->> fileset
                           (boot/fileset-diff @prev)
-                          boot/input-files
+                          boot/ls
                           filter
                           (boot/by-ext [".html"]))
                 scripts-contents (->> fileset
-                                      boot/input-files
+                                      boot/ls
                                       (boot/by-path scripts)
                                       (map (comp slurp boot/tmp-file)))]
            (doseq [file files
