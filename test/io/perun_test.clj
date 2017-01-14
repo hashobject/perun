@@ -122,7 +122,9 @@ This be ___markdown___.")
   (str "<body>" (:content (:entry data)) "</body>"))
 
 (deftesttask markdown-test []
-  (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
+  (comp (p/collection :renderer 'io.perun-test/render) ;; test #77, collection works without input files
+
+        (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
