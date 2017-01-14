@@ -532,6 +532,7 @@
       (let [render-paths (render-paths-fn fileset options)
             new-metadata (render-to-paths render-paths (:renderer options) tmp tracer)
             rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
+        (perun/report-debug "render-pre-wrap" "removing files" rm-files)
         (-> fileset
             (boot/rm rm-files)
             (commit tmp)
