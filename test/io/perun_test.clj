@@ -2,6 +2,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.test :as boot-test :refer [deftesttask]]
             [clojure.java.io :as io]
+            [clojure.string :as str]
             [clojure.test :refer [deftest testing is]]
             [io.perun :as p]
             [io.perun.meta :as pm])
@@ -121,53 +122,100 @@ This be ___markdown___.")
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
-(deftesttask markdown-test []
-  (comp (p/collection :renderer 'io.perun-test/render) ;; test #77, collection works without input files
-
-        (add-txt-file :path "2017-01-01-test.md" :content md-content)
+(deftesttask default-tests []
+  (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
                                        :description "Test Desc"}))
         (p/markdown)
-        (content-test :path "2017-01-01-test.html" :content parsed-md)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :parsed parsed-md))
+        (testing "markdown"
+          (content-test :path "2017-01-01-test.html" :content parsed-md)
+          (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :parsed parsed-md)))
 
         (p/ttr)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :ttr 1))
+        (testing "ttr"
+          (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :ttr 1)))
 
         (p/word-count)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :word-count 18))
+        (testing "word-count"
+          (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :word-count 18)))
 
         (p/gravatar :source-key :email :target-key :gravatar)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444"))
+        (testing "gravatar"
+          (value-test :path "2017-01-01-test.html"
+                      :value-fn
+                      #(meta= % :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")))
 
         (p/build-date)
-        (key-test :path "2017-01-01-test.html" :key :date-build)
+        (testing "build-date"
+          (key-test :path "2017-01-01-test.html" :key :date-build))
 
         (p/slug)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :slug "test"))
+        (testing "slug"
+          (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :slug "test")))
 
         (p/permalink)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :permalink "/test/index.html"))
+        (testing "permalink"
+          (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :permalink "/test/index.html")))
 
         (p/canonical-url)
-        (value-test :path "2017-01-01-test.html" :value-fn #(meta= % :canonical-url "http://example.com/test/index.html"))
+        (testing "canonical-url"
+          (value-test :path "2017-01-01-test.html"
+                      :value-fn #(meta= % :canonical-url "http://example.com/test/index.html")))
 
         (p/sitemap)
-        (file-exists? :path "public/sitemap.xml")
+        (testing "sitemap"
+          (file-exists? :path "public/sitemap.xml"))
 
         (p/rss)
-        (file-exists? :path "public/feed.rss")
+        (testing "rss"
+          (file-exists? :path "public/feed.rss"))
 
         (p/atom-feed)
-        (file-exists? :path "public/atom.xml")
+        (testing "atom-feed"
+          (file-exists? :path "public/atom.xml"))
 
         (p/render :renderer 'io.perun-test/render)
 
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
-        (content-test :path "public/test/index.html" :content (str "<script>" js-content "</script>"))
+        (testing "inject-scripts"
+          (content-test :path "public/test/index.html" :content (str "<script>" js-content "</script>")))
 
         (p/draft)
-        (file-exists? :path "2017-01-01-test.html" :negate? true)))
+        (testing "draft"
+          (file-exists? :path "2017-01-01-test.html" :negate? true))))
+
+(deftesttask content-tests []
+  (comp (testing "Collection works without input files" ;; #77
+          (p/collection :renderer 'io.perun-test/render))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown) ;; render once
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"Hello" "Salutations"))
+        (p/markdown)
+        (testing "detecting content changes"
+          (content-test :path "test.html" :content "Salutations"))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: false"))
+        (p/markdown)
+        (testing "detecting metadata changes"
+          (value-test :path "test.html" :value-fn #(meta= % :draft false)))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: true\nfoo: bar"))
+        (p/markdown)
+        (testing "detecting metadata additions"
+          (value-test :path "test.html" :value-fn #(meta= % :foo "bar")))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown)
+        (testing "detecting metadata deletions"
+          (value-test :path "test.html" :value-fn #(meta= % :foo nil)))
+
+        (add-txt-file :path "test2.md" :content md-content)
+        (p/markdown)
+        (testing "detecting new files"
+          (content-test :path "test2.html" :content parsed-md)
+          (value-test :path "test2.md" :value-fn #(meta= % :parsed parsed-md)))))
