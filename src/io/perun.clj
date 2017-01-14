@@ -180,7 +180,8 @@
 
    This task will look for files ending with `md` or `markdown`
    and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
+   HTML resulting from processing markdown file's content. Also
+   writes an HTML file that contains the same content as `:parsed`"
   [m meta    META edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options OPTS edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
