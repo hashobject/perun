@@ -506,7 +506,7 @@
 
   All `:entry`s will be returned, with their `:path`s set, `:has-content`
   set to `true`, and `tracer` added to `io.perun/trace`."
-  [data renderer tmp tracer]
+  [task-name data renderer tmp tracer]
   (pod/with-call-in @render-pod
     (io.perun.render/update!))
   (doall
@@ -514,6 +514,7 @@
           (for [[path render-data] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
+              (perun/report-debug task-name "rendered page for path" path)
               (assoc (dissoc (:entry render-data) :content)
                      :path path
                      :has-content true))))))
@@ -526,13 +527,14 @@
   that are required by `render-paths-fn`.
 
   Returns a boot `with-pre-wrap` result"
-  [render-paths-fn options tracer]
+  [task-name render-paths-fn options tracer]
   (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [render-paths (render-paths-fn fileset options)
-            new-metadata (render-to-paths render-paths (:renderer options) tmp tracer)
+            new-metadata (render-to-paths task-name render-paths (:renderer options) tmp tracer)
             rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
-        (perun/report-debug "render-pre-wrap" "removing files" rm-files)
+        (perun/report-info task-name "rendered %s pages" (count render-paths))
+        (perun/report-debug task-name "removing files" rm-files)
         (-> fileset
             (boot/rm rm-files)
             (commit tmp)
@@ -579,15 +581,13 @@
                                    new-path (make-path (:out-dir options) permalink path)
                                    meta-entry (merge meta entry)
                                    content-entry (assoc meta-entry :content content)]
-                               (perun/report-debug "render" "rendered page for path" path)
                                (assoc result new-path {:meta    (pm/get-global-meta fileset)
                                                        :entries (vec entries)
                                                        :entry   content-entry})))
                            {}
                            entries)]
-                (perun/report-info "render" "rendered %s pages" (count paths))
                 paths))]
-      (render-pre-wrap render-paths options :io.perun/render))))
+      (render-pre-wrap "render" render-paths options :io.perun/render))))
 
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
@@ -674,7 +674,7 @@
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
           (let [collection-paths (partial grouped-paths "collection")]
-            (render-pre-wrap collection-paths options :io.perun/collection)))))
+            (render-pre-wrap "collection" collection-paths options :io.perun/collection)))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
