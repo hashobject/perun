@@ -424,7 +424,7 @@
     (mv-impl "slug" path-fn :io.perun/slug options)))
 
 (def ^:private +permalink-defaults+
-  {:permalink-fn (fn [m] (perun/absolutize-url (str (:parent-path m) (:slug m) "/index.html")))
+  {:permalink-fn (fn [m] (perun/absolutize-url (str (:parent-path m) (:slug m) "/")))
    :filterer identity
    :extensions [".html"]})
 
