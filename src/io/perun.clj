@@ -155,13 +155,14 @@
                                                   :path page-filepath
                                                   :filename (string/replace filename
                                                                             ext-pattern ".html"))
-                                           (dissoc :parsed :extension :file-type :full-path
-                                                   :mime-type :original))]
+                                           (dissoc :parsed :original))]
                              (perun/create-file tmp page-filepath parsed)
                              entry)))
-            new-fs (-> input-fs
-                       (commit tmp)
-                       (pm/set-meta output-meta))]
+            new-fs* (-> input-fs
+                        (commit tmp)
+                        (pm/set-meta output-meta))
+            filedata (add-filedata (boot/by-path (map :path output-meta) (boot/ls new-fs*)))
+            new-fs (pm/set-meta new-fs* filedata)]
         (reset! prev-fs new-fs)
         new-fs))))
 
