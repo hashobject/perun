@@ -18,6 +18,12 @@
   (or (some #{val} (-> file pm/+meta-key+ key))
       (contains? (-> file pm/+meta-key+ key) val)))
 
+(deftask prn-meta-key
+  [p path PATH str "path of the file to test"
+   k key  KEY  kw  "the key to prn"]
+  (boot/with-pass-thru fileset
+    (->> path (boot/tmp-get fileset) pm/+meta-key+ key prn)))
+
 (deftask key-test
   [p path PATH str "path of the file to test"
    k key  KEY  kw  "the key to test"
