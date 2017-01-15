@@ -2,6 +2,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.test :as boot-test :refer [deftesttask]]
             [clojure.java.io :as io]
+            [clojure.string :as str]
             [clojure.test :refer [deftest testing is]]
             [io.perun :as p]
             [io.perun.meta :as pm])
@@ -19,31 +20,35 @@
         (contains? meta val))))
 
 (deftask key-test
-  [p path     PATH    str "path of the file to test"
-   k key      KEY     kw  "the key to test"]
+  [p path PATH str "path of the file to test"
+   k key  KEY  kw  "the key to test"
+   m msg  MSG  str "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [file (boot/tmp-get fileset path)]
-      (is (contains? (pm/meta-from-file fileset file) key)))))
+      (is (contains? (pm/meta-from-file fileset file) key) msg))))
 
 (deftask value-test
   [p path     PATH    str "path of the file to test"
-   v value-fn VALUEFN edn "the value to test (optional)"]
+   v value-fn VALUEFN edn "the value to test (optional)"
+   m msg      MSG     str "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [file (boot/tmp-get fileset path)]
-      (is (and (not (nil? file)) (value-fn fileset file))))))
+      (is (and (not (nil? file)) (value-fn fileset file)) msg))))
 
 (deftask content-test
   [p path    PATH    str "path of the file to test"
-   c content CONTENT str "The content of the file"]
+   c content CONTENT str "The content of the file"
+   m msg     MSG     str "message shown on failure"]
   (boot/with-pass-thru fileset
-    (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset path))) content))))
+    (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset path))) content) msg)))
 
 (deftask file-exists?
   [p path    PATH str  "path of the image to add"
-   n negate?      bool "true to check if file doesn't exist"]
+   n negate?      bool "true to check if file doesn't exist"
+   m msg     MSG  str  "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [f (if negate? nil? (complement nil?))]
-      (is (f (boot/tmp-get fileset path))))))
+      (is (f (boot/tmp-get fileset path)) msg))))
 
 (deftask add-image
   [p path   PATH   str "path of the image to add"
@@ -116,54 +121,140 @@ This be ___markdown___.")
   (comp (add-txt-file :path "perun.base.edn" :content "{:global \"metadata!\"}")
         (p/global-metadata)
         (boot/with-pass-thru fileset
-          (is (= (:global (pm/+global-meta-key+ (meta fileset))) "metadata!")))))
+          (is (= (:global (pm/+global-meta-key+ (meta fileset))) "metadata!")
+              "global metadata should be set from perun.base.edn"))))
 
 (defn render
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
-(deftesttask markdown-test []
+(deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
                                        :description "Test Desc"}))
         (p/markdown)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= %1 %2 :parsed parsed-md))
-        (content-test :path "public/2017-01-01-test.html" :content parsed-md)
+
+        (testing "markdown"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= %1 %2 :parsed parsed-md)
+                      :msg "`markdown` should set `:parsed` metadata on markdown file")
+          (content-test :path "public/2017-01-01-test.html"
+                        :content parsed-md
+                        :msg "`markdown` should populate HTML file with parsed content"))
 
         (p/ttr)
-        (value-test :path "public/2017-01-01-test.html" :value-fn #(meta= %1 %2 :ttr 1))
+        (testing "ttr"
+          (value-test :path "public/2017-01-01-test.html"
+                      :value-fn #(meta= %1 %2 :ttr 1)
+                      :msg "`ttr` should set `:ttr` metadata"))
 
         (p/word-count)
-        (value-test :path "public/2017-01-01-test.html" :value-fn #(meta= %1 %2 :word-count 18))
+        (testing "word-count"
+          (value-test :path "public/2017-01-01-test.html"
+                      :value-fn #(meta= %1 %2 :word-count 18)
+                      :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
-        (value-test :path "public/2017-01-01-test.html" :value-fn #(meta= %1 %2 :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444"))
+        (testing "gravatar"
+          (value-test :path "public/2017-01-01-test.html"
+                      :value-fn
+                      #(meta= %1 %2 :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
+                      :msg "`gravatar` should set `:gravatar` metadata"))
 
         (p/build-date)
-        (key-test :path "public/2017-01-01-test.html" :key :date-build)
+        (testing "build-date"
+          (key-test :path "public/2017-01-01-test.html"
+                    :key :date-build
+                    :msg "`build-date` should set `:date-build` metadata"))
 
         (p/slug)
-        (value-test :path "public/test.html" :value-fn #(meta= %1 %2 :slug "test"))
+        (testing "slug"
+          (value-test :path "public/test.html"
+                      :value-fn #(meta= %1 %2 :slug "test")
+                      :msg "`:slug` should move a file"))
 
         (p/permalink)
-        (value-test :path "public/test/index.html" :value-fn #(meta= %1 %2 :permalink "/test/"))
-        (value-test :path "public/test/index.html" :value-fn #(meta= %1 %2 :canonical-url "http://example.com/test/"))
+        (testing "permalink"
+          (value-test :path "public/test/index.html"
+                      :value-fn #(meta= %1 %2 :permalink "/test/")
+                      :msg "`permalink` should move a file"))
+        (testing "canonical-url"
+          (value-test :path "public/test/index.html"
+                      :value-fn #(meta= %1 %2 :canonical-url "http://example.com/test/")
+                      :msg "`canonical-url` should be implicitly set"))
         (p/sitemap)
-        (file-exists? :path "public/sitemap.xml")
+        (testing "sitemap"
+          (file-exists? :path "public/sitemap.xml"
+                        :msg "`sitemap` should write sitemap.xml"))
 
         (p/rss)
-        (file-exists? :path "public/feed.rss")
+        (testing "rss"
+          (file-exists? :path "public/feed.rss"
+                        :msg "`rss` should write feed.rss"))
 
         (p/atom-feed)
-        (file-exists? :path "public/atom.xml")
+        (testing "atom-feed"
+          (file-exists? :path "public/atom.xml"
+                        :msg "`atom-feed` should write atom.xml"))
 
         (p/render :renderer 'io.perun-test/render)
 
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
-        (content-test :path "public/test/index.html" :content (str "<script>" js-content "</script>"))
+        (testing "inject-scripts"
+          (content-test :path "public/test/index.html"
+                        :content (str "<script>" js-content "</script>")
+                        :msg "`inject-scripts` should alter the contents of a file"))
 
         (p/draft)
-        (file-exists? :path "public/test/index.html" :negate? true)))
+        (testing "draft"
+          (file-exists? :path "public/test/index.html"
+                        :negate? true
+                        :msg "`draft` should remove files"))))
+
+(deftesttask content-tests []
+  (comp (testing "Collection works without input files" ;; #77
+          (p/collection :renderer 'io.perun-test/render))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown) ;; render once
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"Hello" "Salutations"))
+        (p/markdown)
+        (testing "detecting content changes"
+          (content-test :path "public/test.html"
+                        :content "Salutations"
+                        :msg "content changes should result in re-rendering"))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: false"))
+        (p/markdown)
+        (testing "detecting metadata changes"
+          (value-test :path "public/test.html"
+                      :value-fn #(meta= %1 %2 :draft false)
+                      :msg "metadata changes should result in re-rendering"))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: true\nfoo: bar"))
+        (p/markdown)
+        (testing "detecting metadata additions"
+          (value-test :path "public/test.html"
+                      :value-fn #(meta= %1 %2 :foo "bar")
+                      :msg "metadata additions should result in re-rendering"))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown)
+        (testing "detecting metadata deletions"
+          (value-test :path "public/test.html"
+                      :value-fn #(meta= %1 %2 :foo nil)
+                      :msg "metadata deletions should result in re-rendering"))
+
+        (add-txt-file :path "test2.md" :content md-content)
+        (p/markdown)
+        (testing "detecting new files"
+          (content-test :path "public/test2.html"
+                        :content parsed-md
+                        :msg "new files should be parsed, after initial render")
+          (value-test :path "test2.md"
+                      :value-fn #(meta= %1 %2 :parsed parsed-md)
+                      :msg "new files should have `:parsed` set on them, after initial render"))))
