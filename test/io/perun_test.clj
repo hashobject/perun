@@ -18,25 +18,28 @@
       (contains? (-> file pm/+meta-key+ key) val)))
 
 (deftask key-test
-  [p path     PATH    str "path of the file to test"
-   k key      KEY     kw  "the key to test"]
+  [p path PATH str "path of the file to test"
+   k key  KEY  kw  "the key to test"
+   m msg  MSG  str "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [file (boot/tmp-get fileset path)]
-      (is (contains? (pm/+meta-key+ file) key)))))
+      (is (contains? (pm/+meta-key+ file) key) msg))))
 
 (deftask value-test
   [p path     PATH    str "path of the file to test"
-   v value-fn VALUEFN edn "the value to test (optional)"]
+   v value-fn VALUEFN edn "the value to test (optional)"
+   m msg      MSG     str "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [file (boot/tmp-get fileset path)]
-      (is (and (not (nil? file)) (value-fn file))))))
+      (is (and (not (nil? file)) (value-fn file)) msg))))
 
 (deftask file-exists?
   [p path    PATH str  "path of the image to add"
-   n negate?      bool "true to check if file doesn't exist"]
+   n negate?      bool "true to check if file doesn't exist"
+   m msg     MSG  str  "message shown on failure"]
   (boot/with-pass-thru fileset
     (let [f (if negate? nil? (complement nil?))]
-      (is (f (boot/tmp-get fileset path))))))
+      (is (f (boot/tmp-get fileset path)) msg))))
 
 (deftask add-image
   [p path   PATH   str "path of the image to add"
@@ -113,52 +116,88 @@ This be ___markdown___.")
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
-(deftesttask markdown-test []
+(deftesttask default-test []
   (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
                                        :description "Test Desc"}))
         (p/markdown)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :content "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This be <strong><em>markdown</em></strong>.</p>"))
+        (testing "markdown"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :content "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This be <strong><em>markdown</em></strong>.</p>")
+                      :msg "`markdown` should set `:content` metadata on markdown file"))
 
         (p/ttr)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :ttr 1))
+        (testing "ttr"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :ttr 1)
+                      :msg "`ttr` should set `:ttr` metadata"))
 
         (p/word-count)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :word-count 7))
+        (testing "word-count"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :word-count 7)
+                      :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444"))
+        (testing "gravatar"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn
+                      #(meta= % :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
+                      :msg "`gravatar` should set `:gravatar` metadata"))
 
         (p/build-date)
-        (key-test :path "2017-01-01-test.md" :key :date-build)
+        (testing "build-date"
+          (key-test :path "2017-01-01-test.md"
+                    :key :date-build
+                    :msg "`build-date` should set `:date-build` metadata"))
 
         (p/slug)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :slug "test"))
+        (testing "slug"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :slug "test")
+                      :msg "`:slug` should set `:slug` metadata"))
 
         (p/permalink)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :permalink "/test/index.html"))
+        (testing "permalink"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :permalink "/test/index.html")
+                      :msg "`:permalink` should set `:permalink` metadata"))
 
         (p/canonical-url)
-        (value-test :path "2017-01-01-test.md" :value-fn #(meta= % :canonical-url "http://example.com/test/index.html"))
+        (testing "canonical-url"
+          (value-test :path "2017-01-01-test.md"
+                      :value-fn #(meta= % :canonical-url "http://example.com/test/index.html")
+                      :msg "`:canonical-url` should set `:canonical-url` metadata"))
 
         (p/sitemap)
-        (file-exists? :path "public/sitemap.xml")
+        (testing "sitemap"
+          (file-exists? :path "public/sitemap.xml"
+                        :msg "`sitemap` should write sitemap.xml"))
 
         (p/rss)
-        (file-exists? :path "public/feed.rss")
+        (testing "rss"
+          (file-exists? :path "public/feed.rss"
+                        :msg "`rss` should write feed.rss"))
 
         (p/atom-feed)
-        (file-exists? :path "public/atom.xml")
+        (testing "atom-feed"
+          (file-exists? :path "public/atom.xml"
+                        :msg "`atom-feed` should write atom.xml"))
 
         (p/render :renderer 'io.perun-test/render)
 
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
-        (boot/with-pass-thru fileset
-          (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset "public/test/index.html")))
-                         (str "<script>" js-content "</script>"))))
+        (testing "inject-scripts"
+          (boot/with-pass-thru fileset
+            (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset "public/test/index.html")))
+                           (str "<script>" js-content "</script>"))
+                "`inject-scripts` should alter the contents of a file")))
 
         (p/draft)
-        (file-exists? :path "2017-01-01-test.md" :negate? true)))
+        (testing "draft"
+          (file-exists? :path "2017-01-01-test.md"
+                        :negate? true
+                        :msg "`draft` should remove files"))))
