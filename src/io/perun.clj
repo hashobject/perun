@@ -183,33 +183,43 @@
         (diff* before after props)]
     (update-in added [:tree] merge (:tree changed))))
 
+;;; end modified boot functions
+
+(defn diff-filesets
+  [before after uses-meta]
+  (if uses-meta
+    ;; Change `fileset-diff` to `boot/fileset-diff` when
+    ;; https://github.com/boot-clj/boot/pull/566 is merged
+    (let [diff (fileset-diff before after :hash pm/+meta-key+)]
+      {:content-diff diff
+       :meta-diff diff})
+    {:content-diff (fileset-diff before after :hash)
+     :meta-diff (fileset-diff before after pm/+meta-key+)}))
+
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
   files with extensions in `extensions`, adds `tracer` to `:io.perun/trace`
   and writes files for subsequent tasks to process, if desired.
   `output-extension` can be used to indicate the type of file the task produces,
   or pass `nil` to overwrite with a file of the same name and extension. Pass
-  `pod` if one is needed for parsing"
-  [{:keys [parse-form-fn extensions output-extension tracer options pod]}]
+  `pod` if one is needed for parsing. Set `uses-meta` to `true` if parsing
+  depends on Perun metadata"
+  [{:keys [parse-form-fn extensions output-extension tracer options pod uses-meta]}]
   (let [tmp  (boot/tmp-dir!)
         prev (atom {})]
     (boot/with-pre-wrap fileset
-      (let [global-meta (pm/get-global-meta fileset)
-            prev-fs (:fs @prev)
-            content-changed-files (boot/fileset-diff prev-fs fileset :hash)
-            ;; Change `fileset-diff` to `boot/fileset-diff` when
-            ;; https://github.com/boot-clj/boot/pull/566 is merged
-            meta-changed-files (fileset-diff prev-fs fileset pm/+meta-key+)
-            parse-form (parse-form-fn (meta-by-ext content-changed-files extensions))
+      (let [{:keys [content-diff meta-diff]} (diff-filesets (:fs @prev) fileset uses-meta)
+            parse-form (parse-form-fn (meta-by-ext content-diff extensions))
             changed-meta (->> (if pod
                                 (pod/with-call-in @pod ~parse-form)
                                 (eval parse-form))
-                              (pm/merge-meta (meta-by-ext meta-changed-files extensions))
+                              (pm/merge-meta (meta-by-ext meta-diff extensions))
                               (trace tracer))
             input-fs (-> fileset
                          (pm/set-meta (:meta @prev))
                          (pm/set-meta changed-meta))
             input-meta (meta-by-ext input-fs extensions)
+            global-meta (pm/get-global-meta fileset)
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
                            (let [out-dir (:out-dir options)
