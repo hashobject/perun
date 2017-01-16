@@ -1,5 +1,6 @@
 (ns io.perun-test
   (:require [boot.core :as boot :refer [deftask]]
+            [boot.task.built-in :refer [sift]]
             [boot.test :as boot-test :refer [deftesttask]]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -19,6 +20,12 @@
     (or (some #{val} meta)
         (contains? meta val))))
 
+(deftask prn-meta-key
+  [p path PATH str "path of the file to test"
+   k key  KEY  kw  "the key to prn"]
+  (boot/with-pass-thru fileset
+    (->> path (boot/tmp-get fileset) pm/+meta-key+ key prn)))
+
 (deftask key-test
   [p path PATH str "path of the file to test"
    k key  KEY  kw  "the key to test"
@@ -36,11 +43,13 @@
       (is (and (not (nil? file)) (value-fn fileset file)) msg))))
 
 (deftask content-test
-  [p path    PATH    str "path of the file to test"
-   c content CONTENT str "The content of the file"
-   m msg     MSG     str "message shown on failure"]
+  [p path    PATH    str  "path of the file to test"
+   c content CONTENT str  "The content of the file"
+   n negate?         bool "true to check if file doesn't exist"
+   m msg     MSG     str  "message shown on failure"]
   (boot/with-pass-thru fileset
-    (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset path))) content) msg)))
+    (let [f (if negate? not identity)]
+      (is (f (.contains (slurp (boot/tmp-file (boot/tmp-get fileset path))) content)) msg))))
 
 (deftask file-exists?
   [p path    PATH str  "path of the image to add"
@@ -111,9 +120,11 @@ author: Testy McTesterson
 ---
 # Hello there
 
-This be ___markdown___.")
+This --- be ___markdown___.")
 
-(def parsed-md "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This be <strong><em>markdown</em></strong>.</p>")
+(def parsed-md-basic "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>")
+
+(def parsed-md-smarts "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
 
 (def js-content "(function somejs() { console.log('foo'); })();")
 
@@ -138,10 +149,10 @@ This be ___markdown___.")
 
         (testing "markdown"
           (value-test :path "2017-01-01-test.md"
-                      :value-fn #(meta= %1 %2 :parsed parsed-md)
+                      :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
                       :msg "`markdown` should set `:parsed` metadata on markdown file")
           (content-test :path "public/2017-01-01-test.html"
-                        :content parsed-md
+                        :content parsed-md-basic
                         :msg "`markdown` should populate HTML file with parsed content"))
 
         (p/ttr)
@@ -153,7 +164,7 @@ This be ___markdown___.")
         (p/word-count)
         (testing "word-count"
           (value-test :path "public/2017-01-01-test.html"
-                      :value-fn #(meta= %1 %2 :word-count 18)
+                      :value-fn #(meta= %1 %2 :word-count 19)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
@@ -214,6 +225,128 @@ This be ___markdown___.")
                         :negate? true
                         :msg "`draft` should remove files"))))
 
+(deftesttask with-arguments-test []
+  (comp (add-txt-file :path "test.md" :content md-content)
+        (boot/with-pre-wrap fileset
+          (pm/set-global-meta fileset {:base-url "http://example.com/"
+                                       :site-title "Test Title"
+                                       :description "Test Desc"
+                                       :doc-root "hammock"}))
+        (p/markdown :out-dir "hammock"
+                    :meta {:markdown-set :metadata}
+                    :options {:extensions {:smarts true}})
+        (testing "markdown"
+          (value-test :path "test.md"
+                      :value-fn #(meta= %1 %2 :parsed parsed-md-smarts)
+                      :msg "`markdown` should set `:parsed` metadata on markdown file")
+          (content-test :path "hammock/test.html"
+                        :content parsed-md-smarts
+                        :msg "`markdown` should populate HTML file with parsed content"))
+        (sift :move {#"hammock/test\.html" "hammock/test.htm"})
+
+        (p/ttr :filterer :markdown-set
+               :extensions [".htm"])
+        (testing "ttr"
+          (value-test :path "hammock/test.htm"
+                      :value-fn #(meta= %1 %2 :ttr 1)
+                      :msg "`ttr` should set `:ttr` metadata"))
+
+        (p/word-count :filterer :markdown-set
+                      :extensions [".htm"])
+        (testing "word-count"
+          (value-test :path "hammock/test.htm"
+                      :value-fn #(meta= %1 %2 :word-count 19)
+                      :msg "`word-count` should set `:word-count` metadata"))
+
+        (p/gravatar :source-key :email
+                    :target-key :gravatar
+                    :filterer :markdown-set
+                    :extensions [".htm"])
+        (testing "gravatar"
+          (value-test :path "hammock/test.htm"
+                      :value-fn
+                      #(meta= %1 %2 :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
+                      :msg "`gravatar` should set `:gravatar` metadata"))
+
+        (p/build-date :filterer :markdown-set
+                      :extensions [".htm"])
+        (testing "build-date"
+          (key-test :path "hammock/test.htm"
+                    :key :date-build
+                    :msg "`build-date` should set `:date-build` metadata"))
+
+        (p/slug :filterer :markdown-set
+                :extensions [".htm"]
+                :slug-fn (fn [m] "time"))
+        (testing "slug"
+          (value-test :path "hammock/time.htm"
+                      :value-fn #(meta= %1 %2 :slug "time")
+                      :msg "`:slug` should move a file"))
+
+        (p/permalink :filterer :markdown-set
+                     :extensions [".htm"]
+                     :permalink-fn (fn [_] "/foo.htm"))
+        (testing "permalink"
+          (value-test :path "hammock/foo.htm"
+                      :value-fn #(meta= %1 %2 :permalink "/foo.htm")
+                      :msg "`permalink` should move a file"))
+        (testing "canonical-url"
+          (value-test :path "hammock/foo.htm"
+                      :value-fn #(meta= %1 %2 :canonical-url "http://example.com/foo.htm")
+                      :msg "`canonical-url` should be implicitly set"))
+
+
+        (p/sitemap :filterer :markdown-set
+                   :extensions [".htm"]
+                   :filename "test.xml"
+                   :out-dir "foo"
+                   :url "http://bar.com/")
+        (testing "sitemap"
+          (file-exists? :path "foo/test.xml"
+                        :msg "`sitemap` should write test.xml"))
+
+        (p/rss :filterer :markdown-set
+               :extensions [".htm"]
+               :filename "test.rss"
+               :out-dir "foo"
+               :base-url "http://bar.com/"
+               :site-title "Test Site"
+               :description "Here we go a-testing")
+        (testing "rss"
+          (file-exists? :path "foo/test.rss"
+                        :msg "`rss` should write test.rss"))
+
+        (p/atom-feed :filterer :markdown-set
+                     :extensions [".htm"]
+                     :filename "test-atom.xml"
+                     :out-dir "foo"
+                     :base-url "http://bar.com/"
+                     :site-title "Test Site"
+                     :subtitle "Sub-test"
+                     :description "Here we go a-testing")
+        (testing "atom-feed"
+          (file-exists? :path "foo/test-atom.xml"
+                        :msg "`atom-feed` should write test-atom.xml"))
+
+        (p/render :renderer 'io.perun-test/render
+                  :filterer :markdown-set
+                  :extensions [".htm"]
+                  :out-dir "bar"
+                  :meta {:set-by-render true})
+
+        (add-txt-file :path "test.js" :content js-content)
+        (add-txt-file :path "baz.html" :content "<body></body>")
+        (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"})
+        (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"})
+        (testing "inject-scripts"
+          (content-test :path "bar/foo.html"
+                        :content (str "<script>" js-content "</script>")
+                        :msg "`inject-scripts` should alter the contents of a file")
+          (content-test :path "baz.html"
+                        :content (str "<script>" js-content "</script>")
+                        :negate? true
+                        :msg "`inject-scripts` should not alter the contents of a removed file"))))
+
 (deftesttask content-tests []
   (comp (testing "Collection works without input files" ;; #77
           (p/collection :renderer 'io.perun-test/render))
@@ -253,8 +386,8 @@ This be ___markdown___.")
         (p/markdown)
         (testing "detecting new files"
           (content-test :path "public/test2.html"
-                        :content parsed-md
+                        :content parsed-md-basic
                         :msg "new files should be parsed, after initial render")
           (value-test :path "test2.md"
-                      :value-fn #(meta= %1 %2 :parsed parsed-md)
+                      :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
                       :msg "new files should have `:parsed` set on them, after initial render"))))

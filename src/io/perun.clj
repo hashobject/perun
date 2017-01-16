@@ -388,9 +388,10 @@
   "Abstraction for tasks that move files in the fileset"
   [task-name path-fn tracer options]
   (boot/with-pre-wrap fileset
-    (let [metas (filter-meta-by-ext fileset options)
+    (let [global-meta (pm/get-global-meta fileset)
+          metas (filter-meta-by-ext fileset options)
           new-fs (reduce #(let [old-path (:path %2)
-                                new-path (path-fn %2)]
+                                new-path (path-fn global-meta %2)]
                             (perun/report-debug task-name "Moved" [old-path new-path])
                             (-> %1
                                 (boot/mv old-path new-path)
@@ -418,9 +419,10 @@
    e extensions EXTENSIONS [str] "extensions of files to include"]
   (let [options (merge +slug-defaults+ *opts*)
         slug-fn (:slug-fn options)
-        path-fn #(let [{:keys [path filename]} %
-                       slug (slug-fn %)]
-                   (str (perun/parent-path path filename) slug "." (perun/extension filename)))]
+        path-fn (fn [_ m]
+                  (let [{:keys [path filename]} m
+                        slug (slug-fn m)]
+                    (str (perun/parent-path path filename) slug "." (perun/extension filename))))]
     (mv-impl "slug" path-fn :io.perun/slug options)))
 
 (def ^:private +permalink-defaults+
@@ -437,8 +439,10 @@
    e extensions   EXTENSIONS  [str] "extensions of files to include"]
   (let [options (merge +permalink-defaults+ *opts*)
         permalink-fn (:permalink-fn options)
-        path-fn #(let [permalink (permalink-fn %)]
-                   (subs (string/replace permalink #"/$" "/index.html") 1))]
+        path-fn (fn [global-meta m]
+                  (let [permalink (permalink-fn m)]
+                    (str (:doc-root global-meta)
+                         (string/replace permalink #"/$" "/index.html"))))]
     (mv-impl "permalink" path-fn :io.perun/permalink options)))
 
 (deftask canonical-url
