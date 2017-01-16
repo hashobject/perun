@@ -18,6 +18,12 @@
   (or (some #{val} (-> file pm/+meta-key+ key))
       (contains? (-> file pm/+meta-key+ key) val)))
 
+(deftask prn-meta-key
+  [p path PATH str "path of the file to test"
+   k key  KEY  kw  "the key to prn"]
+  (boot/with-pass-thru fileset
+    (->> path (boot/tmp-get fileset) pm/+meta-key+ key prn)))
+
 (deftask key-test
   [p path PATH str "path of the file to test"
    k key  KEY  kw  "the key to test"
@@ -33,6 +39,15 @@
   (boot/with-pass-thru fileset
     (let [file (boot/tmp-get fileset path)]
       (is (and (not (nil? file)) (value-fn file)) msg))))
+
+(deftask content-test
+  [p path    PATH    str  "path of the file to test"
+   c content CONTENT str  "The content of the file"
+   n negate?         bool "true to check if file doesn't exist"
+   m msg     MSG     str  "message shown on failure"]
+  (boot/with-pass-thru fileset
+    (let [f (if negate? not identity)]
+      (is (f (.contains (slurp (boot/tmp-file (boot/tmp-get fileset path))) content))))))
 
 (deftask file-exists?
   [p path    PATH str  "path of the image to add"
@@ -105,6 +120,10 @@ author: Testy McTesterson
 
 This --- be ___markdown___.")
 
+(def parsed-md-basic "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>")
+
+(def parsed-md-smarts "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
+
 (def js-content "(function somejs() { console.log('foo'); })();")
 
 (deftesttask global-metadata-test []
@@ -117,7 +136,7 @@ This --- be ___markdown___.")
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
-(deftesttask default-test []
+(deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
@@ -126,51 +145,54 @@ This --- be ___markdown___.")
         (p/markdown)
         (testing "markdown"
           (value-test :path "2017-01-01-test.md"
-                      :value-fn #(meta= % :content "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>")
-                      :msg "`markdown` should set `:content` metadata on markdown file"))
+                      :value-fn #(meta= % :parsed parsed-md-basic)
+                      :msg "`markdown` should set `:parsed` metadata on markdown file")
+          (content-test :path "2017-01-01-test.html"
+                        :content parsed-md-basic
+                        :msg "`markdown` should populate HTML file with parsed content"))
 
         (p/ttr)
         (testing "ttr"
-          (value-test :path "2017-01-01-test.md"
+          (value-test :path "2017-01-01-test.html"
                       :value-fn #(meta= % :ttr 1)
                       :msg "`ttr` should set `:ttr` metadata"))
 
         (p/word-count)
         (testing "word-count"
-          (value-test :path "2017-01-01-test.md"
-                      :value-fn #(meta= % :word-count 8)
+          (value-test :path "2017-01-01-test.html"
+                      :value-fn #(meta= % :word-count 19)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
         (testing "gravatar"
-          (value-test :path "2017-01-01-test.md"
+          (value-test :path "2017-01-01-test.html"
                       :value-fn
                       #(meta= % :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
                       :msg "`gravatar` should set `:gravatar` metadata"))
 
         (p/build-date)
         (testing "build-date"
-          (key-test :path "2017-01-01-test.md"
+          (key-test :path "2017-01-01-test.html"
                     :key :date-build
                     :msg "`build-date` should set `:date-build` metadata"))
 
         (p/slug)
         (testing "slug"
-          (value-test :path "2017-01-01-test.md"
+          (value-test :path "2017-01-01-test.html"
                       :value-fn #(meta= % :slug "test")
-                      :msg "`:slug` should set `:slug` metadata"))
+                      :msg "`slug` should set `:slug` metadata"))
 
         (p/permalink)
         (testing "permalink"
-          (value-test :path "2017-01-01-test.md"
+          (value-test :path "2017-01-01-test.html"
                       :value-fn #(meta= % :permalink "/test/index.html")
-                      :msg "`:permalink` should set `:permalink` metadata"))
+                      :msg "`permalink` should set `:permalink` metadata"))
 
         (p/canonical-url)
         (testing "canonical-url"
-          (value-test :path "2017-01-01-test.md"
+          (value-test :path "2017-01-01-test.html"
                       :value-fn #(meta= % :canonical-url "http://example.com/test/index.html")
-                      :msg "`:canonical-url` should set `:canonical-url` metadata"))
+                      :msg "`canonical-url` should set `:canonical-url` metadata"))
 
         (p/sitemap)
         (testing "sitemap"
@@ -192,14 +214,13 @@ This --- be ___markdown___.")
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
         (testing "inject-scripts"
-          (boot/with-pass-thru fileset
-            (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset "public/test/index.html")))
-                           (str "<script>" js-content "</script>"))
-                "`inject-scripts` should alter the contents of a file")))
+          (content-test :path "public/test/index.html"
+                        :content (str "<script>" js-content "</script>")
+                        :msg "`inject-scripts` should alter the contents of a file"))
 
         (p/draft)
         (testing "draft"
-          (file-exists? :path "2017-01-01-test.md"
+          (file-exists? :path "2017-01-01-test.html"
                         :negate? true
                         :msg "`draft` should remove files"))))
 
@@ -212,8 +233,11 @@ This --- be ___markdown___.")
         (p/markdown :meta {:markdown-set :metadata} :options {:extensions {:smarts true}})
         (testing "markdown"
           (value-test :path "test.md"
-                      :value-fn #(meta= % :content "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
-                      :msg "`markdown` should set `:content` metadata on markdown file"))
+                      :value-fn #(meta= % :parsed parsed-md-smarts)
+                      :msg "`markdown` should set `:parsed` metadata on markdown file")
+          (content-test :path "test.html"
+                        :content parsed-md-smarts
+                        :msg "`markdown` should populate HTML file with parsed content"))
 
         (p/ttr :filterer :markdown-set)
         (testing "ttr"
@@ -224,7 +248,7 @@ This --- be ___markdown___.")
         (p/word-count :filterer :markdown-set)
         (testing "word-count"
           (value-test :path "test.md"
-                      :value-fn #(meta= % :word-count 8)
+                      :value-fn #(meta= % :word-count 19)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar :filterer :markdown-set)
@@ -298,10 +322,43 @@ This --- be ___markdown___.")
         (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"})
         (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"})
         (testing "inject-scripts"
-          (boot/with-pass-thru fileset
-            (is (.contains (slurp (boot/tmp-file (boot/tmp-get fileset "bar/foo.html")))
-                           (str "<script>" js-content "</script>"))
-                "`inject-scripts` should alter the contents of an included file")
-            (is (not (.contains (slurp (boot/tmp-file (boot/tmp-get fileset "baz.html")))
-                                (str "<script>" js-content "</script>")))
-                "`inject-scripts` should not alter the contents of a removed file")))))
+          (content-test :path "bar/foo.html"
+                        :content (str "<script>" js-content "</script>")
+                        :msg "`inject-scripts` should alter the contents of a file")
+          (content-test :path "baz.html"
+                        :content (str "<script>" js-content "</script>")
+                        :negate? true
+                        :msg "`inject-scripts` should not alter the contents of a removed file"))))
+
+(deftesttask content-tests []
+  (comp (testing "Collection works without input files" ;; #77
+          (p/collection :renderer 'io.perun-test/render))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown) ;; render once
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"Hello" "Salutations"))
+        (p/markdown)
+        (testing "detecting content changes"
+          (content-test :path "test.html" :content "Salutations"))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: false"))
+        (p/markdown)
+        (testing "detecting metadata changes"
+          (value-test :path "test.html" :value-fn #(meta= % :draft false)))
+
+        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: true\nfoo: bar"))
+        (p/markdown)
+        (testing "detecting metadata additions"
+          (value-test :path "test.html" :value-fn #(meta= % :foo "bar")))
+
+        (add-txt-file :path "test.md" :content md-content)
+        (p/markdown)
+        (testing "detecting metadata deletions"
+          (value-test :path "test.html" :value-fn #(meta= % :foo nil)))
+
+        (add-txt-file :path "test2.md" :content md-content)
+        (p/markdown)
+        (testing "detecting new files"
+          (content-test :path "test2.html" :content parsed-md-basic)
+          (value-test :path "test2.md" :value-fn #(meta= % :parsed parsed-md-basic)))))

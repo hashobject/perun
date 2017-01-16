@@ -27,13 +27,22 @@ set for the tasks using task options.
 
 ## Post metadata
 
-All posts have a filename which is used as a key to identify the post.
+All posts have a path which is used as a key to identify the post.
 
 - **:title**
     - Required by: *atom-feed*
     - Used by: *rss* either this or description is required
 - **:content** The post content
-    - Set by: *markdown*
+    - Populated from file content
+    - Only set in the `:entry` value of the map passed to `renderer` functions
+- **:has-content** Flag indicating that this file contains page content
+    - Set by input parsing tasks (like `markdown`) on output files
+    - Passed through by rendering tasks
+- **:original-path** The path for the input file from which this entry is descended
+    - Set by input parsing tasks (like `markdown`) on output files
+    - Passed through by rendering tasks
+- **:parsed** Contains the parsed file content
+    - Set by input parsing tasks (like `markdown`) on input files
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**

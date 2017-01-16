@@ -55,7 +55,7 @@
   (let [file-content (-> file :full-path io/file slurp)
         md-metadata (merge (:meta options) (yaml/parse-file-metadata file-content))
         html (markdown-to-html file-content (:options options))]
-    (merge md-metadata {:content html} file)))
+    (merge md-metadata {:parsed html} file)))
 
 (defn parse-markdown [markdown-files options]
   (let [updated-files (doall (map #(process-file % options) markdown-files))]
