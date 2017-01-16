@@ -184,7 +184,7 @@ This --- be ___markdown___.")
         (testing "slug"
           (value-test :path "public/test.html"
                       :value-fn #(meta= %1 %2 :slug "test")
-                      :msg "`:slug` should move a file"))
+                      :msg "`slug` should move a file"))
 
         (p/permalink)
         (testing "permalink"
@@ -194,7 +194,15 @@ This --- be ___markdown___.")
         (testing "canonical-url"
           (value-test :path "public/test/index.html"
                       :value-fn #(meta= %1 %2 :canonical-url "http://example.com/test/")
-                      :msg "`canonical-url` should be implicitly set"))
+                      :msg "`:canonical-url` should be implicitly set"))
+
+        (p/mime-type)
+        (testing "mime-type"
+          (value-test :path "public/test/index.html"
+                      :value-fn #(and (meta= %1 %2 :mime-type "text/html")
+                                      (meta= %1 %2 :file-type "text"))
+                      :msg "`mime-type` should be set `:mime-type` and `:file-type` metadata"))
+
         (p/sitemap)
         (testing "sitemap"
           (file-exists? :path "public/sitemap.xml"
