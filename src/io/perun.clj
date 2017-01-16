@@ -753,16 +753,21 @@
                               :options options
                               :tracer :io.perun/collection})))))
 
+(def +inject-scripts-defaults+
+  {:extensions [".html"]})
+
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
    Use either filter to include only files matching or remove to
    include only files not matching regex."
-   [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-    f filter  RE         #{regex} "Regexes to filter HTML files"
-    r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
+   [s scripts    JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
+    f filter     RE         #{regex} "Regexes to filter HTML files"
+    r remove     RE         #{regex} "Regexes to blacklist HTML files with"
+    e extensions EXTENSIONS [str]    "extensions of files to include"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
+         {:keys [scripts filter remove extensions]} (merge +inject-scripts-defaults+ *opts*)
          filter (cond
                   filter #(boot/by-re filter %)
                   remove #(boot/by-re remove % true)
@@ -772,7 +777,7 @@
          (let [files (->> (boot/fileset-diff @prev fileset :hash)
                           boot/ls
                           filter
-                          (boot/by-ext [".html"]))
+                          (boot/by-ext extensions))
                 scripts-contents (->> fileset
                                       boot/ls
                                       (boot/by-path scripts)

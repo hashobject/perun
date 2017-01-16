@@ -349,17 +349,15 @@ This --- be ___markdown___.")
                   :out-dir "bar"
                   :meta {:set-by-render true})
 
-        ;; inject-scripts currently requires html files
-        (sift :move {#"hammock/foo\.htm" "hammock/foo.html"})
         (add-txt-file :path "test.js" :content js-content)
-        (add-txt-file :path "baz.html" :content "<body></body>")
-        (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"})
-        (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"})
+        (add-txt-file :path "baz.htm" :content "<body></body>")
+        (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"} :extensions [".htm"])
+        (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"} :extensions [".htm"])
         (testing "inject-scripts"
-          (content-test :path "hammock/foo.html"
+          (content-test :path "hammock/foo.htm"
                         :content (str "<script>" js-content "</script>")
                         :msg "`inject-scripts` should alter the contents of a file")
-          (content-test :path "baz.html"
+          (content-test :path "baz.htm"
                         :content (str "<script>" js-content "</script>")
                         :negate? true
                         :msg "`inject-scripts` should not alter the contents of a removed file"))))
