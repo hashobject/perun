@@ -46,17 +46,17 @@
   "Returns boot tmpfiles from `fileset`. `options` selects files
   that end with values in the `:extensions` key, filtered by the
   `:filterer` predicate. If `:extensions` is empty, returns all files."
-  [fileset options]
-  (filter (comp (:filterer options) (partial pm/meta-from-file fileset))
-          (tmp-by-ext fileset (:extensions options))))
+  [fileset {:keys [filterer extensions]}]
+  (filter (comp filterer (partial pm/meta-from-file fileset))
+          (tmp-by-ext fileset extensions)))
 
 (defn filter-meta-by-ext
   "Returns perun metadata from `fileset`. `options` selects files
   that end with values in the `:extensions` key, filtered by the
   `:filterer` predicate. If `:extensions` is empty, returns
   metadata for all files."
-  [fileset options]
-  (filter (:filterer options) (meta-by-ext fileset (:extensions options))))
+  [fileset {:keys [filterer extensions]}]
+  (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private print-meta-deps
   '[[mvxcvi/puget "1.0.0"]])
@@ -190,7 +190,7 @@
   `output-extension` can be used to indicate the type of file the task produces,
   or pass `nil` to overwrite with a file of the same name and extension. Pass
   `pod` if one is needed for parsing"
-  [parse-form-fn extensions output-extension tracer options & [pod]]
+  [{:keys [parse-form-fn extensions output-extension tracer options pod]}]
   (let [tmp  (boot/tmp-dir!)
         prev (atom {})]
     (boot/with-pre-wrap fileset
@@ -258,12 +258,12 @@
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
-     [".md" ".markdown"]
-     ".html"
-     :io.perun/markdown
-     options
-     pod)))
+     {:parse-form-fn (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
+      :extensions [".md" ".markdown"]
+      :output-extension ".html"
+      :tracer :io.perun/markdown
+      :options options
+      :pod pod})))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
@@ -417,8 +417,7 @@
   [s slug-fn    SLUGFN     code  "function to build slug from file metadata"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"]
-  (let [options (merge +slug-defaults+ *opts*)
-        slug-fn (:slug-fn options)
+  (let [{:keys [slug-fn] :as options} (merge +slug-defaults+ *opts*)
         path-fn (fn [global-meta m]
                   (let [{:keys [path filename]} m
                         slug (slug-fn global-meta m)]
@@ -441,8 +440,7 @@
   [p permalink-fn PERMALINKFN code  "function to build permalink from TmpFile metadata"
    _ filterer     FILTER      code  "predicate to use for selecting entries (default: `identity`)"
    e extensions   EXTENSIONS  [str] "extensions of files to include"]
-  (let [options (merge +permalink-defaults+ *opts*)
-        permalink-fn (:permalink-fn options)
+  (let [{:keys [permalink-fn] :as options} (merge +permalink-defaults+ *opts*)
         path-fn (fn [global-meta m]
                   (let [permalink (permalink-fn global-meta m)]
                     (str (:doc-root global-meta)
@@ -580,7 +578,7 @@
   All `:entry`s will be returned, with their `:path`s and `:canonical-url`s
   (if there is a valid `:base-url` in global metadata) set, and `tracer`
   added to `io.perun/trace`."
-  [task-name data renderer tmp tracer global-meta]
+  [{:keys [task-name data renderer tmp tracer global-meta]}]
   (pod/with-call-in @render-pod
     (io.perun.render/update!))
   (doall
@@ -599,12 +597,17 @@
   that are required by `render-paths-fn`.
 
   Returns a boot `with-pre-wrap` result"
-  [task-name render-paths-fn options tracer]
+  [{:keys [task-name render-paths-fn options tracer]}]
   (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [render-paths (render-paths-fn fileset options)
             global-meta (pm/get-global-meta fileset)
-            new-metadata (render-to-paths task-name render-paths (:renderer options) tmp tracer global-meta)
+            new-metadata (render-to-paths {:task-name task-name
+                                           :data render-paths
+                                           :renderer (:renderer options)
+                                           :tmp tmp
+                                           :tracer tracer
+                                           :global-meta global-meta})
             rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
         (perun/report-info task-name "rendered %s pages" (count render-paths))
         (perun/report-debug task-name "removing files" rm-files)
@@ -654,14 +657,16 @@
                            {}
                            entries)]
                 paths))]
-      (render-pre-wrap "render" render-paths options :io.perun/render))))
+      (render-pre-wrap {:task-name "render"
+                        :render-paths-fn render-paths
+                        :options options
+                        :tracer :io.perun/render}))))
 
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
-  [task-name fileset options]
+  [task-name fileset {:keys [grouper sortby comparator out-dir] :as options}]
   (let [global-meta (pm/get-global-meta fileset)
-        {:keys [grouper sortby comparator out-dir]} options
         paths (grouper (filter-meta-by-ext fileset options))]
     (if (seq paths)
       (reduce
@@ -739,7 +744,10 @@
           (u/fail "collection task :sortby option value should implement IFn\n")
           :else
           (let [collection-paths (partial grouped-paths "collection")]
-            (render-pre-wrap "collection" collection-paths options :io.perun/collection)))))
+            (render-pre-wrap {:task-name"collection"
+                              :render-paths-fn collection-paths
+                              :options options
+                              :tracer :io.perun/collection})))))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
