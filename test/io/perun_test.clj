@@ -303,6 +303,13 @@ This --- be ___markdown___.")
                       :value-fn #(meta= %1 %2 :canonical-url "http://example.com/foo.htm")
                       :msg "`canonical-url` should be implicitly set"))
 
+        (p/mime-type :filterer :markdown-set
+                     :extensions [".htm"])
+        (testing "mime-type"
+          (value-test :path "hammock/foo.htm"
+                      :value-fn #(and (meta= %1 %2 :mime-type "text/html")
+                                      (meta= %1 %2 :file-type "text"))
+                      :msg "`mime-type` should be set `:mime-type` and `:file-type` metadata"))
 
         (p/sitemap :filterer :markdown-set
                    :extensions [".htm"]
