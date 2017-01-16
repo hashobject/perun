@@ -73,3 +73,6 @@
   (->> (for [d data] [(:path d) {+meta-key+ (apply dissoc d derived-meta-keys)}])
        (into {})
        (boot/add-meta fileset)))
+
+(defn merge-meta [m1 m2]
+  (vals (merge-with merge (key-meta m1) (key-meta m2))))

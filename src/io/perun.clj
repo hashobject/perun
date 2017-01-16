@@ -177,7 +177,7 @@
        :removed (->> (set/difference x y changed-keys) (select-keys t1) (assoc after :tree))
        :changed (->> changed-keys                      (select-keys t2) (assoc after :tree))})))
 
-(defn- diff
+(defn- fileset-diff
   [before after & props]
   (let [{:keys [added changed]}
         (diff* before after props)]
@@ -196,17 +196,15 @@
     (boot/with-pre-wrap fileset
       (let [global-meta (pm/get-global-meta fileset)
             prev-fs (:fs @prev)
-            parse-form (parse-form-fn (meta-by-ext (boot/fileset-diff prev-fs fileset :hash) extensions))
-            ;; Change `diff` to boot/fileset-diff when
+            content-changed-files (boot/fileset-diff prev-fs fileset :hash)
+            ;; Change `fileset-diff` to `boot/fileset-diff` when
             ;; https://github.com/boot-clj/boot/pull/566 is merged
-            changed-from-prev-meta (meta-by-ext (diff prev-fs fileset pm/+meta-key+) extensions)
-            changed-from-parsing-meta (if pod
-                                        (pod/with-call-in @pod ~parse-form)
-                                        (eval parse-form))
-            changed-meta (->> (merge-with merge
-                                          (pm/key-meta changed-from-prev-meta)
-                                          (pm/key-meta changed-from-parsing-meta))
-                              vals
+            meta-changed-files (fileset-diff prev-fs fileset pm/+meta-key+)
+            parse-form (parse-form-fn (meta-by-ext content-changed-files extensions))
+            changed-meta (->> (if pod
+                                (pod/with-call-in @pod ~parse-form)
+                                (eval parse-form))
+                              (pm/merge-meta (meta-by-ext meta-changed-files extensions))
                               (trace tracer))
             input-fs (-> fileset
                          (pm/set-meta (:meta @prev))
