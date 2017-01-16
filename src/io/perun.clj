@@ -397,7 +397,7 @@
                          fileset
                          metas)]
       (perun/report-info task-name "Moved %s files" (count metas))
-      new-fs)))
+      (boot/commit! new-fs))))
 
 (def ^:private +slug-defaults+
   {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
