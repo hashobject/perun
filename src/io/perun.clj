@@ -404,11 +404,11 @@
 (def ^:private +slug-defaults+
   {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
    ; Jekyll uses the same format by default.
-   :slug-fn (fn [m] (->> (string/split (:filename m) #"[-\.]")
-                         (drop 3)
-                         drop-last
-                         (string/join "-")
-                         string/lower-case))
+   :slug-fn (fn [_ m] (->> (string/split (:filename m) #"[-\.]")
+                           (drop 3)
+                           drop-last
+                           (string/join "-")
+                           string/lower-case))
    :filterer identity
    :extensions [".html"]})
 
@@ -419,14 +419,18 @@
    e extensions EXTENSIONS [str] "extensions of files to include"]
   (let [options (merge +slug-defaults+ *opts*)
         slug-fn (:slug-fn options)
-        path-fn (fn [_ m]
+        path-fn (fn [global-meta m]
                   (let [{:keys [path filename]} m
-                        slug (slug-fn m)]
+                        slug (slug-fn global-meta m)]
                     (str (perun/parent-path path filename) slug "." (perun/extension filename))))]
     (mv-impl "slug" path-fn :io.perun/slug options)))
 
 (def ^:private +permalink-defaults+
-  {:permalink-fn (fn [m] (perun/absolutize-url (str (:parent-path m) (:slug m) "/")))
+  {:permalink-fn (fn [global-meta m]
+                   (perun/absolutize-url
+                    (string/replace (str (:parent-path m) (:slug m) "/")
+                                    (re-pattern (str "^" (:doc-root global-meta)))
+                                    "")))
    :filterer identity
    :extensions [".html"]})
 
@@ -440,7 +444,7 @@
   (let [options (merge +permalink-defaults+ *opts*)
         permalink-fn (:permalink-fn options)
         path-fn (fn [global-meta m]
-                  (let [permalink (permalink-fn m)]
+                  (let [permalink (permalink-fn global-meta m)]
                     (str (:doc-root global-meta)
                          (string/replace permalink #"/$" "/index.html"))))]
     (mv-impl "permalink" path-fn :io.perun/permalink options)))

@@ -277,7 +277,7 @@ This --- be ___markdown___.")
 
         (p/slug :filterer :markdown-set
                 :extensions [".htm"]
-                :slug-fn (fn [m] "time"))
+                :slug-fn (fn [_ _] "time"))
         (testing "slug"
           (value-test :path "hammock/time.htm"
                       :value-fn #(meta= %1 %2 :slug "time")
@@ -285,7 +285,7 @@ This --- be ___markdown___.")
 
         (p/permalink :filterer :markdown-set
                      :extensions [".htm"]
-                     :permalink-fn (fn [_] "/foo.htm"))
+                     :permalink-fn (fn [_ _] "/foo.htm"))
         (testing "permalink"
           (value-test :path "hammock/foo.htm"
                       :value-fn #(meta= %1 %2 :permalink "/foo.htm")
@@ -334,12 +334,14 @@ This --- be ___markdown___.")
                   :out-dir "bar"
                   :meta {:set-by-render true})
 
+        ;; inject-scripts currently requires html files
+        (sift :move {#"hammock/foo\.htm" "hammock/foo.html"})
         (add-txt-file :path "test.js" :content js-content)
         (add-txt-file :path "baz.html" :content "<body></body>")
         (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"})
         (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"})
         (testing "inject-scripts"
-          (content-test :path "bar/foo.html"
+          (content-test :path "hammock/foo.html"
                         :content (str "<script>" js-content "</script>")
                         :msg "`inject-scripts` should alter the contents of a file")
           (content-test :path "baz.html"
