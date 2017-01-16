@@ -382,9 +382,9 @@
         (perun/report-info "build-date" "added date-build to %s files" (count updated-metas))
       (pm/set-global-meta updated-fs new-global-meta))))
 
-(defn mv-impl
+(defn mv-pre-wrap
   "Abstraction for tasks that move files in the fileset"
-  [task-name path-fn tracer options]
+  [{:keys [task-name path-fn tracer options]}]
   (boot/with-pre-wrap fileset
     (let [global-meta (pm/get-global-meta fileset)
           metas (filter-meta-by-ext fileset options)
@@ -420,7 +420,10 @@
                   (let [{:keys [path filename]} m
                         slug (slug-fn global-meta m)]
                     (str (perun/parent-path path filename) slug "." (perun/extension filename))))]
-    (mv-impl "slug" path-fn :io.perun/slug options)))
+    (mv-pre-wrap {:task-name "slug"
+                  :path-fn path-fn
+                  :tracer :io.perun/slug
+                  :options options})))
 
 (def ^:private +permalink-defaults+
   {:permalink-fn (fn [global-meta m]
@@ -443,7 +446,10 @@
                   (let [permalink (permalink-fn global-meta m)]
                     (str (:doc-root global-meta)
                          (string/replace permalink #"/$" "/index.html"))))]
-    (mv-impl "permalink" path-fn :io.perun/permalink options)))
+    (mv-pre-wrap {:task-name "permalink"
+                  :path-fn path-fn
+                  :tracer :io.perun/permalink
+                  :options options})))
 
 (deftask canonical-url
   "Deprecated - The `:canonical-url` key will now automatically be set in the `entry` map passed
