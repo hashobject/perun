@@ -684,7 +684,7 @@
         paths (grouper (filter-meta-by-ext fileset options))]
     (if (seq paths)
       (reduce
-       (fn [result [path {:keys [entries group-meta]}]]
+       (fn [result [path {:keys [entry entries]}]]
          (let [sorted      (->> entries
                                 (sort-by sortby comparator)
                                 (map #(assoc % :content (->> (:path %)
@@ -692,7 +692,7 @@
                                                              boot/tmp-file
                                                              slurp))))
                new-path    (perun/create-filepath out-dir path)
-               new-entry   (assoc group-meta :out-dir out-dir)]
+               new-entry   (assoc entry :out-dir out-dir)]
            (perun/report-info task-name (str "rendered " task-name " " path))
            (assoc result new-path {:meta    global-meta
                                    :entry   new-entry
@@ -708,7 +708,8 @@
 
   `task-name` is used for log messages. `tracer` is a keyword that gets added
   to the `:io.perun/trace` metadata. `grouper` is a function that takes a seq
-  of entries and returns a map of paths to groups to be rendered.
+  of entries and returns a map of paths to render data (see docstring for
+  `assortment` for more info)
 
   Returns a boot `with-pre-wrap` result"
   [{:keys [task-name tracer grouper options]}]
@@ -727,7 +728,7 @@
                              (->> entries
                                   grouper
                                   (map (fn [[path data]]
-                                         [path (update-in data [:group-meta] #(merge (:meta options) %))]))
+                                         [path (update-in data [:entry] #(merge (:meta options) %))]))
                                   (into {})))
               options (assoc options :grouper meta-grouper)]
           (render-pre-wrap {:task-name task-name
@@ -755,7 +756,7 @@
    entries to be grouped, and it should return a map with keys that
    are filenames and values that are maps with the keys:
     - `:entries`: the entries for each collection
-    - `:group-meta`: (optional) page metadata for this collection
+    - `:entry`: (optional) page metadata for this collection
 
    Entries can optionally be filtered by supplying a function
    to the `filterer` option.
