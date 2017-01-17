@@ -280,11 +280,11 @@
   "Parse markdown files
 
   This task will look for files ending with `md` or `markdown`
-  and add a `:parsed` key to their metadata containing the
-  HTML resulting from processing markdown file's content. It
-  will not parse YAML metadata at the head of the file. Also
-  writes an HTML file that contains the same content as
-  `:parsed`"
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will _not_ parse
+  YAML metadata at the head of the file. Also adds a `:parsed`
+  key to the markdown file's metadata, allowing us not to
+  re-parse the same content later."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
@@ -302,10 +302,12 @@
   "Parse markdown files
 
   This task will look for files ending with `md` or `markdown`
-  and add a `:parsed` key to their metadata containing the
-  HTML resulting from processing markdown file's content. It
-  will parse YAML metadata at the head of the file, and add
-  any data found to the output's metadata."
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will parse YAML
+  metadata at the head of the file, and add any data found to
+  the output's metadata. Also adds a `:parsed` key to the
+  markdown file's metadata, allowing us not to re-parse the
+  same content later."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
