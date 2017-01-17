@@ -693,7 +693,6 @@
                                                              slurp))))
                new-path    (perun/create-filepath out-dir path)
                new-entry   (assoc entry :out-dir out-dir)]
-           (perun/report-info task-name (str "rendered " task-name " " path))
            (assoc result new-path {:meta    global-meta
                                    :entry   new-entry
                                    :entries (vec sorted)})))
