@@ -3,7 +3,9 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.pod :as pod]
             [boot.util :as u]
+            [clojure.data :as data]
             [clojure.java.io :as io]
+            [clojure.set :as set]
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
@@ -28,22 +30,33 @@
       boot/commit!))
 
 (defn tmp-by-ext
+  "Returns boot tmpfiles from `fileset` that end with `extensions`.
+  If `extensions` is empty, returns all files."
   [fileset extensions]
-  (cond->> (vals (:tree fileset))
+  (cond->> (boot/ls fileset)
     (> (count extensions) 0) (boot/by-ext extensions)))
 
 (defn meta-by-ext
+  "Returns perun metadata from `fileset`, filtered by `extensions`.
+  If `extensions` is empty, returns metadata for all files."
   [fileset extensions]
   (map (partial pm/meta-from-file fileset) (tmp-by-ext fileset extensions)))
 
 (defn filter-tmp-by-ext
-  [fileset options]
-  (filter (comp (:filterer options) (partial pm/meta-from-file fileset))
-          (tmp-by-ext fileset (:extensions options))))
+  "Returns boot tmpfiles from `fileset`. `options` selects files
+  that end with values in the `:extensions` key, filtered by the
+  `:filterer` predicate. If `:extensions` is empty, returns all files."
+  [fileset {:keys [filterer extensions]}]
+  (filter (comp filterer (partial pm/meta-from-file fileset))
+          (tmp-by-ext fileset extensions)))
 
 (defn filter-meta-by-ext
-  [fileset options]
-  (filter (:filterer options) (meta-by-ext fileset (:extensions options))))
+  "Returns perun metadata from `fileset`. `options` selects files
+  that end with values in the `:extensions` key, filtered by the
+  `:filterer` predicate. If `:extensions` is empty, returns
+  metadata for all files."
+  [fileset {:keys [filterer extensions]}]
+  (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private print-meta-deps
   '[[mvxcvi/puget "1.0.0"]])
@@ -125,7 +138,7 @@
 (deftask images-resize
   "Resize images to the provided resolutions.
    Each image file would have resolution appended to it's name:
-   e.x. san-francisco.jpg would become san-francisco-3840.jpg"
+   e.x. san-francisco.jpg would become san-francisco_3840.jpg"
   [o out-dir     OUTDIR       str    "the output directory"
    r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
   (boot/with-pre-wrap fileset
@@ -137,45 +150,97 @@
           updated-metas (pod/with-call-in @pod
                          (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~metas ~options))]
       (perun/report-debug "images-resize" "new resized images" updated-metas)
-      (pm/set-meta fileset updated-metas)
-      (commit fileset tmp))))
+      (-> fileset
+          (commit tmp)
+          (pm/set-meta updated-metas)))))
+
+;; These are modified diff functions from boot. They can be removed if/when
+;; this PR is merged: https://github.com/boot-clj/boot/pull/566
+(defn- diff-tree
+  [tree props]
+  (let [->map #(select-keys % props)]
+    (reduce-kv #(assoc %1 %2 (->map %3)) {} tree)))
+
+(defn- diff*
+  [{t1 :tree :as before} {t2 :tree :as after} props]
+  (if-not before
+    {:added   after
+     :removed (assoc after :tree {})
+     :changed (assoc after :tree {})}
+    (let [props        (or (seq props) [:id])
+          d1           (diff-tree t1 props)
+          d2           (diff-tree t2 props)
+          [x y z]      (map (comp set keys) (data/diff d1 d2))
+          changed-keys (set/union (set/intersection x y)
+                                  (set/intersection (set/union x y) z))]
+      {:added   (->> (set/difference y x changed-keys) (select-keys t2) (assoc after :tree))
+       :removed (->> (set/difference x y changed-keys) (select-keys t1) (assoc after :tree))
+       :changed (->> changed-keys                      (select-keys t2) (assoc after :tree))})))
+
+(defn- fileset-diff
+  [before after & props]
+  (let [{:keys [added changed]}
+        (diff* before after props)]
+    (update-in added [:tree] merge (:tree changed))))
+
+;;; end modified boot functions
+
+(defn diff-filesets
+  [before after uses-meta]
+  (if uses-meta
+    ;; Change `fileset-diff` to `boot/fileset-diff` when
+    ;; https://github.com/boot-clj/boot/pull/566 is merged
+    (let [diff (fileset-diff before after :hash pm/+meta-key+)]
+      {:content-diff diff
+       :meta-diff diff})
+    {:content-diff (fileset-diff before after :hash)
+     :meta-diff (fileset-diff before after pm/+meta-key+)}))
 
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
   files with extensions in `extensions`, adds `tracer` to `:io.perun/trace`
-  and writes files for subsequent tasks to process, if desired. Pass
-  `pod` if one is needed for parsing"
-  [parse-form extensions output-extension tracer options & [pod]]
-  (let [tmp     (boot/tmp-dir!)
-        prev-fs (atom nil)]
+  and writes files for subsequent tasks to process, if desired.
+  `output-extension` can be used to indicate the type of file the task produces,
+  or pass `nil` to overwrite with a file of the same name and extension. Pass
+  `pod` if one is needed for parsing. Set `uses-meta` to `true` if parsing
+  depends on Perun metadata"
+  [{:keys [parse-form-fn extensions output-extension tracer options pod uses-meta]}]
+  (let [tmp  (boot/tmp-dir!)
+        prev (atom {})]
     (boot/with-pre-wrap fileset
-      (let [global-meta (pm/get-global-meta fileset)
-            changed-meta* (meta-by-ext (boot/fileset-diff @prev-fs fileset :hash) extensions)
-            changed-meta (trace tracer
-                                (if pod
-                                  (pod/with-call-in @pod ~(parse-form changed-meta*))
-                                  (eval (parse-form changed-meta*))))
-            input-fs (-> (if @prev-fs
-                           (pm/set-meta fileset (meta-by-ext @prev-fs extensions))
-                           fileset)
+      (let [{:keys [content-diff meta-diff]} (diff-filesets (:fs @prev) fileset uses-meta)
+            parse-form (parse-form-fn (meta-by-ext content-diff extensions))
+            changed-meta (->> (if pod
+                                (pod/with-call-in @pod ~parse-form)
+                                (eval parse-form))
+                              (pm/merge-meta (meta-by-ext meta-diff extensions))
+                              (trace tracer))
+            input-fs (-> fileset
+                         (pm/set-meta (:meta @prev))
                          (pm/set-meta changed-meta))
             input-meta (meta-by-ext input-fs extensions)
+            global-meta (pm/get-global-meta fileset)
             output-meta (doall
                          (for [{:keys [path parsed filename] :as entry*} input-meta]
-                           (let [new-path (->> output-extension
-                                               (string/replace path #"(?i).[a-z]+$")
-                                               (perun/create-filepath (:out-dir options)))
+                           (let [out-dir (:out-dir options)
+                                 ext-pattern (re-pattern (str "(" (string/join "|" extensions) ")$"))
+                                 new-path (if output-extension
+                                            (->> output-extension
+                                                 (string/replace path ext-pattern)
+                                                 (perun/create-filepath out-dir))
+                                            (perun/create-filepath out-dir path))
                                  entry (-> entry*
                                            (dissoc :parsed :original)
-                                           (merge {:original-path path
-                                                   :out-dir (:out-dir options)}
+                                           (merge {:original-path path}
+                                                  (when out-dir
+                                                    {:out-dir out-dir})
                                                   (pm/path-meta new-path global-meta)))]
                              (perun/create-file tmp new-path parsed)
                              entry)))
             new-fs (-> input-fs
                        (commit tmp)
                        (pm/set-meta output-meta))]
-        (reset! prev-fs new-fs)
+        (reset! prev {:fs fileset :meta input-meta})
         new-fs))))
 
 (def ^:private markdown-deps
@@ -193,19 +258,20 @@
 
    This task will look for files ending with `md` or `markdown`
    and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content"
+   HTML resulting from processing markdown file's content. Also
+   writes an HTML file that contains the same content as `:parsed`"
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
-     [".md" ".markdown"]
-     ".html"
-     :io.perun/markdown
-     options
-     pod)))
+     {:parse-form-fn (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
+      :extensions [".md" ".markdown"]
+      :output-extension ".html"
+      :tracer :io.perun/markdown
+      :options options
+      :pod pod})))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
@@ -216,14 +282,13 @@
   [n filename NAME str "filename to read global metadata from"]
   (boot/with-pre-wrap fileset
     (let [meta-file (or filename "perun.base.edn")
-          global-meta
-          (some->> fileset
-                   boot/user-files
-                   (boot/by-name [meta-file])
-                   first
-                   boot/tmp-file
-                   slurp
-                   read-string)]
+          global-meta (some->> fileset
+                               boot/ls
+                               (boot/by-name [meta-file])
+                               first
+                               boot/tmp-file
+                               slurp
+                               read-string)]
       (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
       (pm/set-global-meta fileset global-meta))))
 
@@ -294,7 +359,7 @@
                                  (pod/with-call-in @pod
                                    (io.perun.gravatar/find-gravatar ~metas ~source-key ~target-key)))]
         (perun/report-debug "gravatar" "found gravatars" (map target-key updated-metas))
-       (pm/set-meta fileset updated-metas)))))
+        (pm/set-meta fileset updated-metas)))))
 
 ;; Should be handled by more generic filterer options to other tasks
 (deftask draft
@@ -302,7 +367,7 @@
   []
   (boot/with-pre-wrap fileset
     (let [meta-fn (partial pm/meta-from-file fileset)
-          draft-files (filter #(-> % meta-fn :draft) (vals (:tree fileset)))]
+          draft-files (filter #(-> % meta-fn :draft) (boot/ls fileset))]
       (perun/report-info "draft" "removed %s draft files" (count draft-files))
       (boot/rm fileset draft-files))))
 
@@ -327,12 +392,14 @@
         (perun/report-info "build-date" "added date-build to %s files" (count updated-metas))
       (pm/set-global-meta updated-fs new-global-meta))))
 
-(defn mv-impl
-  [task-name path-fn tracer options]
+(defn mv-pre-wrap
+  "Abstraction for tasks that move files in the fileset"
+  [{:keys [task-name path-fn tracer options]}]
   (boot/with-pre-wrap fileset
-    (let [metas (filter-meta-by-ext fileset options)
+    (let [global-meta (pm/get-global-meta fileset)
+          metas (filter-meta-by-ext fileset options)
           new-fs (reduce #(let [old-path (:path %2)
-                                new-path (path-fn %2)]
+                                new-path (path-fn global-meta %2)]
                             (perun/report-debug task-name "Moved" [old-path new-path])
                             (-> %1
                                 (boot/mv old-path new-path)
@@ -340,16 +407,16 @@
                          fileset
                          metas)]
       (perun/report-info task-name "Moved %s files" (count metas))
-      new-fs)))
+      (boot/commit! new-fs))))
 
 (def ^:private +slug-defaults+
   {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
    ; Jekyll uses the same format by default.
-   :slug-fn (fn [m] (->> (string/split (:filename m) #"[-\.]")
-                         (drop 3)
-                         drop-last
-                         (string/join "-")
-                         string/lower-case))
+   :slug-fn (fn [_ m] (->> (string/split (:filename m) #"[-\.]")
+                           (drop 3)
+                           drop-last
+                           (string/join "-")
+                           string/lower-case))
    :filterer identity
    :extensions [".html"]})
 
@@ -358,15 +425,22 @@
   [s slug-fn    SLUGFN     code  "function to build slug from file metadata"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"]
-  (let [options (merge +slug-defaults+ *opts*)
-        slug-fn (:slug-fn options)
-        path-fn #(let [{:keys [path filename]} %
-                       slug (slug-fn %)]
-                   (str (perun/parent-path path filename) slug "." (perun/extension filename)))]
-    (mv-impl "slug" path-fn :io.perun/slug options)))
+  (let [{:keys [slug-fn] :as options} (merge +slug-defaults+ *opts*)
+        path-fn (fn [global-meta m]
+                  (let [{:keys [path filename]} m
+                        slug (slug-fn global-meta m)]
+                    (str (perun/parent-path path filename) slug "." (perun/extension filename))))]
+    (mv-pre-wrap {:task-name "slug"
+                  :path-fn path-fn
+                  :tracer :io.perun/slug
+                  :options options})))
 
 (def ^:private +permalink-defaults+
-  {:permalink-fn (fn [m] (perun/absolutize-url (str (:slug m) "/index.html")))
+  {:permalink-fn (fn [global-meta m]
+                   (perun/absolutize-url
+                    (string/replace (str (:parent-path m) (:slug m) "/")
+                                    (re-pattern (str "^" (:doc-root global-meta)))
+                                    "")))
    :filterer identity
    :extensions [".html"]})
 
@@ -377,11 +451,15 @@
   [p permalink-fn PERMALINKFN code  "function to build permalink from TmpFile metadata"
    _ filterer     FILTER      code  "predicate to use for selecting entries (default: `identity`)"
    e extensions   EXTENSIONS  [str] "extensions of files to include"]
-  (let [options (merge +permalink-defaults+ *opts*)
-        permalink-fn (:permalink-fn options)
-        path-fn #(let [permalink (permalink-fn %)]
-                   (subs (string/replace permalink #"/$" "/index.html") 1))]
-    (mv-impl "permalink" path-fn :io.perun/permalink options)))
+  (let [{:keys [permalink-fn] :as options} (merge +permalink-defaults+ *opts*)
+        path-fn (fn [global-meta m]
+                  (let [permalink (permalink-fn global-meta m)]
+                    (str (:doc-root global-meta)
+                         (string/replace permalink #"/$" "/index.html"))))]
+    (mv-pre-wrap {:task-name "permalink"
+                  :path-fn path-fn
+                  :tracer :io.perun/permalink
+                  :options options})))
 
 (deftask canonical-url
   "Deprecated - The `:canonical-url` key will now automatically be set in the `entry` map passed
@@ -514,7 +592,7 @@
   All `:entry`s will be returned, with their `:path`s and `:canonical-url`s
   (if there is a valid `:base-url` in global metadata) set, and `tracer`
   added to `io.perun/trace`."
-  [data renderer tmp tracer global-meta]
+  [{:keys [task-name data renderer tmp tracer global-meta]}]
   (pod/with-call-in @render-pod
     (io.perun.render/update!))
   (doall
@@ -522,6 +600,7 @@
           (for [[path {:keys [entry] :as render-data}] data]
             (let [content (render-in-pod @render-pod renderer render-data)]
               (perun/create-file tmp path content)
+              (perun/report-debug task-name "rendered page for path" path)
               (merge entry (pm/path-meta path global-meta)))))))
 
 (defn render-pre-wrap
@@ -532,13 +611,20 @@
   that are required by `render-paths-fn`.
 
   Returns a boot `with-pre-wrap` result"
-  [render-paths-fn options tracer]
+  [{:keys [task-name render-paths-fn options tracer]}]
   (let [tmp (boot/tmp-dir!)]
     (boot/with-pre-wrap fileset
       (let [render-paths (render-paths-fn fileset options)
             global-meta (pm/get-global-meta fileset)
-            new-metadata (render-to-paths render-paths (:renderer options) tmp tracer global-meta)
+            new-metadata (render-to-paths {:task-name task-name
+                                           :data render-paths
+                                           :renderer (:renderer options)
+                                           :tmp tmp
+                                           :tracer tracer
+                                           :global-meta global-meta})
             rm-files (keep #(boot/tmp-get fileset (-> % :entry :path)) (vals render-paths))]
+        (perun/report-info task-name "rendered %s pages" (count render-paths))
+        (perun/report-debug task-name "removing files" rm-files)
         (-> fileset
             (boot/rm rm-files)
             (commit tmp)
@@ -579,22 +665,22 @@
                                                     meta
                                                     {:content content
                                                      :out-dir (:out-dir options)})]
-                               (perun/report-debug "render" "rendered page for path" path)
                                (assoc result new-path {:meta    (pm/get-global-meta fileset)
                                                        :entries entries
                                                        :entry   new-entry})))
                            {}
                            entries)]
-                (perun/report-info "render" "rendered %s pages" (count paths))
                 paths))]
-      (render-pre-wrap render-paths options :io.perun/render))))
+      (render-pre-wrap {:task-name "render"
+                        :render-paths-fn render-paths
+                        :options options
+                        :tracer :io.perun/render}))))
 
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
-  [task-name fileset options]
+  [task-name fileset {:keys [grouper sortby comparator out-dir] :as options}]
   (let [global-meta (pm/get-global-meta fileset)
-        {:keys [grouper sortby comparator out-dir]} options
         paths (grouper (filter-meta-by-ext fileset options))]
     (if (seq paths)
       (reduce
@@ -637,7 +723,10 @@
                                          [path (update-in data [:group-meta] #(merge (:meta options) %))]))
                                   (into {})))
               options (assoc options :grouper meta-grouper)]
-          (render-pre-wrap assortment-paths options tracer))))
+          (render-pre-wrap {:task-name task-name
+                            :render-paths-fn assortment-paths
+                            :options options
+                            :tracer tracer}))))
 
 (def ^:private +assortment-defaults+
   {:out-dir "public"
@@ -711,29 +800,33 @@
         grouper #(-> {p {:entries %}})]
     (assortment-impl "collection" :io.perun/collection grouper options)))
 
+(def +inject-scripts-defaults+
+  {:extensions [".html"]})
+
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
    Use either filter to include only files matching or remove to
    include only files not matching regex."
-   [s scripts JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
-    f filter  RE         #{regex} "Regexes to filter HTML files"
-    r remove  RE         #{regex} "Regexes to blacklist HTML files with"]
+   [s scripts    JAVASCRIPT #{str}   "JavaScript files to inject as <script> tags in <head>."
+    f filter     RE         #{regex} "Regexes to filter HTML files"
+    r remove     RE         #{regex} "Regexes to blacklist HTML files with"
+    e extensions EXTENSIONS [str]    "extensions of files to include"]
    (let [pod  (create-pod [])
          prev (atom nil)
          out  (boot/tmp-dir!)
+         {:keys [scripts filter remove extensions]} (merge +inject-scripts-defaults+ *opts*)
          filter (cond
                   filter #(boot/by-re filter %)
                   remove #(boot/by-re remove % true)
                   :else identity)]
      (fn [next-task]
        (fn [fileset]
-         (let [files (->> fileset
-                          (boot/fileset-diff @prev)
-                          boot/input-files
+         (let [files (->> (boot/fileset-diff @prev fileset :hash)
+                          boot/ls
                           filter
-                          (boot/by-ext [".html"]))
+                          (boot/by-ext extensions))
                 scripts-contents (->> fileset
-                                      boot/input-files
+                                      boot/ls
                                       (boot/by-path scripts)
                                       (map (comp slurp boot/tmp-file)))]
            (doseq [file files
@@ -745,6 +838,9 @@
                  ~scripts-contents
                  ~(.getPath (boot/tmp-file file))
                  ~(.getPath new-file))))
-           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files" (count scripts-contents) (count files)))
-         (reset! prev fileset)
-         (next-task (-> fileset (boot/add-resource out) boot/commit!))))))
+           (perun/report-info "inject-scripts" "injected %s scripts into %s HTML files" (count scripts-contents) (count files))
+           (reset! prev fileset)
+           (next-task (-> fileset
+                          (boot/add-resource out)
+                          boot/commit!
+                          (pm/set-meta (map (partial pm/meta-from-file fileset) files)))))))))
