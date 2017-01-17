@@ -703,8 +703,8 @@
         (perun/report-info task-name (str task-name " found nothing to render"))
         []))))
 
-(defn- assortment-impl
-  [task-name tracer grouper options]
+(defn assortment-pre-wrap
+  [{:keys [task-name tracer grouper options]}]
   (cond (not (fn? (:comparator options)))
         (u/fail (str task-name " task :comparator option should implement Fn\n"))
         (not (ifn? (:filterer options)))
@@ -764,8 +764,12 @@
    m meta       META       edn   "metadata to set on each collection entry"
    n task-name  TASKNAME   str   "name to use for logging messages; only for tasks that use assortment under the hood"
    t tracer     TRACER     kw    "value to put in `:io.perun/trace`; only for tasks that use assortment under the hood"]
-  (let [options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
-    (assortment-impl "assortment" :io.perun/assortment grouper options)))
+  (let [grouper (or grouper #(-> {"index.html" {:entries %}}))
+        options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
+    (assortment-pre-wrap {:task-name "assortment"
+                          :tracer :io.perun/assortment
+                          :grouper grouper
+                          :options options})))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
@@ -795,10 +799,11 @@
    c comparator COMPARATOR code  "sort by comparator function"
    p page       PAGE       str   "collection result page path"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [p (or page "index.html")
-        options (merge +collection-defaults+ (dissoc *opts* :page))
-        grouper #(-> {p {:entries %}})]
-    (assortment-impl "collection" :io.perun/collection grouper options)))
+  (let [p (or page "index.html")]
+    (assortment-pre-wrap {:task-name "collection"
+                          :tracer :io.perun/collection
+                          :grouper #(-> {p {:entries %}})
+                          :options (merge +collection-defaults+ (dissoc *opts* :page))})))
 
 (def +inject-scripts-defaults+
   {:extensions [".html"]})
