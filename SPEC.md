@@ -17,9 +17,11 @@ set for the tasks using task options.
 - **:author-email**
 - **:base-url**
     - Must be in canonical form, that is end in `/`
-    - Required by: *canonical-url*
     - Required by: *atom-feed*
     - Required by: *rss*
+- **:doc-root**
+    - Defaults to "public"
+    - Permalinks will be determined relative to this directory
 - **:language**
 - **:description**
     - Used by: *atom-feed*
