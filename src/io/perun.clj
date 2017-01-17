@@ -704,6 +704,13 @@
         []))))
 
 (defn assortment-pre-wrap
+  "Handles common assortment task orchestration
+
+  `task-name` is used for log messages. `tracer` is a keyword that gets added
+  to the `:io.perun/trace` metadata. `grouper` is a function that takes a seq
+  of entries and returns a map of paths to groups to be rendered.
+
+  Returns a boot `with-pre-wrap` result"
   [{:keys [task-name tracer grouper options]}]
   (cond (not (fn? (:comparator options)))
         (u/fail (str task-name " task :comparator option should implement Fn\n"))
