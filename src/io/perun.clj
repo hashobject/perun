@@ -838,15 +838,18 @@
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [options (merge +paginate-defaults+ *opts*)
+  (let [{:keys [sortby comparator page-size prefix] :as options} (merge +paginate-defaults+ *opts*)
         grouper (fn [entries]
                   (->> entries
-                       (sort-by (:sortby options) (:comparator options))
-                       (partition-all (:page-size options))
-                       (map-indexed #(-> [(str (:prefix options) (inc %1) ".html")
+                       (sort-by sortby comparator)
+                       (partition-all page-size)
+                       (map-indexed #(-> [(str prefix (inc %1) ".html")
                                           {:entries %2}]))
                        (into {})))]
-    (assortment-impl "paginate" :io.perun/paginate grouper options)))
+    (assortment-pre-wrap {:task-name "paginate"
+                          :tracer :io.perun/paginate
+                          :grouper grouper
+                          :options options})))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
