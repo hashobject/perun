@@ -834,8 +834,7 @@
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [options (merge +tags-defaults+ *opts*)
-        grouper (fn [entries]
+  (let [grouper (fn [entries]
                   (->> entries
                        (mapcat (fn [entry]
                                  (map #(-> [% entry]) (:tags entry))))
@@ -845,7 +844,10 @@
                                        (update-in [path :entries] conj entry)
                                        (assoc-in [path :group-meta :tag] tag))))
                                {})))]
-    (assortment-impl "tags" :io.perun/tags grouper options)))
+    (assortment-pre-wrap {:task-name "tags"
+                          :tracer :io.perun/tags
+                          :grouper grouper
+                          :options (merge +tags-defaults+ *opts*)})))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
