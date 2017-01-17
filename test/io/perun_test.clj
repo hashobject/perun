@@ -164,7 +164,7 @@ This --- be ___markdown___.")
         (p/word-count)
         (testing "word-count"
           (value-test :path "public/2017-01-01-test.html"
-                      :value-fn #(meta= %1 %2 :word-count 19)
+                      :value-fn #(meta= %1 %2 :word-count 8)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
@@ -263,7 +263,7 @@ This --- be ___markdown___.")
                       :extensions [".htm"])
         (testing "word-count"
           (value-test :path "hammock/test.htm"
-                      :value-fn #(meta= %1 %2 :word-count 19)
+                      :value-fn #(meta= %1 %2 :word-count 8)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email
