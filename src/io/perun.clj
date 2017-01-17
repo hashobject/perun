@@ -247,8 +247,7 @@
   '[[circleci/clj-yaml "0.5.5"]])
 
 (def ^:private +yaml-metadata-defaults+
-  {:filterer identity
-   :extensions []})
+  {:extensions []})
 
 (deftask yaml-metadata
   "Parse YAML metadata at the beginning of files
@@ -259,10 +258,10 @@
   with the parsed data added as perun metadata."
   [e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
   (let [pod     (create-pod yaml-metadata-deps)
-        options (merge +yaml-metadata-defaults+ *opts*)]
+        {:keys [extensions] :as options} (merge +yaml-metadata-defaults+ *opts*)]
     (content-pre-wrap
      {:parse-form-fn (fn [metas] `(io.perun.yaml/parse-yaml ~metas))
-      :extensions (:extensions options)
+      :extensions extensions
       :output-extension nil ;; keeps the same extension as the input file
       :tracer :io.perun/yaml-metadata
       :options options
