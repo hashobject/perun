@@ -768,9 +768,7 @@
    e extensions EXTENSIONS [str] "extensions of files to include"
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
-   m meta       META       edn   "metadata to set on each collection entry"
-   n task-name  TASKNAME   str   "name to use for logging messages; only for tasks that use assortment under the hood"
-   t tracer     TRACER     kw    "value to put in `:io.perun/trace`; only for tasks that use assortment under the hood"]
+   m meta       META       edn   "metadata to set on each collection entry"]
   (let [grouper (or grouper #(-> {"index.html" {:entries %}}))
         options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
     (assortment-pre-wrap {:task-name "assortment"
