@@ -272,7 +272,7 @@ This --- be ___markdown___.")
                          :content "assortment 6"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
-        (testing "assortment"
+        (testing "collection"
           (content-check :path "public/index.html"
                          :content "collection 7"))
 
