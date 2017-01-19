@@ -191,10 +191,10 @@
     ;; Change `fileset-diff` to `boot/fileset-diff` when
     ;; https://github.com/boot-clj/boot/pull/566 is merged
     (let [diff (fileset-diff before after :hash pm/+meta-key+)]
-      {:content-diff diff
-       :meta-diff diff})
-    {:content-diff (fileset-diff before after :hash)
-     :meta-diff (fileset-diff before after pm/+meta-key+)}))
+      {:content-diff-fs diff
+       :meta-diff-fs diff})
+    {:content-diff-fs (fileset-diff before after :hash)
+     :meta-diff-fs (fileset-diff before after pm/+meta-key+)}))
 
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
@@ -208,12 +208,12 @@
   (let [tmp  (boot/tmp-dir!)
         prev (atom {})]
     (boot/with-pre-wrap fileset
-      (let [{:keys [content-diff meta-diff]} (diff-filesets (:fs @prev) fileset uses-meta)
-            parse-form (parse-form-fn (meta-by-ext content-diff extensions))
+      (let [{:keys [content-diff-fs meta-diff-fs]} (diff-filesets (:fs @prev) fileset uses-meta)
+            parse-form (parse-form-fn (meta-by-ext content-diff-fs extensions))
             changed-meta (->> (if pod
                                 (pod/with-call-in @pod ~parse-form)
                                 (eval parse-form))
-                              (pm/merge-meta (meta-by-ext meta-diff extensions))
+                              (pm/merge-meta (meta-by-ext meta-diff-fs extensions))
                               (trace tracer))
             input-fs (-> fileset
                          (pm/set-meta (:meta @prev))
@@ -693,7 +693,6 @@
                                                              slurp))))
                new-path    (perun/create-filepath out-dir path)
                new-entry   (assoc entry :out-dir out-dir)]
-           (perun/report-info task-name (str "rendered " task-name " " path))
            (assoc result new-path {:meta    global-meta
                                    :entry   new-entry
                                    :entries (vec sorted)})))
@@ -722,8 +721,7 @@
         (not (ifn? grouper))
         (u/fail (str task-name " task :grouper option value should implement IFn\n"))
         :else
-        (let [assortment-paths (partial grouped-paths task-name)
-              ;; Make sure task-level metadata gets added to each entry
+        (let [;; Make sure task-level metadata gets added to each entry
               meta-grouper (fn [entries]
                              (->> entries
                                   grouper
@@ -732,7 +730,7 @@
                                   (into {})))
               options (assoc options :grouper meta-grouper)]
           (render-pre-wrap {:task-name task-name
-                            :render-paths-fn assortment-paths
+                            :render-paths-fn (partial grouped-paths task-name)
                             :options options
                             :tracer tracer}))))
 
@@ -769,9 +767,7 @@
    e extensions EXTENSIONS [str] "extensions of files to include"
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
-   m meta       META       edn   "metadata to set on each collection entry"
-   n task-name  TASKNAME   str   "name to use for logging messages; only for tasks that use assortment under the hood"
-   t tracer     TRACER     kw    "value to put in `:io.perun/trace`; only for tasks that use assortment under the hood"]
+   m meta       META       edn   "metadata to set on each collection entry"]
   (let [grouper (or grouper #(-> {"index.html" {:entries %}}))
         options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
     (assortment-pre-wrap {:task-name "assortment"
@@ -783,7 +779,7 @@
   {:out-dir "public"
    :filterer identity
    :extensions [".html"]
-   :sortby (fn [file] (:date-published file))
+   :sortby :date-published
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask collection
