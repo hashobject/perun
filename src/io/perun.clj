@@ -191,10 +191,10 @@
     ;; Change `fileset-diff` to `boot/fileset-diff` when
     ;; https://github.com/boot-clj/boot/pull/566 is merged
     (let [diff (fileset-diff before after :hash pm/+meta-key+)]
-      {:content-diff diff
-       :meta-diff diff})
-    {:content-diff (fileset-diff before after :hash)
-     :meta-diff (fileset-diff before after pm/+meta-key+)}))
+      {:content-diff-fs diff
+       :meta-diff-fs diff})
+    {:content-diff-fs (fileset-diff before after :hash)
+     :meta-diff-fs (fileset-diff before after pm/+meta-key+)}))
 
 (defn content-pre-wrap
   "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
@@ -208,12 +208,12 @@
   (let [tmp  (boot/tmp-dir!)
         prev (atom {})]
     (boot/with-pre-wrap fileset
-      (let [{:keys [content-diff meta-diff]} (diff-filesets (:fs @prev) fileset uses-meta)
-            parse-form (parse-form-fn (meta-by-ext content-diff extensions))
+      (let [{:keys [content-diff-fs meta-diff-fs]} (diff-filesets (:fs @prev) fileset uses-meta)
+            parse-form (parse-form-fn (meta-by-ext content-diff-fs extensions))
             changed-meta (->> (if pod
                                 (pod/with-call-in @pod ~parse-form)
                                 (eval parse-form))
-                              (pm/merge-meta (meta-by-ext meta-diff extensions))
+                              (pm/merge-meta (meta-by-ext meta-diff-fs extensions))
                               (trace tracer))
             input-fs (-> fileset
                          (pm/set-meta (:meta @prev))
