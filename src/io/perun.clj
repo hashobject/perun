@@ -721,8 +721,7 @@
         (not (ifn? grouper))
         (u/fail (str task-name " task :grouper option value should implement IFn\n"))
         :else
-        (let [assortment-paths (partial grouped-paths task-name)
-              ;; Make sure task-level metadata gets added to each entry
+        (let [;; Make sure task-level metadata gets added to each entry
               meta-grouper (fn [entries]
                              (->> entries
                                   grouper
@@ -731,7 +730,7 @@
                                   (into {})))
               options (assoc options :grouper meta-grouper)]
           (render-pre-wrap {:task-name task-name
-                            :render-paths-fn assortment-paths
+                            :render-paths-fn (partial grouped-paths task-name)
                             :options options
                             :tracer tracer}))))
 
@@ -780,7 +779,7 @@
   {:out-dir "public"
    :filterer identity
    :extensions [".html"]
-   :sortby (fn [file] (:date-published file))
+   :sortby :date-published
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask collection
