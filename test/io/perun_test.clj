@@ -477,7 +477,13 @@ This --- be ___markdown___.")
           (content-check :path "baz/decomplect-2.html"
                          :content "paginate 2")
           (content-check :path "baz/decomplect-3.html"
-                         :content "paginate 1"))
+                         :content "paginate 1")
+          (value-check :path "baz/decomplect-1.html"
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm"))
+          (value-check :path "baz/decomplect-2.html"
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm"))
+          (value-check :path "baz/decomplect-3.html"
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm")))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
