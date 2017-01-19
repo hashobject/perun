@@ -260,10 +260,10 @@ This --- be ___markdown___.")
           (file-exists? :path "public/atom.xml"
                         :msg "`atom-feed` should write atom.xml"))
 
-        (add-txt-file :path "test2.md" :content (nth yamls 3))
-        (add-txt-file :path "test3.md" :content (nth yamls 4))
-        (add-txt-file :path "test4.md" :content (nth yamls 5))
-        (add-txt-file :path "test5.md" :content (nth yamls 6))
+        (add-txt-file :path "test2.md" :content (nth input-strings 3))
+        (add-txt-file :path "test3.md" :content (nth input-strings 4))
+        (add-txt-file :path "test4.md" :content (nth input-strings 5))
+        (add-txt-file :path "test5.md" :content (nth input-strings 6))
         (p/markdown)
 
         (p/assortment :renderer 'io.perun-test/render-assortment)
