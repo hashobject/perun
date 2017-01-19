@@ -468,7 +468,7 @@ This --- be ___markdown___.")
                     :page-size 2
                     :filterer :assorting
                     :extensions [".htm"]
-                    :sortby :prder
+                    :sortby :order
                     :comparator #(compare %1 %2)
                     :meta {:paginated "mmhmm"})
         (testing "paginate"
