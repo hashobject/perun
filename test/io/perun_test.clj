@@ -181,6 +181,11 @@ This --- be ___markdown___.")
   (let [{:keys [entry entries]} data]
     (str "<h1>collection " (count entries) "</h1>")))
 
+(defn render-paginate
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>paginate " (count entries) "</h1>")))
+
 (deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (boot/with-pre-wrap fileset
@@ -275,6 +280,11 @@ This --- be ___markdown___.")
         (testing "collection"
           (content-check :path "public/index.html"
                          :content "collection 7"))
+
+        (p/paginate :renderer 'io.perun-test/render-paginate)
+        (testing "paginate"
+          (content-check :path "public/page-1.html"
+                         :content "paginate 7"))
 
         (p/render :renderer 'io.perun-test/render)
 
@@ -451,6 +461,23 @@ This --- be ___markdown___.")
                          :content "collection 2")
           (value-check :path "bar/its-a-collection.html"
                        :value-fn #(meta= %1 %2 :collected "uh huh")))
+
+        (p/paginate :renderer 'io.perun-test/render-paginate
+                    :out-dir "baz"
+                    :prefix "decomplect-"
+                    :page-size 2
+                    :filterer :assorting
+                    :extensions [".htm"]
+                    :sortby :prder
+                    :comparator #(compare %1 %2)
+                    :meta {:paginated "mmhmm"})
+        (testing "paginate"
+          (content-check :path "baz/decomplect-1.html"
+                         :content "paginate 2")
+          (content-check :path "baz/decomplect-2.html"
+                         :content "paginate 2")
+          (content-check :path "baz/decomplect-3.html"
+                         :content "paginate 1"))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
