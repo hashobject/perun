@@ -2,6 +2,7 @@
   (:require [boot.core :as boot :refer [deftask]]
             [boot.task.built-in :refer [sift]]
             [boot.test :as boot-test :refer [deftesttask]]
+            [clj-yaml.core :as yaml]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest testing is]]
@@ -111,16 +112,47 @@
           (boot/add-resource tmp)
           boot/commit!))))
 
+(def base-meta {:email "brent.hagany@gmail.com"
+                :author "Testy McTesterson"})
+(def yamls [(yaml/generate-string (assoc base-meta
+                                         :uuid "2078a34d-1b1a-4257-9eff-ffe215d90bcd"
+                                         :draft true))
+            (yaml/generate-string (assoc base-meta
+                                         :uuid "2078a34d-1b1a-4257-9eff-ffe215d90bcd"
+                                         :draft false))
+            (yaml/generate-string (assoc base-meta
+                                         :uuid "2078a34d-1b1a-4257-9eff-ffe215d90bcd"
+                                         :draft true
+                                         :order 4
+                                         :foo "bar"))
+
+            (yaml/generate-string (assoc base-meta
+                                         :uuid "e98ae98f-a621-47f3-a4be-de8b06961f41"
+                                         :tags ["tag1" "tag2" "tag3"]
+                                         :order 3
+                                         :baz true))
+            (yaml/generate-string (assoc base-meta
+                                         :uuid "2d4f8006-4a3b-4099-9f7b-3b8c9349a3dc"
+                                         :tags ["tag1" "tag2"]
+                                         :order 2
+                                         :baz false))
+            (yaml/generate-string (assoc base-meta
+                                         ;; :uuid
+                                         :tags ["tag1" "tag3"]
+                                         :order 1
+                                         :baz false))
+            (yaml/generate-string (assoc base-meta
+                                         ;; :uuid
+                                         :tags ["tag2" "tag3"]
+                                         :order 0
+                                         :baz true))])
+
 (def md-content
-  "---
-email: brent.hagany@gmail.com
-uuid: 2078a34d-1b1a-4257-9eff-ffe215d90bcd
-draft: true
-author: Testy McTesterson
----
-# Hello there
+  "# Hello there
 
 This --- be ___markdown___.")
+
+(def input-strings (map #(str "---\n" % "\n---\n" md-content) yamls))
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>")
 
@@ -139,8 +171,18 @@ This --- be ___markdown___.")
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
+(defn render-assortment
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>assortment " (count entries) "</h1>")))
+
+(defn render-collection
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>collection " (count entries) "</h1>")))
+
 (deftesttask default-tests []
-  (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
+  (comp (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
@@ -164,7 +206,7 @@ This --- be ___markdown___.")
         (p/word-count)
         (testing "word-count"
           (value-test :path "public/2017-01-01-test.html"
-                      :value-fn #(meta= %1 %2 :word-count 19)
+                      :value-fn #(meta= %1 %2 :word-count 22)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
@@ -218,6 +260,22 @@ This --- be ___markdown___.")
           (file-exists? :path "public/atom.xml"
                         :msg "`atom-feed` should write atom.xml"))
 
+        (add-txt-file :path "test2.md" :content (nth yamls 3))
+        (add-txt-file :path "test3.md" :content (nth yamls 4))
+        (add-txt-file :path "test4.md" :content (nth yamls 5))
+        (add-txt-file :path "test5.md" :content (nth yamls 6))
+        (p/markdown)
+
+        (p/assortment :renderer 'io.perun-test/render-assortment)
+        (testing "assortment"
+          (content-test :path "public/index.html"
+                        :content "assortment 6"))
+
+        (p/collection :renderer 'io.perun-test/render-collection)
+        (testing "assortment"
+          (content-test :path "public/index.html"
+                        :content "collection 7"))
+
         (p/render :renderer 'io.perun-test/render)
 
         (add-txt-file :path "test.js" :content js-content)
@@ -234,7 +292,7 @@ This --- be ___markdown___.")
                         :msg "`draft` should remove files"))))
 
 (deftesttask with-arguments-test []
-  (comp (add-txt-file :path "test.md" :content md-content)
+  (comp (add-txt-file :path "test.md" :content (nth input-strings 0))
         (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
@@ -263,7 +321,7 @@ This --- be ___markdown___.")
                       :extensions [".htm"])
         (testing "word-count"
           (value-test :path "hammock/test.htm"
-                      :value-fn #(meta= %1 %2 :word-count 19)
+                      :value-fn #(meta= %1 %2 :word-count 22)
                       :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email
@@ -343,6 +401,57 @@ This --- be ___markdown___.")
           (file-exists? :path "foo/test-atom.xml"
                         :msg "`atom-feed` should write test-atom.xml"))
 
+        (add-txt-file :path "test2.md" :content (nth input-strings 3))
+        (add-txt-file :path "test3.md" :content (nth input-strings 4))
+        (add-txt-file :path "test4.md" :content (nth input-strings 5))
+        (add-txt-file :path "test5.md" :content (nth input-strings 6))
+        (p/markdown :meta {:assorting true}
+                    :out-dir "assorting")
+        (sift :move {#"assorting/(.*)\.html" "assorting/$1.htm"})
+
+        (p/assortment :renderer 'io.perun-test/render-assortment
+                      :out-dir "foo"
+                      :grouper (fn [entries]
+                                 (reduce (fn [paths {:keys [baz tags] :as entry}]
+                                           (let [path (str baz "-" (first tags) ".html")]
+                                             (if (and (not (nil? baz)) (seq tags))
+                                               (update-in paths [path :entries] conj entry)
+                                               paths)))
+                                         {}
+                                         entries))
+                      :filterer :assorting
+                      :extensions [".htm"]
+                      :sortby :order
+                      :comparator #(compare %1 %2)
+                      :meta {:assorted "yep"})
+        (testing "assortment"
+          (content-test :path "foo/true-tag1.html"
+                        :content "assortment 1")
+          (content-test :path "foo/true-tag2.html"
+                        :content "assortment 1")
+          (content-test :path "foo/false-tag1.html"
+                        :content "assortment 2")
+          (value-test :path "foo/true-tag1.html"
+                      :value-fn #(meta= %1 %2 :assorted "yep"))
+          (value-test :path "foo/true-tag2.html"
+                      :value-fn #(meta= %1 %2 :assorted "yep"))
+          (value-test :path "foo/false-tag1.html"
+                      :value-fn #(meta= %1 %2 :assorted "yep")))
+
+        (p/collection :renderer 'io.perun-test/render-collection
+                      :out-dir "bar"
+                      :filterer :baz
+                      :extensions [".htm"]
+                      :sortby :order
+                      :comparator #(compare %1 %2)
+                      :page "its-a-collection.html"
+                      :meta {:collected "uh huh"})
+        (testing "collection"
+          (content-test :path "bar/its-a-collection.html"
+                        :content "collection 2")
+          (value-test :path "bar/its-a-collection.html"
+                      :value-fn #(meta= %1 %2 :collected "uh huh")))
+
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
                   :extensions [".htm"]
@@ -366,38 +475,38 @@ This --- be ___markdown___.")
   (comp (testing "Collection works without input files" ;; #77
           (p/collection :renderer 'io.perun-test/render))
 
-        (add-txt-file :path "test.md" :content md-content)
+        (add-txt-file :path "test.md" :content (nth input-strings 0))
         (p/markdown) ;; render once
 
-        (add-txt-file :path "test.md" :content (str/replace md-content #"Hello" "Salutations"))
+        (add-txt-file :path "test.md" :content (str/replace (nth input-strings 0) #"Hello" "Salutations"))
         (p/markdown)
         (testing "detecting content changes"
           (content-test :path "public/test.html"
                         :content "Salutations"
                         :msg "content changes should result in re-rendering"))
 
-        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: false"))
+        (add-txt-file :path "test.md" :content (nth input-strings 1))
         (p/markdown)
         (testing "detecting metadata changes"
           (value-test :path "public/test.html"
                       :value-fn #(meta= %1 %2 :draft false)
                       :msg "metadata changes should result in re-rendering"))
 
-        (add-txt-file :path "test.md" :content (str/replace md-content #"draft: true" "draft: true\nfoo: bar"))
+        (add-txt-file :path "test.md" :content (nth input-strings 2))
         (p/markdown)
         (testing "detecting metadata additions"
           (value-test :path "public/test.html"
                       :value-fn #(meta= %1 %2 :foo "bar")
                       :msg "metadata additions should result in re-rendering"))
 
-        (add-txt-file :path "test.md" :content md-content)
+        (add-txt-file :path "test.md" :content (nth input-strings 0))
         (p/markdown)
         (testing "detecting metadata deletions"
           (value-test :path "public/test.html"
                       :value-fn #(meta= %1 %2 :foo nil)
                       :msg "metadata deletions should result in re-rendering"))
 
-        (add-txt-file :path "test2.md" :content md-content)
+        (add-txt-file :path "test2.md" :content (nth input-strings 3))
         (p/markdown)
         (testing "detecting new files"
           (content-test :path "public/test2.html"
