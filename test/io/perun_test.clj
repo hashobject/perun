@@ -181,6 +181,11 @@ This --- be ___markdown___.")
   (let [{:keys [entry entries]} data]
     (str "<h1>collection " (count entries) "</h1>")))
 
+(defn render-tags
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>tags " (count entries) "</h1>")))
+
 (deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (boot/with-pre-wrap fileset
@@ -275,6 +280,15 @@ This --- be ___markdown___.")
         (testing "collection"
           (content-check :path "public/index.html"
                          :content "collection 7"))
+
+        (p/tags :renderer 'io.perun-test/render-tags)
+        (testing "tags"
+          (content-check :path "public/tag1.html"
+                         :content "tags 3")
+          (content-check :path "public/tag2.html"
+                         :content "tags 3")
+          (content-check :path "public/tag3.html"
+                         :content "tags 3"))
 
         (p/render :renderer 'io.perun-test/render)
 
@@ -451,6 +465,27 @@ This --- be ___markdown___.")
                          :content "collection 2")
           (value-check :path "bar/its-a-collection.html"
                        :value-fn #(meta= %1 %2 :collected "uh huh")))
+
+        (p/tags :renderer 'io.perun-test/render-tags
+                :out-dir "baz"
+                :filterer :assorting
+                :extensions [".htm"]
+                :sortby :order
+                :comparator #(compare %1 %2)
+                :meta {:tagged "mmhmm"})
+        (testing "tags"
+          (content-check :path "baz/tag1.html"
+                         :content "tags 3")
+          (content-check :path "baz/tag2.html"
+                         :content "tags 3")
+          (content-check :path "baz/tag3.html"
+                         :content "tags 3")
+          (value-check :path "baz/tag1.html"
+                       :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+          (value-check :path "baz/tag2.html"
+                       :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+          (value-check :path "baz/tag3.html"
+                       :value-fn #(meta= %1 %2 :tagged "mmhmm")))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
