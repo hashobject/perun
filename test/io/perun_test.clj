@@ -79,25 +79,55 @@
         (add-image :path "test-image.jpeg" :type "JPG" :width 54 :height 180)
         (add-image :path "test-image.png"  :type "PNG" :width 76 :height 37)
         (p/images-dimensions)
-        (value-check :path "test-image.jpg"  :value-fn #(meta= %1 %2 :width 10))
-        (value-check :path "test-image.jpg"  :value-fn #(meta= %1 %2 :height 10))
-        (value-check :path "test-image.jpg"  :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))
-        (value-check :path "test-image.jpeg" :value-fn #(meta= %1 %2 :width 54))
-        (value-check :path "test-image.jpeg" :value-fn #(meta= %1 %2 :height 180))
-        (value-check :path "test-image.jpeg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))
-        (value-check :path "test-image.png"  :value-fn #(meta= %1 %2 :width 76))
-        (value-check :path "test-image.png"  :value-fn #(meta= %1 %2 :height 37))
-        (value-check :path "test-image.png"  :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))))
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta= %1 %2 :width 10)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta= %1 %2 :height 10)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta= %1 %2 :width 54)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta= %1 %2 :height 180)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta= %1 %2 :width 76)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta= %1 %2 :height 37)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")))
 
 (deftesttask images-resize-test []
   (comp (add-image :path "test-image.jpg" :type "JPG" :width 10 :height 10)
         (p/images-resize :resolutions #{100 200})
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta= %1 %2 :width 100))
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta= %1 %2 :height 100))
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta= %1 %2 :width 200))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta= %1 %2 :height 200))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize))))
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta= %1 %2 :width 100)
+                     :msg "`images-resize resize image file and set `:width` metadata")
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta= %1 %2 :height 100)
+                     :msg "`images-resize resize image file and set `:height` metadata")
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize)
+                     :msg "`images-resize should add `:io.perun/images-resize` to `:io.perun/trace`")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta= %1 %2 :width 200)
+                     :msg "`images-resize resize image file and set `:width` metadata")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta= %1 %2 :height 200)
+                     :msg "`images-resize resize image file and set `:height` metadata")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize)
+                     :msg "`images-resize should add `:io.perun/images-resize` to `:io.perun/trace`")))
 
 (deftask add-txt-file
   [p path    PATH  str "path of the file to add"
