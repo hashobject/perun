@@ -269,12 +269,14 @@ This --- be ___markdown___.")
         (p/assortment :renderer 'io.perun-test/render-assortment)
         (testing "assortment"
           (content-check :path "public/index.html"
-                         :content "assortment 6"))
+                         :content "assortment 6"
+                         :msg "assortment should modify file contents"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
         (testing "collection"
           (content-check :path "public/index.html"
-                         :content "collection 7"))
+                         :content "collection 7"
+                         :msg "collection should modify file contents"))
 
         (p/render :renderer 'io.perun-test/render)
 
@@ -426,17 +428,23 @@ This --- be ___markdown___.")
                       :meta {:assorted "yep"})
         (testing "assortment"
           (content-check :path "foo/true-tag1.html"
-                         :content "assortment 1")
+                         :content "assortment 1"
+                         :msg "assortment should modify file contents")
           (content-check :path "foo/true-tag2.html"
-                         :content "assortment 1")
+                         :content "assortment 1"
+                         :msg "assortment should modify file contents")
           (content-check :path "foo/false-tag1.html"
-                         :content "assortment 2")
+                         :content "assortment 2"
+                         :msg "assortment should modify file contents")
           (value-check :path "foo/true-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata")
           (value-check :path "foo/true-tag2.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata")
           (value-check :path "foo/false-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata"))
 
         (p/collection :renderer 'io.perun-test/render-collection
                       :out-dir "bar"
@@ -448,9 +456,11 @@ This --- be ___markdown___.")
                       :meta {:collected "uh huh"})
         (testing "collection"
           (content-check :path "bar/its-a-collection.html"
-                         :content "collection 2")
+                         :content "collection 2"
+                         :msg "collection should modify file contents")
           (value-check :path "bar/its-a-collection.html"
-                       :value-fn #(meta= %1 %2 :collected "uh huh")))
+                       :value-fn #(meta= %1 %2 :collected "uh huh")
+                       :msg "collection should modify file metadata"))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
