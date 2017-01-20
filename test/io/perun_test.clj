@@ -80,25 +80,55 @@
         (add-image :path "test-image.jpeg" :type "JPG" :width 54 :height 180)
         (add-image :path "test-image.png"  :type "PNG" :width 76 :height 37)
         (p/images-dimensions)
-        (value-check :path "test-image.jpg"  :value-fn #(meta= %1 %2 :width 10))
-        (value-check :path "test-image.jpg"  :value-fn #(meta= %1 %2 :height 10))
-        (value-check :path "test-image.jpg"  :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))
-        (value-check :path "test-image.jpeg" :value-fn #(meta= %1 %2 :width 54))
-        (value-check :path "test-image.jpeg" :value-fn #(meta= %1 %2 :height 180))
-        (value-check :path "test-image.jpeg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))
-        (value-check :path "test-image.png"  :value-fn #(meta= %1 %2 :width 76))
-        (value-check :path "test-image.png"  :value-fn #(meta= %1 %2 :height 37))
-        (value-check :path "test-image.png"  :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions))))
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta= %1 %2 :width 10)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta= %1 %2 :height 10)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta= %1 %2 :width 54)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta= %1 %2 :height 180)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.jpeg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta= %1 %2 :width 76)
+                     :msg "`images-dimensions should set `:width` metadata on image file")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta= %1 %2 :height 37)
+                     :msg "`images-dimensions should set `:height` metadata on image file")
+        (value-check :path "test-image.png"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-dimensions)
+                     :msg "`images-dimensions should add `:io.perun/images-dimensions` to `:io.perun/trace`")))
 
 (deftesttask images-resize-test []
   (comp (add-image :path "test-image.jpg" :type "JPG" :width 10 :height 10)
         (p/images-resize :resolutions #{100 200})
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta= %1 %2 :width 100))
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta= %1 %2 :height 100))
-        (value-check :path "public/test-image_100.jpg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta= %1 %2 :width 200))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta= %1 %2 :height 200))
-        (value-check :path "public/test-image_200.jpg" :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize))))
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta= %1 %2 :width 100)
+                     :msg "`images-resize resize image file and set `:width` metadata")
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta= %1 %2 :height 100)
+                     :msg "`images-resize resize image file and set `:height` metadata")
+        (value-check :path "public/test-image_100.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize)
+                     :msg "`images-resize should add `:io.perun/images-resize` to `:io.perun/trace`")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta= %1 %2 :width 200)
+                     :msg "`images-resize resize image file and set `:width` metadata")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta= %1 %2 :height 200)
+                     :msg "`images-resize resize image file and set `:height` metadata")
+        (value-check :path "public/test-image_200.jpg"
+                     :value-fn #(meta-contains? %1 %2 :io.perun/trace :io.perun/images-resize)
+                     :msg "`images-resize should add `:io.perun/images-resize` to `:io.perun/trace`")))
 
 (deftask add-txt-file
   [p path    PATH  str "path of the file to add"
@@ -274,12 +304,14 @@ This --- be ___markdown___.")
         (p/assortment :renderer 'io.perun-test/render-assortment)
         (testing "assortment"
           (content-check :path "public/index.html"
-                         :content "assortment 6"))
+                         :content "assortment 6"
+                         :msg "assortment should modify file contents"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
         (testing "collection"
           (content-check :path "public/index.html"
-                         :content "collection 7"))
+                         :content "collection 7"
+                         :msg "collection should modify file contents"))
 
         (p/tags :renderer 'io.perun-test/render-tags)
         (testing "tags"
@@ -291,6 +323,10 @@ This --- be ___markdown___.")
                          :content "tags 3"))
 
         (p/render :renderer 'io.perun-test/render)
+        (testing "render"
+          (content-check :path "public/test/index.html"
+                         :content "<body>"
+                         :msg "`render` should modify a page"))
 
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
@@ -440,17 +476,23 @@ This --- be ___markdown___.")
                       :meta {:assorted "yep"})
         (testing "assortment"
           (content-check :path "foo/true-tag1.html"
-                         :content "assortment 1")
+                         :content "assortment 1"
+                         :msg "assortment should modify file contents")
           (content-check :path "foo/true-tag2.html"
-                         :content "assortment 1")
+                         :content "assortment 1"
+                         :msg "assortment should modify file contents")
           (content-check :path "foo/false-tag1.html"
-                         :content "assortment 2")
+                         :content "assortment 2"
+                         :msg "assortment should modify file contents")
           (value-check :path "foo/true-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata")
           (value-check :path "foo/true-tag2.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata")
           (value-check :path "foo/false-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")))
+                       :value-fn #(meta= %1 %2 :assorted "yep")
+                       :msg "assortment should modify file metadata"))
 
         (p/collection :renderer 'io.perun-test/render-collection
                       :out-dir "bar"
@@ -462,9 +504,11 @@ This --- be ___markdown___.")
                       :meta {:collected "uh huh"})
         (testing "collection"
           (content-check :path "bar/its-a-collection.html"
-                         :content "collection 2")
+                         :content "collection 2"
+                         :msg "collection should modify file contents")
           (value-check :path "bar/its-a-collection.html"
-                       :value-fn #(meta= %1 %2 :collected "uh huh")))
+                       :value-fn #(meta= %1 %2 :collected "uh huh")
+                       :msg "collection should modify file metadata"))
 
         (p/tags :renderer 'io.perun-test/render-tags
                 :out-dir "baz"
@@ -492,6 +536,13 @@ This --- be ___markdown___.")
                   :extensions [".htm"]
                   :out-dir "bar"
                   :meta {:set-by-render true})
+        (testing "render"
+          (content-check :path "bar/hammock/foo.htm"
+                         :content "<body>"
+                         :msg "`render` should modify a page")
+          (value-check :path "bar/hammock/foo.htm"
+                       :value-fn #(meta= %1 %2 :set-by-render true)
+                       :msg "`render` should set metadata"))
 
         (add-txt-file :path "test.js" :content js-content)
         (add-txt-file :path "baz.htm" :content "<body></body>")
