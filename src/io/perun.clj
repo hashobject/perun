@@ -700,11 +700,13 @@
   (let [options (merge +static-defaults+ *opts*)
         path (perun/create-filepath (:out-dir options) (:page options))
         static-path (fn [fileset options]
-                      (perun/report-info "static" "rendered %s" path)
                       {path {:render-data {:meta (pm/get-global-meta fileset)
                                            :entry (:meta options)}
                              :entry (assoc (:meta options) :path path)}})]
-    (render-pre-wrap static-path options :io.perun/static)))
+    (render-pre-wrap {:task-name "static"
+                      :render-paths-fn static-path
+                      :options options
+                      :tracer :io.perun/static})))
 
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
