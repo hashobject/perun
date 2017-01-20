@@ -249,6 +249,10 @@ This --- be ___markdown___.")
                         :msg "`atom-feed` should write atom.xml"))
 
         (p/render :renderer 'io.perun-test/render)
+        (testing "render"
+          (content-check :path "public/test/index.html"
+                         :content "<body>"
+                         :msg "`render` should modify a page"))
 
         (add-txt-file :path "test.js" :content js-content)
         (p/inject-scripts :scripts #{"test.js"})
@@ -378,6 +382,13 @@ This --- be ___markdown___.")
                   :extensions [".htm"]
                   :out-dir "bar"
                   :meta {:set-by-render true})
+        (testing "render"
+          (content-check :path "bar/hammock/foo.htm"
+                         :content "<body>"
+                         :msg "`render` should modify a page")
+          (value-check :path "bar/hammock/foo.htm"
+                       :value-fn #(meta= %1 %2 :set-by-render true)
+                       :msg "`render` should set metadata"))
 
         (add-txt-file :path "test.js" :content js-content)
         (add-txt-file :path "baz.htm" :content "<body></body>")
