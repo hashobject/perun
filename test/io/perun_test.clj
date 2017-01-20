@@ -139,6 +139,10 @@ This --- be ___markdown___.")
   [data]
   (str "<body>" (:content (:entry data)) "</body>"))
 
+(defn render-static
+  [data]
+  "<h1>static</h1>")
+
 (deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content md-content)
         (boot/with-pre-wrap fileset
@@ -217,6 +221,11 @@ This --- be ___markdown___.")
         (testing "atom-feed"
           (file-exists? :path "public/atom.xml"
                         :msg "`atom-feed` should write atom.xml"))
+
+        (p/static :renderer 'io.perun-test/render-static)
+        (testing "static"
+          (content-check :path "public/index.html"
+                         :content "<h1>static</h1>"))
 
         (p/render :renderer 'io.perun-test/render)
 
@@ -342,6 +351,16 @@ This --- be ___markdown___.")
         (testing "atom-feed"
           (file-exists? :path "foo/test-atom.xml"
                         :msg "`atom-feed` should write test-atom.xml"))
+
+        (p/static :renderer 'io.perun-test/render-static
+                  :out-dir "laphroiag"
+                  :page "neat.html"
+                  :meta {:statique "affirmative"})
+        (testing "static"
+          (content-check :path "laphroiag/neat.html"
+                         :content "<h1>static</h1>")
+          (value-check :path "laphroiag/neat.html"
+                       :value-fn #(meta= %1 %2 :statique "affirmative")))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
