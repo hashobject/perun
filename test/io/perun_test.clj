@@ -225,7 +225,8 @@ This --- be ___markdown___.")
         (p/static :renderer 'io.perun-test/render-static)
         (testing "static"
           (content-check :path "public/index.html"
-                         :content "<h1>static</h1>"))
+                         :content "<h1>static</h1>"
+                         :msg "`static` should write new files"))
 
         (p/render :renderer 'io.perun-test/render)
 
@@ -358,9 +359,11 @@ This --- be ___markdown___.")
                   :meta {:statique "affirmative"})
         (testing "static"
           (content-check :path "laphroiag/neat.html"
-                         :content "<h1>static</h1>")
+                         :content "<h1>static</h1>"
+                         :msg "`static` should write new files")
           (value-check :path "laphroiag/neat.html"
-                       :value-fn #(meta= %1 %2 :statique "affirmative")))
+                       :value-fn #(meta= %1 %2 :statique "affirmative")
+                       :msg "`static` should set metadata"))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
