@@ -314,7 +314,8 @@ This --- be ___markdown___.")
         (p/paginate :renderer 'io.perun-test/render-paginate)
         (testing "paginate"
           (content-check :path "public/page-1.html"
-                         :content "paginate 7"))
+                         :content "paginate 7"
+                         :msg "`paginate` should write new files"))
 
         (p/render :renderer 'io.perun-test/render)
         (testing "render"
@@ -507,17 +508,23 @@ This --- be ___markdown___.")
                     :meta {:paginated "mmhmm"})
         (testing "paginate"
           (content-check :path "baz/decomplect-1.html"
-                         :content "paginate 2")
+                         :content "paginate 2"
+                         :msg "`paginate` should write new files")
           (content-check :path "baz/decomplect-2.html"
-                         :content "paginate 2")
+                         :content "paginate 2"
+                         :msg "`paginate` should write new files")
           (content-check :path "baz/decomplect-3.html"
-                         :content "paginate 1")
+                         :content "paginate 1"
+                         :msg "`paginate` should write new files")
           (value-check :path "baz/decomplect-1.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm"))
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                       :msg "`paginate` should set metadata")
           (value-check :path "baz/decomplect-2.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm"))
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                       :msg "`paginate` should set metadata")
           (value-check :path "baz/decomplect-3.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm")))
+                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                       :msg "`paginate` should set metadata"))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
