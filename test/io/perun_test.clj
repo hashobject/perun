@@ -316,11 +316,14 @@ This --- be ___markdown___.")
         (p/tags :renderer 'io.perun-test/render-tags)
         (testing "tags"
           (content-check :path "public/tag1.html"
-                         :content "tags 3")
+                         :content "tags 3"
+                         :msg "`tags` should write new files")
           (content-check :path "public/tag2.html"
-                         :content "tags 3")
+                         :content "tags 3"
+                         :msg "`tags` should write new files")
           (content-check :path "public/tag3.html"
-                         :content "tags 3"))
+                         :content "tags 3"
+                         :msg "`tags` should write new files"))
 
         (p/render :renderer 'io.perun-test/render)
         (testing "render"
@@ -519,11 +522,14 @@ This --- be ___markdown___.")
                 :meta {:tagged "mmhmm"})
         (testing "tags"
           (content-check :path "baz/tag1.html"
-                         :content "tags 3")
+                         :content "tags 3"
+                         :msg "`tags` should write new files")
           (content-check :path "baz/tag2.html"
-                         :content "tags 3")
+                         :content "tags 3"
+                         :msg "`tags` should write new files")
           (content-check :path "baz/tag3.html"
-                         :content "tags 3")
+                         :content "tags 3"
+                         :msg "`tags` should write new files")
           (value-check :path "baz/tag1.html"
                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))
           (value-check :path "baz/tag2.html"
