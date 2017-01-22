@@ -17,9 +17,11 @@ set for the tasks using task options.
 - **:author-email**
 - **:base-url**
     - Must be in canonical form, that is end in `/`
-    - Required by: *canonical-url*
     - Required by: *atom-feed*
     - Required by: *rss*
+- **:doc-root**
+    - Defaults to "public"
+    - Permalinks will be determined relative to this directory
 - **:language**
 - **:description**
     - Used by: *atom-feed*
@@ -35,9 +37,6 @@ All posts have a path which is used as a key to identify the post.
 - **:content** The post content
     - Populated from file content
     - Only set in the `:entry` value of the map passed to `renderer` functions
-- **:has-content** Flag indicating that this file contains page content
-    - Set by input parsing tasks (like `markdown`) on output files
-    - Passed through by rendering tasks
 - **:original-path** The path for the input file from which this entry is descended
     - Set by input parsing tasks (like `markdown`) on output files
     - Passed through by rendering tasks
@@ -46,15 +45,14 @@ All posts have a path which is used as a key to identify the post.
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
-    - Set by: slug
+    - Set implicitly based on a file's path
     - Required by: *permalink* default fn
 - **:permalink** relative url for the post
-    - Set by: *permalink*
-    - Used by: *render* as first option for output file name
+    - Set implicitly based on a file's path
     - Required by: *atom-feed*
     - Required by: *canonical-url*
 - **:canonical-url** full url for the post
-    - Set by: *canonical-url*
+    - Set implicitly based on a file's path, if a `:base-url` is present in global metadata
     - Used by: *atom-feed*
     - Used by: *rss*
 - **:author**

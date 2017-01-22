@@ -42,7 +42,7 @@
         new-dimensions (iu/dimensions resized-buffered-image)
         new-meta (write-file options tgt-path file resized-buffered-image resolution)
         dimensions {:width (first new-dimensions) :height (second new-dimensions)}]
-    (merge file new-meta dimensions)))
+    (merge file new-meta dimensions (select-keys options [:out-dir]))))
 
 (defn process-image [tgt-path file options]
   (perun/report-debug "image-resize" "resizing" (:path file))
