@@ -316,15 +316,16 @@ This --- be ___markdown___.")
 
         (p/tags :renderer 'io.perun-test/render-tags)
         (testing "tags"
-          (content-check :path "public/tag1.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files")
-          (content-check :path "public/tag2.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files")
-          (content-check :path "public/tag3.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files"))
+          (comp
+           (content-check :path "public/tag1.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "public/tag2.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "public/tag3.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")))
 
         (p/render :renderer 'io.perun-test/render)
         (testing "render"
@@ -480,24 +481,25 @@ This --- be ___markdown___.")
                       :comparator #(compare %1 %2)
                       :meta {:assorted "yep"})
         (testing "assortment"
-          (content-check :path "foo/true-tag1.html"
-                         :content "assortment 1"
-                         :msg "assortment should modify file contents")
-          (content-check :path "foo/true-tag2.html"
-                         :content "assortment 1"
-                         :msg "assortment should modify file contents")
-          (content-check :path "foo/false-tag1.html"
-                         :content "assortment 2"
-                         :msg "assortment should modify file contents")
-          (value-check :path "foo/true-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")
-                       :msg "assortment should modify file metadata")
-          (value-check :path "foo/true-tag2.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")
-                       :msg "assortment should modify file metadata")
-          (value-check :path "foo/false-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")
-                       :msg "assortment should modify file metadata"))
+          (comp
+           (content-check :path "foo/true-tag1.html"
+                          :content "assortment 1"
+                          :msg "assortment should modify file contents")
+           (content-check :path "foo/true-tag2.html"
+                          :content "assortment 1"
+                          :msg "assortment should modify file contents")
+           (content-check :path "foo/false-tag1.html"
+                          :content "assortment 2"
+                          :msg "assortment should modify file contents")
+           (value-check :path "foo/true-tag1.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")
+           (value-check :path "foo/true-tag2.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")
+           (value-check :path "foo/false-tag1.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")))
 
         (p/collection :renderer 'io.perun-test/render-collection
                       :out-dir "bar"
@@ -508,12 +510,13 @@ This --- be ___markdown___.")
                       :page "its-a-collection.html"
                       :meta {:collected "uh huh"})
         (testing "collection"
-          (content-check :path "bar/its-a-collection.html"
-                         :content "collection 2"
-                         :msg "collection should modify file contents")
-          (value-check :path "bar/its-a-collection.html"
-                       :value-fn #(meta= %1 %2 :collected "uh huh")
-                       :msg "collection should modify file metadata"))
+          (comp
+           (content-check :path "bar/its-a-collection.html"
+                          :content "collection 2"
+                          :msg "collection should modify file contents")
+           (value-check :path "bar/its-a-collection.html"
+                        :value-fn #(meta= %1 %2 :collected "uh huh")
+                        :msg "collection should modify file metadata")))
 
         (p/tags :renderer 'io.perun-test/render-tags
                 :out-dir "baz"
@@ -523,21 +526,22 @@ This --- be ___markdown___.")
                 :comparator #(compare %1 %2)
                 :meta {:tagged "mmhmm"})
         (testing "tags"
-          (content-check :path "baz/tag1.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files")
-          (content-check :path "baz/tag2.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files")
-          (content-check :path "baz/tag3.html"
-                         :content "tags 3"
-                         :msg "`tags` should write new files")
-          (value-check :path "baz/tag1.html"
-                       :value-fn #(meta= %1 %2 :tagged "mmhmm"))
-          (value-check :path "baz/tag2.html"
-                       :value-fn #(meta= %1 %2 :tagged "mmhmm"))
-          (value-check :path "baz/tag3.html"
-                       :value-fn #(meta= %1 %2 :tagged "mmhmm")))
+          (comp
+           (content-check :path "baz/tag1.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "baz/tag2.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "baz/tag3.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (value-check :path "baz/tag1.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+           (value-check :path "baz/tag2.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+           (value-check :path "baz/tag3.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
