@@ -182,12 +182,13 @@ This --- be ___markdown___.")
         (p/markdown)
 
         (testing "markdown"
-          (value-check :path "2017-01-01-test.md"
-                       :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
-                       :msg "`markdown` should set `:parsed` metadata on markdown file")
-          (content-check :path "public/2017-01-01-test.html"
-                         :content parsed-md-basic
-                         :msg "`markdown` should populate HTML file with parsed content"))
+          (comp
+           (value-check :path "2017-01-01-test.md"
+                        :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
+                        :msg "`markdown` should set `:parsed` metadata on markdown file")
+           (content-check :path "public/2017-01-01-test.html"
+                          :content parsed-md-basic
+                          :msg "`markdown` should populate HTML file with parsed content")))
 
         (p/ttr)
         (testing "ttr"
@@ -288,12 +289,13 @@ This --- be ___markdown___.")
                     :meta {:markdown-set :metadata}
                     :options {:extensions {:smarts true}})
         (testing "markdown"
-          (value-check :path "test.md"
-                       :value-fn #(meta= %1 %2 :parsed parsed-md-smarts)
-                       :msg "`markdown` should set `:parsed` metadata on markdown file")
-          (content-check :path "hammock/test.html"
-                         :content parsed-md-smarts
-                         :msg "`markdown` should populate HTML file with parsed content"))
+          (comp
+           (value-check :path "test.md"
+                        :value-fn #(meta= %1 %2 :parsed parsed-md-smarts)
+                        :msg "`markdown` should set `:parsed` metadata on markdown file")
+           (content-check :path "hammock/test.html"
+                          :content parsed-md-smarts
+                          :msg "`markdown` should populate HTML file with parsed content")))
         (sift :move {#"hammock/test\.html" "hammock/test.htm"})
 
         (p/ttr :filterer :markdown-set
@@ -405,25 +407,27 @@ This --- be ___markdown___.")
                   :out-dir "bar"
                   :meta {:set-by-render true})
         (testing "render"
-          (content-check :path "bar/hammock/foo.htm"
-                         :content "<body>"
-                         :msg "`render` should modify a page")
-          (value-check :path "bar/hammock/foo.htm"
-                       :value-fn #(meta= %1 %2 :set-by-render true)
-                       :msg "`render` should set metadata"))
+          (comp
+           (content-check :path "bar/hammock/foo.htm"
+                          :content "<body>"
+                          :msg "`render` should modify a page")
+           (value-check :path "bar/hammock/foo.htm"
+                        :value-fn #(meta= %1 %2 :set-by-render true)
+                        :msg "`render` should set metadata")))
 
         (add-txt-file :path "test.js" :content js-content)
         (add-txt-file :path "baz.htm" :content "<body></body>")
         (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"} :extensions [".htm"])
         (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"} :extensions [".htm"])
         (testing "inject-scripts"
-          (content-check :path "hammock/foo.htm"
-                         :content (str "<script>" js-content "</script>")
-                         :msg "`inject-scripts` should alter the contents of a file")
-          (content-check :path "baz.htm"
-                         :content (str "<script>" js-content "</script>")
-                         :negate? true
-                         :msg "`inject-scripts` should not alter the contents of a removed file"))))
+          (comp
+           (content-check :path "hammock/foo.htm"
+                          :content (str "<script>" js-content "</script>")
+                          :msg "`inject-scripts` should alter the contents of a file")
+           (content-check :path "baz.htm"
+                          :content (str "<script>" js-content "</script>")
+                          :negate? true
+                          :msg "`inject-scripts` should not alter the contents of a removed file")))))
 
 (deftesttask content-tests []
   (comp (testing "Collection works without input files" ;; #77
@@ -463,9 +467,10 @@ This --- be ___markdown___.")
         (add-txt-file :path "test2.md" :content md-content)
         (p/markdown)
         (testing "detecting new files"
-          (content-check :path "public/test2.html"
-                         :content parsed-md-basic
-                         :msg "new files should be parsed, after initial render")
-          (value-check :path "test2.md"
-                       :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
-                       :msg "new files should have `:parsed` set on them, after initial render"))))
+          (comp
+           (content-check :path "public/test2.html"
+                          :content parsed-md-basic
+                          :msg "new files should be parsed, after initial render")
+           (value-check :path "test2.md"
+                        :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
+                        :msg "new files should have `:parsed` set on them, after initial render")))))
