@@ -144,12 +144,13 @@ This --- be ___markdown___.")
                                        :description "Test Desc"}))
         (p/markdown)
         (testing "markdown"
-          (value-test :path "2017-01-01-test.md"
-                      :value-fn #(meta= % :parsed parsed-md-basic)
-                      :msg "`markdown` should set `:parsed` metadata on markdown file")
-          (content-test :path "2017-01-01-test.html"
-                        :content parsed-md-basic
-                        :msg "`markdown` should populate HTML file with parsed content"))
+          (comp
+           (value-test :path "2017-01-01-test.md"
+                       :value-fn #(meta= % :parsed parsed-md-basic)
+                       :msg "`markdown` should set `:parsed` metadata on markdown file")
+           (content-test :path "2017-01-01-test.html"
+                         :content parsed-md-basic
+                         :msg "`markdown` should populate HTML file with parsed content")))
 
         (p/ttr)
         (testing "ttr"
@@ -232,12 +233,13 @@ This --- be ___markdown___.")
                                        :description "Test Desc"}))
         (p/markdown :meta {:markdown-set :metadata} :options {:extensions {:smarts true}})
         (testing "markdown"
-          (value-test :path "test.md"
-                      :value-fn #(meta= % :parsed parsed-md-smarts)
-                      :msg "`markdown` should set `:parsed` metadata on markdown file")
-          (content-test :path "test.html"
-                        :content parsed-md-smarts
-                        :msg "`markdown` should populate HTML file with parsed content"))
+          (comp
+           (value-test :path "test.md"
+                       :value-fn #(meta= % :parsed parsed-md-smarts)
+                       :msg "`markdown` should set `:parsed` metadata on markdown file")
+           (content-test :path "test.html"
+                         :content parsed-md-smarts
+                         :msg "`markdown` should populate HTML file with parsed content")))
 
         (p/ttr :filterer :markdown-set)
         (testing "ttr"
@@ -322,13 +324,14 @@ This --- be ___markdown___.")
         (p/inject-scripts :scripts #{"test.js"} :filter #{#"foo"})
         (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"})
         (testing "inject-scripts"
-          (content-test :path "bar/foo.html"
-                        :content (str "<script>" js-content "</script>")
-                        :msg "`inject-scripts` should alter the contents of a file")
-          (content-test :path "baz.html"
-                        :content (str "<script>" js-content "</script>")
-                        :negate? true
-                        :msg "`inject-scripts` should not alter the contents of a removed file"))))
+          (comp
+           (content-test :path "bar/foo.html"
+                         :content (str "<script>" js-content "</script>")
+                         :msg "`inject-scripts` should alter the contents of a file")
+           (content-test :path "baz.html"
+                         :content (str "<script>" js-content "</script>")
+                         :negate? true
+                         :msg "`inject-scripts` should not alter the contents of a removed file")))))
 
 (deftesttask content-tests []
   (comp (testing "Collection works without input files" ;; #77
@@ -360,5 +363,6 @@ This --- be ___markdown___.")
         (add-txt-file :path "test2.md" :content md-content)
         (p/markdown)
         (testing "detecting new files"
-          (content-test :path "test2.html" :content parsed-md-basic)
-          (value-test :path "test2.md" :value-fn #(meta= % :parsed parsed-md-basic)))))
+          (comp
+           (content-test :path "test2.html" :content parsed-md-basic)
+           (value-test :path "test2.md" :value-fn #(meta= % :parsed parsed-md-basic))))))
