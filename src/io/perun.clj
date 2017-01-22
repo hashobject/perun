@@ -268,7 +268,36 @@
       :pod pod})))
 
 (def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]])
+  '[[com.vladsch.flexmark/flexmark "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-abbreviation "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-anchorlink "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-aside "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-autolink "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-definition "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-emoji "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-escaped-character "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-footnotes "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-gfm-strikethrough "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-gfm-tables "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-gfm-tasklist "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-jekyll-front-matter "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-jekyll-tag "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-ins "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-xwiki-macros "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-spec-example "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-superscript "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-tables "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-toc "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-typographic "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-wikilink "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-yaml-front-matter "0.11.9"]
+    [com.vladsch.flexmark/flexmark-ext-zzzzzz "0.11.9"]
+    [com.vladsch.flexmark/flexmark-integration-test "0.11.9"]
+    [com.vladsch.flexmark/flexmark-jira-converter "0.11.9"]
+    [com.vladsch.flexmark/flexmark-youtrack-converter "0.11.9"]
+    [com.vladsch.flexmark/flexmark-test-util "0.11.9"]
+    [com.vladsch.flexmark/flexmark-util "0.11.9"]
+    [com.vladsch.flexmark/pegdown-profile "0.11.9"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"

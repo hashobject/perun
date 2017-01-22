@@ -152,9 +152,9 @@ author: Testy McTesterson
 
 This --- be ___markdown___.")
 
-(def parsed-md-basic "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>")
+(def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
-(def parsed-md-smarts "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
+(def parsed-md-smarts "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>\n")
 
 (def js-content "(function somejs() { console.log('foo'); })();")
 
@@ -279,6 +279,8 @@ This --- be ___markdown___.")
                     :meta {:markdown-set :metadata}
                     :options {:extensions {:smarts true}})
         (testing "markdown"
+          ;; smarts extension isn't supported by flexmark as of 2017-01-21
+          ;; it's coming, though
           (comp
            (value-check :path "test.md"
                         :value-fn #(meta= %1 %2 :parsed parsed-md-smarts)
