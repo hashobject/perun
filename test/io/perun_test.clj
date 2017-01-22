@@ -472,18 +472,19 @@ This --- be ___markdown___.")
                       :comparator #(compare %1 %2)
                       :meta {:assorted "yep"})
         (testing "assortment"
-          (content-check :path "foo/true-tag1.html"
-                         :content "assortment 1")
-          (content-check :path "foo/true-tag2.html"
-                         :content "assortment 1")
-          (content-check :path "foo/false-tag1.html"
-                         :content "assortment 2")
-          (value-check :path "foo/true-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
-          (value-check :path "foo/true-tag2.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep"))
-          (value-check :path "foo/false-tag1.html"
-                       :value-fn #(meta= %1 %2 :assorted "yep")))
+          (comp
+           (content-check :path "foo/true-tag1.html"
+                          :content "assortment 1")
+           (content-check :path "foo/true-tag2.html"
+                          :content "assortment 1")
+           (content-check :path "foo/false-tag1.html"
+                          :content "assortment 2")
+           (value-check :path "foo/true-tag1.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep"))
+           (value-check :path "foo/true-tag2.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep"))
+           (value-check :path "foo/false-tag1.html"
+                        :value-fn #(meta= %1 %2 :assorted "yep"))))
 
         (p/collection :renderer 'io.perun-test/render-collection
                       :out-dir "bar"
@@ -494,10 +495,11 @@ This --- be ___markdown___.")
                       :page "its-a-collection.html"
                       :meta {:collected "uh huh"})
         (testing "collection"
-          (content-check :path "bar/its-a-collection.html"
-                         :content "collection 2")
-          (value-check :path "bar/its-a-collection.html"
-                       :value-fn #(meta= %1 %2 :collected "uh huh")))
+          (comp
+           (content-check :path "bar/its-a-collection.html"
+                          :content "collection 2")
+           (value-check :path "bar/its-a-collection.html"
+                        :value-fn #(meta= %1 %2 :collected "uh huh"))))
 
         (p/paginate :renderer 'io.perun-test/render-paginate
                     :out-dir "baz"
@@ -509,24 +511,25 @@ This --- be ___markdown___.")
                     :comparator #(compare %1 %2)
                     :meta {:paginated "mmhmm"})
         (testing "paginate"
-          (content-check :path "baz/decomplect-1.html"
-                         :content "paginate 2"
-                         :msg "`paginate` should write new files")
-          (content-check :path "baz/decomplect-2.html"
-                         :content "paginate 2"
-                         :msg "`paginate` should write new files")
-          (content-check :path "baz/decomplect-3.html"
-                         :content "paginate 1"
-                         :msg "`paginate` should write new files")
-          (value-check :path "baz/decomplect-1.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
-                       :msg "`paginate` should set metadata")
-          (value-check :path "baz/decomplect-2.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
-                       :msg "`paginate` should set metadata")
-          (value-check :path "baz/decomplect-3.html"
-                       :value-fn #(meta= %1 %2 :paginated "mmhmm")
-                       :msg "`paginate` should set metadata"))
+          (comp
+           (content-check :path "baz/decomplect-1.html"
+                          :content "paginate 2"
+                          :msg "`paginate` should write new files")
+           (content-check :path "baz/decomplect-2.html"
+                          :content "paginate 2"
+                          :msg "`paginate` should write new files")
+           (content-check :path "baz/decomplect-3.html"
+                          :content "paginate 1"
+                          :msg "`paginate` should write new files")
+           (value-check :path "baz/decomplect-1.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")
+           (value-check :path "baz/decomplect-2.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")
+           (value-check :path "baz/decomplect-3.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set
