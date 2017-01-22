@@ -551,7 +551,7 @@ This --- be ___markdown___.")
         (p/inject-scripts :scripts #{"test.js"} :remove #{#"baz"} :extensions [".htm"])
         (testing "inject-scripts"
           (comp
-           (content-check :path "hammock/foo.htm"
+           (content-check :path "bar/hammock/foo.htm"
                           :content (str "<script>" js-content "</script>")
                           :msg "`inject-scripts` should alter the contents of a file")
            (content-check :path "baz.htm"
