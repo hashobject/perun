@@ -687,12 +687,7 @@
    The symbol supplied as `renderer` should resolve to a function
    which will be called with a map containing the following keys:
     - `:meta`, global perun metadata
-    - `:entry`, the entry to be rendered
-
-   Filename is determined as follows:
-   If permalink is set for the file, it is used as the filepath.
-   If permalink ends in slash, index.html is used as filename.
-   If permalink is not set, the original filename is used with file extension set to html."
+    - `:entry`, the entry to be rendered"
   [o out-dir  OUTDIR   str "the output directory"
    r renderer RENDERER sym "page renderer (fully qualified symbol resolving to a function)"
    p page     PAGE     str "static result page path"
