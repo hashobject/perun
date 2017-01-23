@@ -339,7 +339,7 @@
         (pm/set-meta fileset updated-metas)))))
 
 (def ^:private gravatar-deps
-  '[[gravatar "0.1.0"]])
+  '[[gravatar "1.1.1"]])
 
 (def ^:private +gravatar-defaults+
   {:filterer identity
