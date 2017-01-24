@@ -156,7 +156,7 @@ This --- be ___markdown___.")
 
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
 
-(def js-content "(function somejs() { console.log('foo'); })();")
+(def js-content "(function somejs() { console.log('$foo'); })();")
 
 (deftesttask global-metadata-test []
   (comp (add-txt-file :path "perun.base.edn" :content "{:global \"metadata!\"}")
