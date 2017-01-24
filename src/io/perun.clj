@@ -848,7 +848,8 @@
                        (sort-by sortby comparator)
                        (partition-all page-size)
                        (map-indexed #(-> [(str prefix (inc %1) ".html")
-                                          {:entries %2}]))
+                                          {:entry {:page (inc %1)}
+                                           :entries %2}]))
                        (into {})))]
     (assortment-pre-wrap {:task-name "paginate"
                           :tracer :io.perun/paginate
