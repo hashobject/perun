@@ -296,21 +296,23 @@ This --- be ___markdown___.")
           (file-exists? :path "public/atom.xml"
                         :msg "`atom-feed` should write atom.xml"))
 
-        (add-txt-file :path "test2.md" :content (nth yamls 3))
-        (add-txt-file :path "test3.md" :content (nth yamls 4))
-        (add-txt-file :path "test4.md" :content (nth yamls 5))
-        (add-txt-file :path "test5.md" :content (nth yamls 6))
+        (add-txt-file :path "test2.md" :content (nth input-strings 3))
+        (add-txt-file :path "test3.md" :content (nth input-strings 4))
+        (add-txt-file :path "test4.md" :content (nth input-strings 5))
+        (add-txt-file :path "test5.md" :content (nth input-strings 6))
         (p/markdown)
 
         (p/assortment :renderer 'io.perun-test/render-assortment)
         (testing "assortment"
           (content-check :path "public/index.html"
-                         :content "assortment 6"))
+                         :content "assortment 6"
+                         :msg "assortment should modify file contents"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
         (testing "collection"
           (content-check :path "public/index.html"
-                         :content "collection 7"))
+                         :content "collection 7"
+                         :msg "collection should modify file contents"))
 
         (p/paginate :renderer 'io.perun-test/render-paginate)
         (testing "paginate"
@@ -474,17 +476,23 @@ This --- be ___markdown___.")
         (testing "assortment"
           (comp
            (content-check :path "foo/true-tag1.html"
-                          :content "assortment 1")
+                          :content "assortment 1"
+                          :msg "assortment should modify file contents")
            (content-check :path "foo/true-tag2.html"
-                          :content "assortment 1")
+                          :content "assortment 1"
+                          :msg "assortment should modify file contents")
            (content-check :path "foo/false-tag1.html"
-                          :content "assortment 2")
+                          :content "assortment 2"
+                          :msg "assortment should modify file contents")
            (value-check :path "foo/true-tag1.html"
-                        :value-fn #(meta= %1 %2 :assorted "yep"))
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")
            (value-check :path "foo/true-tag2.html"
-                        :value-fn #(meta= %1 %2 :assorted "yep"))
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")
            (value-check :path "foo/false-tag1.html"
-                        :value-fn #(meta= %1 %2 :assorted "yep"))))
+                        :value-fn #(meta= %1 %2 :assorted "yep")
+                        :msg "assortment should modify file metadata")))
 
         (p/collection :renderer 'io.perun-test/render-collection
                       :out-dir "bar"
@@ -497,9 +505,11 @@ This --- be ___markdown___.")
         (testing "collection"
           (comp
            (content-check :path "bar/its-a-collection.html"
-                          :content "collection 2")
+                          :content "collection 2"
+                          :msg "collection should modify file contents")
            (value-check :path "bar/its-a-collection.html"
-                        :value-fn #(meta= %1 %2 :collected "uh huh"))))
+                        :value-fn #(meta= %1 %2 :collected "uh huh")
+                        :msg "collection should modify file metadata")))
 
         (p/paginate :renderer 'io.perun-test/render-paginate
                     :out-dir "baz"
