@@ -846,7 +846,7 @@
                                  (let [path (str tag ".html")]
                                    (-> result
                                        (update-in [path :entries] conj entry)
-                                       (assoc-in [path :group-meta :tag] tag))))
+                                       (assoc-in [path :entry :tag] tag))))
                                {})))]
     (assortment-pre-wrap {:task-name "tags"
                           :tracer :io.perun/tags
