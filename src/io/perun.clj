@@ -718,6 +718,33 @@
                         :options options
                         :tracer :io.perun/render}))))
 
+(def ^:private +static-defaults+
+  {:out-dir "public"
+   :page "index.html"
+   :meta {}})
+
+(deftask static
+  "Render an individual page solely from a render function
+
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the entry to be rendered"
+  [o out-dir  OUTDIR   str "the output directory"
+   r renderer RENDERER sym "page renderer (fully qualified symbol resolving to a function)"
+   p page     PAGE     str "static result page path"
+   m meta     META     edn "metadata to set on the static entry"]
+  (let [options (merge +static-defaults+ *opts*)
+        path (perun/create-filepath (:out-dir options) (:page options))
+        static-path (fn [fileset options]
+                      {path {:render-data {:meta (pm/get-global-meta fileset)
+                                           :entry (:meta options)}
+                             :entry (assoc (:meta options) :path path)}})]
+    (render-pre-wrap {:task-name "static"
+                      :render-paths-fn static-path
+                      :options options
+                      :tracer :io.perun/static})))
+
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
