@@ -243,9 +243,32 @@
         (reset! prev {:fs fileset :meta input-meta})
         new-fs))))
 
+(def ^:private yaml-metadata-deps
+  '[[circleci/clj-yaml "0.5.5"]])
+
+(def ^:private +yaml-metadata-defaults+
+  {:extensions []})
+
+(deftask yaml-metadata
+  "Parse YAML metadata at the beginning of files
+
+  This task is primarily intended for composing with other tasks.
+  It will extract and parse any YAML data from the beginning of
+  a file, and then overwrite that file with the YAML removed, and
+  with the parsed data added as perun metadata."
+  [e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+  (let [pod     (create-pod yaml-metadata-deps)
+        {:keys [extensions] :as options} (merge +yaml-metadata-defaults+ *opts*)]
+    (content-pre-wrap
+     {:parse-form-fn (fn [metas] `(io.perun.yaml/parse-yaml ~metas))
+      :extensions extensions
+      :output-extension nil ;; keeps the same extension as the input file
+      :tracer :io.perun/yaml-metadata
+      :options options
+      :pod pod})))
+
 (def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.5"]])
+  '[[org.pegdown/pegdown "1.6.0"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"
@@ -253,25 +276,44 @@
           :include-rss true
           :include-atom true}})
 
-(deftask markdown
+(deftask markdown*
   "Parse markdown files
 
-   This task will look for files ending with `md` or `markdown`
-   and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content. Also
-   writes an HTML file that contains the same content as `:parsed`"
+  This task will look for files ending with `md` or `markdown`
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will _not_ parse
+  YAML metadata at the head of the file. Also adds a `:parsed`
+  key to the markdown file's metadata, allowing us not to
+  re-parse the same content later."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     {:parse-form-fn (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
+     {:parse-form-fn (fn [metas] `(io.perun.markdown/parse-markdown ~metas ~options))
       :extensions [".md" ".markdown"]
       :output-extension ".html"
       :tracer :io.perun/markdown
       :options options
       :pod pod})))
+
+(deftask markdown
+  "Parse markdown files
+
+  This task will look for files ending with `md` or `markdown`
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will parse YAML
+  metadata at the head of the file, and add any data found to
+  the output's metadata. Also adds a `:parsed` key to the
+  markdown file's metadata, allowing us not to re-parse the
+  same content later."
+  [d out-dir  OUTDIR  str "the output directory"
+   m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options  OPTS    edn "options to be passed to the markdown parser"]
+  (let [{:keys [out-dir meta options]} (merge +markdown-defaults+ *opts*)]
+    (comp (yaml-metadata :extensions [".md" ".markdown"])
+          (markdown* :out-dir out-dir :meta meta :options options))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.

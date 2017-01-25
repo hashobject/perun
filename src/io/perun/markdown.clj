@@ -1,6 +1,5 @@
 (ns io.perun.markdown
   (:require [io.perun.core   :as perun]
-            [io.perun.yaml   :as yaml]
             [clojure.java.io :as io])
   (:import [org.pegdown PegDownProcessor Extensions]))
 
@@ -46,16 +45,14 @@
 (defn markdown-to-html [file-content options]
   (let [processor (PegDownProcessor. (extensions-map->int (:extensions options)))]
     (->> file-content
-         yaml/remove-metadata
          char-array
          (.markdownToHtml processor))))
 
 (defn process-file [file options]
   (perun/report-debug "markdown" "processing markdown" (:filename file))
   (let [file-content (-> file :full-path io/file slurp)
-        md-metadata (merge (:meta options) (yaml/parse-file-metadata file-content))
         html (markdown-to-html file-content (:options options))]
-    (merge md-metadata {:parsed html} file)))
+    (merge (:meta options) {:parsed html} file)))
 
 (defn parse-markdown [markdown-files options]
   (let [updated-files (doall (map #(process-file % options) markdown-files))]
