@@ -41,6 +41,7 @@
                                                     (update-in [path :entries] conj entry)
                                                     (assoc-in [path :entry :keyword] kw))))
                                             {}))))
+        (static :renderer 'io.perun.example.about/render :page "about.html")
         (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :description "Hashobject blog")
