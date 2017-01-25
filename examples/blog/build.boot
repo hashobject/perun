@@ -31,6 +31,7 @@
         (sitemap)
         (rss :description "Hashobject blog")
         (atom-feed :filterer :original)
+        (debug)
         (notify)))
 
 (deftask dev
