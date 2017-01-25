@@ -51,3 +51,12 @@
     (pom)
     (jar)
     (install)))
+
+
+(deftask build
+  "Build process"
+  []
+  (comp
+    (pom)
+    (jar)
+    (install)))
