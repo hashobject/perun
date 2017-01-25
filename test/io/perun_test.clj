@@ -188,7 +188,7 @@ This --- be ___markdown___.")
 
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" name=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>")
 
-(def js-content "(function somejs() { console.log('foo'); })();")
+(def js-content "(function somejs() { console.log('$foo'); })();")
 
 (deftesttask global-metadata-test []
   (comp (add-txt-file :path "perun.base.edn" :content "{:global \"metadata!\"}")
@@ -216,6 +216,15 @@ This --- be ___markdown___.")
   (let [{:keys [entry entries]} data]
     (str "<h1>tags " (count entries) "</h1>")))
 
+(defn render-paginate
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>paginate " (count entries) "</h1>")))
+
+(defn render-static
+  [data]
+  "<h1>static</h1>")
+
 (deftesttask default-tests []
   (comp (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (boot/with-pre-wrap fileset
@@ -242,7 +251,7 @@ This --- be ___markdown___.")
         (p/word-count)
         (testing "word-count"
           (value-check :path "public/2017-01-01-test.html"
-                       :value-fn #(meta= %1 %2 :word-count 22)
+                       :value-fn #(meta= %1 %2 :word-count 8)
                        :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email :target-key :gravatar)
@@ -327,6 +336,18 @@ This --- be ___markdown___.")
                           :content "tags 3"
                           :msg "`tags` should write new files")))
 
+        (p/paginate :renderer 'io.perun-test/render-paginate)
+        (testing "paginate"
+          (content-check :path "public/page-1.html"
+                         :content "paginate 10"
+                         :msg "`paginate` should write new files"))
+
+        (p/static :renderer 'io.perun-test/render-static)
+        (testing "static"
+          (content-check :path "public/index.html"
+                         :content "<h1>static</h1>"
+                         :msg "`static` should write new files"))
+
         (p/render :renderer 'io.perun-test/render)
         (testing "render"
           (content-check :path "public/test/index.html"
@@ -377,7 +398,7 @@ This --- be ___markdown___.")
                       :extensions [".htm"])
         (testing "word-count"
           (value-check :path "hammock/test.htm"
-                       :value-fn #(meta= %1 %2 :word-count 22)
+                       :value-fn #(meta= %1 %2 :word-count 8)
                        :msg "`word-count` should set `:word-count` metadata"))
 
         (p/gravatar :source-key :email
@@ -542,6 +563,49 @@ This --- be ___markdown___.")
                         :value-fn #(meta= %1 %2 :tagged "mmhmm"))
            (value-check :path "baz/tag3.html"
                         :value-fn #(meta= %1 %2 :tagged "mmhmm"))))
+
+        (p/paginate :renderer 'io.perun-test/render-paginate
+                    :out-dir "baz"
+                    :prefix "decomplect-"
+                    :page-size 2
+                    :filterer :assorting
+                    :extensions [".htm"]
+                    :sortby :order
+                    :comparator #(compare %1 %2)
+                    :meta {:paginated "mmhmm"})
+        (testing "paginate"
+          (comp
+           (content-check :path "baz/decomplect-1.html"
+                          :content "paginate 2"
+                          :msg "`paginate` should write new files")
+           (content-check :path "baz/decomplect-2.html"
+                          :content "paginate 2"
+                          :msg "`paginate` should write new files")
+           (content-check :path "baz/decomplect-3.html"
+                          :content "paginate 1"
+                          :msg "`paginate` should write new files")
+           (value-check :path "baz/decomplect-1.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")
+           (value-check :path "baz/decomplect-2.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")
+           (value-check :path "baz/decomplect-3.html"
+                        :value-fn #(meta= %1 %2 :paginated "mmhmm")
+                        :msg "`paginate` should set metadata")))
+
+        (p/static :renderer 'io.perun-test/render-static
+                  :out-dir "laphroiag"
+                  :page "neat.html"
+                  :meta {:statique "affirmative"})
+        (testing "static"
+          (comp
+           (content-check :path "laphroiag/neat.html"
+                          :content "<h1>static</h1>"
+                          :msg "`static` should write new files")
+           (value-check :path "laphroiag/neat.html"
+                        :value-fn #(meta= %1 %2 :statique "affirmative")
+                        :msg "`static` should set metadata")))
 
         (p/render :renderer 'io.perun-test/render
                   :filterer :markdown-set

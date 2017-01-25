@@ -1,7 +1,9 @@
 (ns io.perun.yaml
-  (:require [clojure.string  :as str]
-            [clj-yaml.core   :as yaml]
-            [clojure.walk    :as walk])
+  (:require [clj-yaml.core   :as yaml]
+            [clojure.java.io :as io]
+            [clojure.string  :as str]
+            [clojure.walk    :as walk]
+            [io.perun.core   :as perun])
   (:import [flatland.ordered.map OrderedMap]
            [flatland.ordered.set OrderedSet]))
 
@@ -34,12 +36,20 @@
         :else y))
     x))
 
-(defn parse-file-metadata [file-content]
-  (when-let [metadata-str (substr-between file-content *yaml-head* *yaml-head*)]
-    (normal-colls (yaml/parse-string metadata-str))))
-
 (defn remove-metadata [content]
   (let [splitted (str/split content *yaml-head* 3)]
     (if (> (count splitted) 2)
       (first (drop 2 splitted))
       content)))
+
+(defn parse-file-metadata [meta]
+  (let [content (-> meta :full-path io/file slurp)
+        parsed-metadata (if-let [metadata-str (substr-between content *yaml-head* *yaml-head*)]
+                          (normal-colls (yaml/parse-string metadata-str))
+                          {})]
+    (merge meta parsed-metadata {:parsed (remove-metadata content)})))
+
+(defn parse-yaml [metas]
+  (let [updated-metas (doall (map parse-file-metadata metas))]
+    (perun/report-info "yaml-metadata" "parsed %s files" (count metas))
+    updated-metas))

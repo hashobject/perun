@@ -28,6 +28,7 @@
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html")
         (tags :renderer 'io.perun.example.tags/render)
+        (paginate :renderer 'io.perun.example.paginate/render)
         (assortment :renderer 'io.perun.example.assortment/render
                     :grouper (fn [entries]
                                (->> entries
@@ -41,6 +42,7 @@
                                                     (update-in [path :entries] conj entry)
                                                     (assoc-in [path :entry :keyword] kw))))
                                             {}))))
+        (static :renderer 'io.perun.example.about/render :page "about.html")
         (inject-scripts :scripts #{"start.js"})
         (sitemap)
         (rss :description "Hashobject blog")

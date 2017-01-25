@@ -243,9 +243,32 @@
         (reset! prev {:fs fileset :meta input-meta})
         new-fs))))
 
+(def ^:private yaml-metadata-deps
+  '[[circleci/clj-yaml "0.5.5"]])
+
+(def ^:private +yaml-metadata-defaults+
+  {:extensions []})
+
+(deftask yaml-metadata
+  "Parse YAML metadata at the beginning of files
+
+  This task is primarily intended for composing with other tasks.
+  It will extract and parse any YAML data from the beginning of
+  a file, and then overwrite that file with the YAML removed, and
+  with the parsed data added as perun metadata."
+  [e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+  (let [pod     (create-pod yaml-metadata-deps)
+        {:keys [extensions] :as options} (merge +yaml-metadata-defaults+ *opts*)]
+    (content-pre-wrap
+     {:parse-form-fn (fn [metas] `(io.perun.yaml/parse-yaml ~metas))
+      :extensions extensions
+      :output-extension nil ;; keeps the same extension as the input file
+      :tracer :io.perun/yaml-metadata
+      :options options
+      :pod pod})))
+
 (def ^:private markdown-deps
-  '[[org.pegdown/pegdown "1.6.0"]
-    [circleci/clj-yaml "0.5.5"]])
+  '[[org.pegdown/pegdown "1.6.0"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"
@@ -253,25 +276,44 @@
           :include-rss true
           :include-atom true}})
 
-(deftask markdown
+(deftask markdown*
   "Parse markdown files
 
-   This task will look for files ending with `md` or `markdown`
-   and add a `:parsed` key to their metadata containing the
-   HTML resulting from processing markdown file's content. Also
-   writes an HTML file that contains the same content as `:parsed`"
+  This task will look for files ending with `md` or `markdown`
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will _not_ parse
+  YAML metadata at the head of the file. Also adds a `:parsed`
+  key to the markdown file's metadata, allowing us not to
+  re-parse the same content later."
   [d out-dir  OUTDIR  str "the output directory"
    m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
    o options  OPTS    edn "options to be passed to the markdown parser"]
   (let [pod     (create-pod markdown-deps)
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     {:parse-form-fn (fn [meta] `(io.perun.markdown/parse-markdown ~meta ~options))
+     {:parse-form-fn (fn [metas] `(io.perun.markdown/parse-markdown ~metas ~options))
       :extensions [".md" ".markdown"]
       :output-extension ".html"
       :tracer :io.perun/markdown
       :options options
       :pod pod})))
+
+(deftask markdown
+  "Parse markdown files
+
+  This task will look for files ending with `md` or `markdown`
+  and writes an HTML file that contains the result from
+  processing the markdown file's content. It will parse YAML
+  metadata at the head of the file, and add any data found to
+  the output's metadata. Also adds a `:parsed` key to the
+  markdown file's metadata, allowing us not to re-parse the
+  same content later."
+  [d out-dir  OUTDIR  str "the output directory"
+   m meta     META    edn "metadata to set on each entry; keys here will be overridden by metadata in each file"
+   o options  OPTS    edn "options to be passed to the markdown parser"]
+  (let [{:keys [out-dir meta options]} (merge +markdown-defaults+ *opts*)]
+    (comp (yaml-metadata :extensions [".md" ".markdown"])
+          (markdown* :out-dir out-dir :meta meta :options options))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
@@ -676,6 +718,33 @@
                         :options options
                         :tracer :io.perun/render}))))
 
+(def ^:private +static-defaults+
+  {:out-dir "public"
+   :page "index.html"
+   :meta {}})
+
+(deftask static
+  "Render an individual page solely from a render function
+
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the entry to be rendered"
+  [o out-dir  OUTDIR   str "the output directory"
+   r renderer RENDERER sym "page renderer (fully qualified symbol resolving to a function)"
+   p page     PAGE     str "static result page path"
+   m meta     META     edn "metadata to set on the static entry"]
+  (let [options (merge +static-defaults+ *opts*)
+        path (perun/create-filepath (:out-dir options) (:page options))
+        static-path (fn [fileset options]
+                      {path {:render-data {:meta (pm/get-global-meta fileset)
+                                           :entry (:meta options)}
+                             :entry (assoc (:meta options) :path path)}})]
+    (render-pre-wrap {:task-name "static"
+                      :render-paths-fn static-path
+                      :options options
+                      :tracer :io.perun/static})))
+
 (defn- grouped-paths
   "Produces path maps of the shape required by `render-to-paths`, based
   on the provided `fileset` and `options`."
@@ -809,9 +878,6 @@
                           :grouper #(-> {p {:entries %}})
                           :options (merge +collection-defaults+ (dissoc *opts* :page))})))
 
-(def +inject-scripts-defaults+
-  {:extensions [".html"]})
-
 (def ^:private +tags-defaults+
   {:out-dir "public"
    :filterer identity
@@ -852,6 +918,53 @@
                           :tracer :io.perun/tags
                           :grouper grouper
                           :options (merge +tags-defaults+ *opts*)})))
+
+(def ^:private +paginate-defaults+
+  {:out-dir "public"
+   :prefix "page-"
+   :page-size 10
+   :filterer identity
+   :extensions [".html"]
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask paginate
+  "Render multiple collections
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str   "the output directory"
+   f prefix     PREFIX     str   "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
+   p page-size  PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
+  (let [{:keys [sortby comparator page-size prefix] :as options} (merge +paginate-defaults+ *opts*)
+        grouper (fn [entries]
+                  (->> entries
+                       (sort-by sortby comparator)
+                       (partition-all page-size)
+                       (map-indexed #(-> [(str prefix (inc %1) ".html")
+                                          {:entry {:page (inc %1)}
+                                           :entries %2}]))
+                       (into {})))]
+    (assortment-pre-wrap {:task-name "paginate"
+                          :tracer :io.perun/paginate
+                          :grouper grouper
+                          :options options})))
+
+(def +inject-scripts-defaults+
+  {:extensions [".html"]})
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
