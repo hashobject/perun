@@ -6,7 +6,7 @@
 (defn inject [html scripts]
   (->> scripts
        ;; replace regex special characters
-       (map #(str/replace % #"([\\\.\[\]\{\}\(\)\*\+\-\?\^\$\|])" "\\\\$1"))
+       (map #(str/replace % #"([\\\$])" "\\\\$1"))
        (reduce
         #(.replaceFirst %1 "</body>" (format "<script>%s</script></body>" %2))
         html)))
