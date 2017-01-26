@@ -14,4 +14,5 @@
       [:a {:href "/about.html"} "About Page"]
          [:ul.items.columns.small-12
           (for [post posts]
-            [:li (:title post)])]]))
+            [:li
+              [:a {:href (:permalink post)}(:title post)]])]]))

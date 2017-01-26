@@ -21,7 +21,6 @@
         (slug)
         (ttr)
         (word-count)
-        (permalink)
         (build-date)
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
