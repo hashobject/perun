@@ -21,7 +21,6 @@
         (slug)
         (ttr)
         (word-count)
-        (permalink)
         (build-date)
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
@@ -31,6 +30,8 @@
         (sitemap)
         (rss :description "Hashobject blog")
         (atom-feed :filterer :original)
+        (print-meta)
+        (target)
         (notify)))
 
 (deftask dev
