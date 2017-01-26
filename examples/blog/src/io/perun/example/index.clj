@@ -12,7 +12,9 @@
       [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0, user-scalable=no"}]]
     [:body
       [:a {:href "/about.html"} "About Page"]
-         [:ul.items.columns.small-12
+      [:a {:href "/feed.rss"} "RSS"]
+      [:a {:href "/atom.xml"} "Atom Feed"]
+      [:ul.items.columns.small-12
           (for [post posts]
             [:li
               [:a {:href (:permalink post)}(:title post)]])]]))
