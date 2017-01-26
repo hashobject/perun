@@ -31,6 +31,7 @@
         (rss :description "Hashobject blog")
         (atom-feed :filterer :original)
         (print-meta)
+        (target)
         (notify)))
 
 (deftask dev
