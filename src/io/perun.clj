@@ -753,7 +753,7 @@
         paths (grouper (filter-meta-by-ext fileset options))]
     (if (seq paths)
       (reduce
-       (fn [result [path {:keys [entries group-meta]}]]
+       (fn [result [path {:keys [entry entries]}]]
          (let [sorted      (->> entries
                                 (sort-by sortby comparator)
                                 (map #(assoc % :content (->> (:path %)
@@ -761,8 +761,7 @@
                                                              boot/tmp-file
                                                              slurp))))
                new-path    (perun/create-filepath out-dir path)
-               new-entry   (assoc group-meta :out-dir out-dir)]
-           (perun/report-info task-name (str "rendered " task-name " " path))
+               new-entry   (assoc entry :out-dir out-dir)]
            (assoc result new-path {:meta    global-meta
                                    :entry   new-entry
                                    :entries (vec sorted)})))
@@ -772,11 +771,84 @@
         (perun/report-info task-name (str task-name " found nothing to render"))
         []))))
 
-(def ^:private +collection-defaults+
+(defn assortment-pre-wrap
+  "Handles common assortment task orchestration
+
+  `task-name` is used for log messages. `tracer` is a keyword that gets added
+  to the `:io.perun/trace` metadata. `grouper` is a function that takes a seq
+  of entries and returns a map of paths to render data (see docstring for
+  `assortment` for more info)
+
+  Returns a boot `with-pre-wrap` result"
+  [{:keys [task-name tracer grouper options]}]
+  (cond (not (fn? (:comparator options)))
+        (u/fail (str task-name " task :comparator option should implement Fn\n"))
+        (not (ifn? (:filterer options)))
+        (u/fail (str task-name " task :filterer option value should implement IFn\n"))
+        (not (ifn? (:sortby options)))
+        (u/fail (str task-name " task :sortby option value should implement IFn\n"))
+        (not (ifn? grouper))
+        (u/fail (str task-name " task :grouper option value should implement IFn\n"))
+        :else
+        (let [;; Make sure task-level metadata gets added to each entry
+              meta-grouper (fn [entries]
+                             (->> entries
+                                  grouper
+                                  (map (fn [[path data]]
+                                         [path (update-in data [:entry] #(merge (:meta options) %))]))
+                                  (into {})))
+              options (assoc options :grouper meta-grouper)]
+          (render-pre-wrap {:task-name task-name
+                            :render-paths-fn (partial grouped-paths task-name)
+                            :options options
+                            :tracer tracer}))))
+
+(def ^:private +assortment-defaults+
   {:out-dir "public"
    :filterer identity
    :extensions [".html"]
    :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))
+   :grouper #(-> {"index.html" {:entries %}})})
+
+(deftask assortment
+  "Render multiple collections
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   The `grouper` function will be called with a seq containing the
+   entries to be grouped, and it should return a map with keys that
+   are filenames and values that are maps with the keys:
+    - `:entries`: the entries for each collection
+    - `:entry`: (optional) page metadata for this collection
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str   "the output directory"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   g grouper    GROUPER    code  "group posts function, keys are filenames, values are to-be-rendered entries"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
+  (let [grouper (or grouper #(-> {"index.html" {:entries %}}))
+        options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
+    (assortment-pre-wrap {:task-name "assortment"
+                          :tracer :io.perun/assortment
+                          :grouper grouper
+                          :options options})))
+
+(def ^:private +collection-defaults+
+  {:out-dir "public"
+   :filterer identity
+   :extensions [".html"]
+   :sortby :date-published
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask collection
@@ -790,50 +862,68 @@
    Entries can optionally be filtered by supplying a function
    to the `filterer` option.
 
-   The `sortby` and `groupby` functions can be used for ordering entries
+   The `sortby` function can be used for ordering entries
    before rendering as well as rendering groups of entries to different pages."
   [o out-dir    OUTDIR     str   "the output directory"
    r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"
    s sortby     SORTBY     code  "sort entries by function"
-   g groupby    GROUPBY    code  "group posts by function, keys are filenames, values are to-be-rendered entries"
    c comparator COMPARATOR code  "sort by comparator function"
    p page       PAGE       str   "collection result page path"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [options (merge +collection-defaults+
-                       (dissoc *opts* :page)
-                       (if page
-                         {:grouper #(-> {page {:entries %
-                                               :group-meta meta}})}
-                         (if groupby
-                           {:grouper #(->> %
-                                           (group-by groupby)
-                                           (map (fn [[page entries]]
-                                                  [page {:entries entries
-                                                         :group-meta meta}]))
-                                           (into {}))}
-                           {:grouper #(-> {"index.html" {:entries %
-                                                         :group-meta meta}})})))]
-    (cond (not (fn? (:comparator options)))
-          (u/fail "collection task :comparator option should implement Fn\n")
-          (not (ifn? (:filterer options)))
-          (u/fail "collection task :filterer option value should implement IFn\n")
-          (and (:page options) groupby)
-          (u/fail "using the :page option will render any :groupby option setting effectless\n")
-          (and (:groupby options) (not (ifn? (:groupby options))))
-          (u/fail "collection task :groupby option value should implement IFn\n")
-          (not (ifn? (:sortby options)))
-          (u/fail "collection task :sortby option value should implement IFn\n")
-          :else
-          (let [collection-paths (partial grouped-paths "collection")]
-            (render-pre-wrap {:task-name"collection"
-                              :render-paths-fn collection-paths
-                              :options options
-                              :tracer :io.perun/collection})))))
+  (let [p (or page "index.html")]
+    (assortment-pre-wrap {:task-name "collection"
+                          :tracer :io.perun/collection
+                          :grouper #(-> {p {:entries %}})
+                          :options (merge +collection-defaults+ (dissoc *opts* :page))})))
 
 (def +inject-scripts-defaults+
   {:extensions [".html"]})
+
+(def ^:private +paginate-defaults+
+  {:out-dir "public"
+   :prefix "page-"
+   :page-size 10
+   :filterer identity
+   :extensions [".html"]
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask paginate
+  "Render multiple collections
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str   "the output directory"
+   f prefix     PREFIX     str   "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
+   p page-size  PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
+  (let [{:keys [sortby comparator page-size prefix] :as options} (merge +paginate-defaults+ *opts*)
+        grouper (fn [entries]
+                  (->> entries
+                       (sort-by sortby comparator)
+                       (partition-all page-size)
+                       (map-indexed #(-> [(str prefix (inc %1) ".html")
+                                          {:entry {:page (inc %1)}
+                                           :entries %2}]))
+                       (into {})))]
+    (assortment-pre-wrap {:task-name "paginate"
+                          :tracer :io.perun/paginate
+                          :grouper grouper
+                          :options options})))
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
