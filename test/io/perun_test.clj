@@ -211,6 +211,11 @@ This --- be ___markdown___.")
   (let [{:keys [entry entries]} data]
     (str "<h1>collection " (count entries) "</h1>")))
 
+(defn render-tags
+  [data]
+  (let [{:keys [entry entries]} data]
+    (str "<h1>tags " (count entries) "</h1>")))
+
 (defn render-paginate
   [data]
   (let [{:keys [entry entries]} data]
@@ -318,10 +323,23 @@ This --- be ___markdown___.")
                          :content "collection 7"
                          :msg "collection should modify file contents"))
 
+        (p/tags :renderer 'io.perun-test/render-tags)
+        (testing "tags"
+          (comp
+           (content-check :path "public/tag1.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "public/tag2.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "public/tag3.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")))
+
         (p/paginate :renderer 'io.perun-test/render-paginate)
         (testing "paginate"
           (content-check :path "public/page-1.html"
-                         :content "paginate 7"
+                         :content "paginate 10"
                          :msg "`paginate` should write new files"))
 
         (p/static :renderer 'io.perun-test/render-static)
@@ -520,6 +538,31 @@ This --- be ___markdown___.")
            (value-check :path "bar/its-a-collection.html"
                         :value-fn #(meta= %1 %2 :collected "uh huh")
                         :msg "collection should modify file metadata")))
+
+        (p/tags :renderer 'io.perun-test/render-tags
+                :out-dir "baz"
+                :filterer :assorting
+                :extensions [".htm"]
+                :sortby :order
+                :comparator #(compare %1 %2)
+                :meta {:tagged "mmhmm"})
+        (testing "tags"
+          (comp
+           (content-check :path "baz/tag1.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "baz/tag2.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (content-check :path "baz/tag3.html"
+                          :content "tags 3"
+                          :msg "`tags` should write new files")
+           (value-check :path "baz/tag1.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+           (value-check :path "baz/tag2.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))
+           (value-check :path "baz/tag3.html"
+                        :value-fn #(meta= %1 %2 :tagged "mmhmm"))))
 
         (p/paginate :renderer 'io.perun-test/render-paginate
                     :out-dir "baz"

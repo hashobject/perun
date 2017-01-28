@@ -26,6 +26,7 @@
         (gravatar :source-key :author-email :target-key :author-gravatar)
         (render :renderer 'io.perun.example.post/render)
         (collection :renderer 'io.perun.example.index/render :page "index.html")
+        (tags :renderer 'io.perun.example.tags/render)
         (paginate :renderer 'io.perun.example.paginate/render)
         (assortment :renderer 'io.perun.example.assortment/render
                     :grouper (fn [entries]

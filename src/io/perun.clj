@@ -878,8 +878,46 @@
                           :grouper #(-> {p {:entries %}})
                           :options (merge +collection-defaults+ (dissoc *opts* :page))})))
 
-(def +inject-scripts-defaults+
-  {:extensions [".html"]})
+(def ^:private +tags-defaults+
+  {:out-dir "public"
+   :filterer identity
+   :extensions [".html"]
+   :sortby (fn [file] (:date-published file))
+   :comparator (fn [i1 i2] (compare i2 i1))})
+
+(deftask tags
+  "Render multiple collections based on the `:tags` metadata key
+   The symbol supplied as `renderer` should resolve to a function
+   which will be called with a map containing the following keys:
+    - `:meta`, global perun metadata
+    - `:entry`, the metadata for this collection
+    - `:entries`, all entries
+
+   Entries can optionally be filtered by supplying a function
+   to the `filterer` option.
+
+   The `sortby` function can be used for ordering entries before rendering."
+  [o out-dir    OUTDIR     str   "the output directory"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
+  (let [grouper (fn [entries]
+                  (->> entries
+                       (mapcat (fn [entry]
+                                 (map #(-> [% entry]) (:tags entry))))
+                       (reduce (fn [result [tag entry]]
+                                 (let [path (str tag ".html")]
+                                   (-> result
+                                       (update-in [path :entries] conj entry)
+                                       (assoc-in [path :entry :tag] tag))))
+                               {})))]
+    (assortment-pre-wrap {:task-name "tags"
+                          :tracer :io.perun/tags
+                          :grouper grouper
+                          :options (merge +tags-defaults+ *opts*)})))
 
 (def ^:private +paginate-defaults+
   {:out-dir "public"
@@ -924,6 +962,9 @@
                           :tracer :io.perun/paginate
                           :grouper grouper
                           :options options})))
+
+(def +inject-scripts-defaults+
+  {:extensions [".html"]})
 
 (deftask inject-scripts
   "Inject JavaScript scripts into html files.
