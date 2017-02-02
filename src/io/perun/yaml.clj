@@ -42,14 +42,9 @@
       (first (drop 2 splitted))
       content)))
 
-(defn parse-file-metadata [meta]
-  (let [content (-> meta :full-path io/file slurp)
+(defn parse-yaml [{:keys [entry]}]
+  (let [content (-> entry :full-path io/file slurp)
         parsed-metadata (if-let [metadata-str (substr-between content *yaml-head* *yaml-head*)]
                           (normal-colls (yaml/parse-string metadata-str))
                           {})]
-    (merge meta parsed-metadata {:parsed (remove-metadata content)})))
-
-(defn parse-yaml [metas]
-  (let [updated-metas (doall (map parse-file-metadata metas))]
-    (perun/report-info "yaml-metadata" "parsed %s files" (count metas))
-    updated-metas))
+    (merge entry parsed-metadata {:rendered (remove-metadata content)})))

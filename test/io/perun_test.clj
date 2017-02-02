@@ -234,13 +234,9 @@ This --- be ___markdown___.")
         (p/markdown)
 
         (testing "markdown"
-          (comp
-           (value-check :path "2017-01-01-test.md"
-                        :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
-                        :msg "`markdown` should set `:parsed` metadata on markdown file")
-           (content-check :path "public/2017-01-01-test.html"
-                          :content parsed-md-basic
-                          :msg "`markdown` should populate HTML file with parsed content")))
+          (content-check :path "public/2017-01-01-test.html"
+                         :content parsed-md-basic
+                         :msg "`markdown` should populate HTML file with parsed content"))
 
         (p/ttr)
         (testing "ttr"
@@ -314,13 +310,13 @@ This --- be ___markdown___.")
         (p/assortment :renderer 'io.perun-test/render-assortment)
         (testing "assortment"
           (content-check :path "public/index.html"
-                         :content "assortment 6"
+                         :content "assortment 5"
                          :msg "assortment should modify file contents"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
         (testing "collection"
           (content-check :path "public/index.html"
-                         :content "collection 7"
+                         :content "collection 6"
                          :msg "collection should modify file contents"))
 
         (p/tags :renderer 'io.perun-test/render-tags)
@@ -339,7 +335,7 @@ This --- be ___markdown___.")
         (p/paginate :renderer 'io.perun-test/render-paginate)
         (testing "paginate"
           (content-check :path "public/page-1.html"
-                         :content "paginate 10"
+                         :content "paginate 9"
                          :msg "`paginate` should write new files"))
 
         (p/static :renderer 'io.perun-test/render-static)
@@ -375,16 +371,13 @@ This --- be ___markdown___.")
                                        :description "Test Desc"
                                        :doc-root "hammock"}))
         (p/markdown :out-dir "hammock"
+                    :filterer #(= (:path %) "test.md")
                     :meta {:markdown-set :metadata}
                     :options {:extensions {:smarts true}})
         (testing "markdown"
-          (comp
-           (value-check :path "test.md"
-                        :value-fn #(meta= %1 %2 :parsed parsed-md-smarts)
-                        :msg "`markdown` should set `:parsed` metadata on markdown file")
-           (content-check :path "hammock/test.html"
-                          :content parsed-md-smarts
-                          :msg "`markdown` should populate HTML file with parsed content")))
+          (content-check :path "hammock/test.html"
+                         :content parsed-md-smarts
+                         :msg "`markdown` should populate HTML file with parsed content"))
         (sift :move {#"hammock/test\.html" "hammock/test.htm"})
 
         (p/ttr :filterer :markdown-set
@@ -478,6 +471,7 @@ This --- be ___markdown___.")
           (file-exists? :path "foo/test-atom.xml"
                         :msg "`atom-feed` should write test-atom.xml"))
 
+        (add-txt-file :path "test1.md" :content (nth input-strings 2))
         (add-txt-file :path "test2.md" :content (nth input-strings 3))
         (add-txt-file :path "test3.md" :content (nth input-strings 4))
         (add-txt-file :path "test4.md" :content (nth input-strings 5))
@@ -673,10 +667,6 @@ This --- be ___markdown___.")
         (add-txt-file :path "test2.md" :content (nth input-strings 3))
         (p/markdown)
         (testing "detecting new files"
-          (comp
-           (content-check :path "public/test2.html"
-                          :content parsed-md-basic
-                          :msg "new files should be parsed, after initial render")
-           (value-check :path "test2.md"
-                        :value-fn #(meta= %1 %2 :parsed parsed-md-basic)
-                        :msg "new files should have `:parsed` set on them, after initial render")))))
+          (content-check :path "public/test2.html"
+                         :content parsed-md-basic
+                         :msg "new files should be parsed, after initial render"))))
