@@ -219,14 +219,14 @@
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
 
 (defn content-pre-wrap
-  "Wrapper for input parsing tasks. Calls `parse-form` on new or changed
-  files with extensions in `extensions`, adds `tracer` to `:io.perun/trace`
-  and writes files for subsequent tasks to process, if desired.
-  `output-extension` can be used to indicate the type of file the task produces,
-  or pass `nil` to overwrite with a file of the same name and extension. Pass
-  `pod` if one is needed for parsing. In cases where parsing only depends on the
-  content of its input files rather than their metadata, set `passthru-fn` to
-  handle setting changed metadata on files copied from the previous fileset"
+  "Wrapper for input parsing tasks. Calls the return from `render-form-fn` on
+  new or changed inputs returned from `paths-fn`, adds `tracer` to
+  `:io.perun/trace` and writes files for subsequent tasks to process, if
+  desired. Pass `pod` if one is needed for parsing. In cases where parsing only
+  depends on the content of its input files rather than their metadata, set
+  `passthru-fn` to handle setting changed metadata on files copied from the
+  previous fileset. If input files should be removed from the fileset, set
+  `rm-originals` to `true`."
   [{:keys [task-name render-form-fn paths-fn passthru-fn tracer pod rm-originals]}]
   (let [tmp  (boot/tmp-dir!)
         prev (atom {})
