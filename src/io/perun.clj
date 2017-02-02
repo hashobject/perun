@@ -299,7 +299,7 @@
       :pod pod})))
 
 (deftask markdown
-  "Parse markdown files
+  "Parse markdown files with yaml front matter
 
   This task will look for files ending with `md` or `markdown`
   and writes an HTML file that contains the result from
@@ -463,7 +463,7 @@
    :extensions [".html"]})
 
 (deftask slug
-  "Adds :slug key to files metadata. Slug is derived from filename."
+  "Renames a file so that the part before the extension matches the result of `slug-fn`"
   [s slug-fn    SLUGFN     code  "function to build slug from file metadata"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"]
@@ -487,9 +487,7 @@
    :extensions [".html"]})
 
 (deftask permalink
-  "Adds :permalink key to files metadata. Value of key will determine target path.
-
-   Make files permalinked. E.x. about.html will become about/index.html"
+  "Moves a file so that its location matches the result of `permalink-fn`"
   [p permalink-fn PERMALINKFN code  "function to build permalink from TmpFile metadata"
    _ filterer     FILTER      code  "predicate to use for selecting entries (default: `identity`)"
    e extensions   EXTENSIONS  [str] "extensions of files to include"]
@@ -678,7 +676,7 @@
    :extensions [".html"]})
 
 (deftask render
-  "Render individual pages for entries in perun data.
+  "Render individual pages from input files
 
    The symbol supplied as `renderer` should resolve to a function
    which will be called with a map containing the following keys:
