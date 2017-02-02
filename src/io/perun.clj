@@ -281,7 +281,7 @@
           (perun/report-info task-name "rendered %s new or changed files" (count render-inputs)))
         (case (count copy-files)
           0 nil
-          1 (perun/report-info task-name "copied changed file %s" (first (keys render-inputs)))
+          1 (perun/report-info task-name "copied changed file %s" (first (keys copy-files)))
           (perun/report-info task-name "copied %s unchanged file(s)" (count copy-files)))
         (boot/empty-dir! tmp)
         output-fs))))
