@@ -6,7 +6,7 @@
             [clj-time.coerce  :as tc]
             [clj-time.format  :as tf]))
 
-;; Check https://github.com/jekyll/jekyll-feed/blob/master/lib/feed.xml for tags to use
+;; Check https://github.com/jekyll/jekyll-feed/blob/master/lib/jekyll-feed/feed.xml for tags to use
 
 (defn published [{:keys [date-published date-created]}]
   (or date-published date-created))
@@ -17,56 +17,67 @@
 (defn iso-datetime [date]
   (tf/unparse (tf/formatters :date-time-no-ms) (tc/from-date date)))
 
-(defn generate-atom-str [posts {:keys [site-title description base-url filename] :as global-metadata}]
-  (assert (seq site-title) "Atom XML requires non-empty site-title")
-  (assert (seq base-url) "Atom XML requires full base-url")
-  ;; FIXME: chould validate that it is an URL?
-  (xml/emit-str
-    (xml/sexp-as-element
-      [:feed {:xmlns "http://www.w3.org/2005/Atom"}
-       [:title site-title]
-       (if (seq description)
-         [:subtitle description])
-       ;; FIXME: :version property
-       [:generator {:uri "https://perun.io/"} "Perun"]
-       [:link {:href (str base-url filename) :rel "self"}]
-       [:link {:href base-url :type "text/html"}]
-       [:updated (->> (take 10 posts)
-                      (map (comp iso-datetime updated first))
-                      sort
-                      reverse
-                      first)]
-       [:id base-url]
+(defn nav-hrefs
+  [{:keys [next-page prev-page first-page last-page out-dir doc-root base-url]}]
+  (->> [next-page prev-page first-page last-page]
+       (map #(when %
+               (perun/path->canonical-url
+                (perun/create-filepath out-dir %)
+                doc-root
+                base-url)))
+       (map vector [:next :prev :first :last])
+       (into {})))
 
-       (if (:author global-metadata)
-         [:author
-          [:name (:author global-metadata)]
-          [:email (:author-email global-metadata)]])
+(defn generate-atom [{:keys [entry entries meta]}]
+  (let [{:keys [site-title description base-url canonical-url] :as options} (merge meta entry)
+        {global-author :author global-author-email :author-email} meta
+        navs (nav-hrefs options)
+        atom (xml/emit-str
+              (xml/sexp-as-element
+               [:feed {:xmlns "http://www.w3.org/2005/Atom"}
+                [:title site-title]
+                (when (seq description)
+                  [:subtitle description])
+                ;; FIXME: :version property
+                [:generator {:uri "https://perun.io/"} "Perun"]
+                [:link {:href base-url :type "text/html"}]
+                [:link {:href canonical-url :rel "self"}]
+                [:link {:href (:first navs) :rel "first"}]
+                [:link {:href (:last navs) :rel "last"}]
+                (when-let [next (:next navs)]
+                  [:link {:href next :rel "next"}])
+                (when-let [prev (:prev navs)]
+                  [:link {:href prev :rel "previous"}])
+                [:updated (->> entries
+                               (map (comp iso-datetime updated first))
+                               sort
+                               reverse
+                               first)]
+                [:id base-url]
 
-       (for [[{:keys [uuid canonical-url title author author-email] :as post} content] (take 10 posts)
-             :let [author (or author (:author global-metadata))
-                   author-email (or author-email (:author-email global-metadata))]]
-         (do
-           (assert (seq uuid) (format "Atom XML requires that each post has a unique uuid, if you need one, use this: %s. Post %s is missing one" (str (java.util.UUID/randomUUID)) canonical-url))
-           (assert (seq author) (format "Atom XML requires that each post has author name. Post %s is missing one" canonical-url))
-           [:entry
-            [:id (str "urn:uuid:" uuid)]
-            [:title title]
-            (if canonical-url
-              [:link {:href canonical-url :type "text/html" :title title}])
-            [:published (iso-datetime (published post))]
-            [:updated (iso-datetime (updated post))]
-            ;; FIXME: plain text on xml:base property
-            [:content {:type "html"} (str content)]
-            [:author
-             [:name author]
-             (if author-email [:email author-email])]
-            ;; FIXME: category & tags [:category {:term "tag"}]
-            ;; FIXME: post-image media:thumbnail
-            ]))])))
+                (when global-author
+                  [:author
+                   [:name global-author]
+                   (when global-author-email
+                     [:email global-author-email])])
 
-(defn generate-atom [tgt-path files options]
-  (let [atom-filepath (str (:out-dir options) "/" (:filename options))
-        atom-string   (generate-atom-str files options)]
-    (perun/create-file tgt-path atom-filepath atom-string)
-    (perun/report-info "atom" "generated Atom feed and saved to %s" atom-filepath)))
+                (for [{:keys [uuid canonical-url title author
+                              author-email category tags content] :as post} entries
+                      :let [author (or author global-author)
+                            author-email (or author-email global-author-email)]]
+                  [:entry
+                   [:id (str "urn:uuid:" uuid)]
+                   [:title title]
+                   (when canonical-url
+                     [:link {:href canonical-url :type "text/html" :title title :rel "alternate"}])
+                   [:published (iso-datetime (published post))]
+                   [:updated (iso-datetime (updated post))]
+                   [:content {:type "html" :xml:base canonical-url} (str content)]
+                   [:author
+                    [:name author]
+                    (when author-email [:email author-email])]
+                   (for [tag tags]
+                     [:category {:term tag}])
+                   ;; FIXME: post-image media:thumbnail
+                   ])]))]
+    (assoc entry :rendered atom)))

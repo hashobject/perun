@@ -70,3 +70,20 @@
   (assert (= \/ (last base-url))
           "base-url must end in \"/\"")
   base-url)
+
+(defn path->permalink
+  [path doc-root]
+  (let [match-doc-root (re-pattern (str "^" doc-root))]
+    (-> path
+        (string/replace match-doc-root "")
+        (string/replace #"(^|/)index\.html$" "/")
+        absolutize-url)))
+
+(defn permalink->canonical-url
+  [permalink base-url]
+  (str base-url (subs permalink 1)))
+
+(defn path->canonical-url
+  [path doc-root base-url]
+  (let [permalink (path->permalink path doc-root)]
+    (permalink->canonical-url permalink base-url)))

@@ -560,7 +560,7 @@ This --- be ___markdown___.")
 
         (p/paginate :renderer 'io.perun-test/render-paginate
                     :out-dir "baz"
-                    :prefix "decomplect-"
+                    :filename-fn #(str "decomplect-" % ".html")
                     :page-size 2
                     :filterer :assorting
                     :extensions [".htm"]

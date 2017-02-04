@@ -617,69 +617,6 @@
           (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~metas ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
-(def ^:private rss-deps
-  '[[clj-rss "0.2.3"]
-    [clj-time "0.12.0"]])
-
-(def ^:private +rss-defaults+
-  {:filename "feed.rss"
-   :filterer :include-rss
-   :extensions [".html"]
-   :out-dir "public"})
-
-(deftask rss
-  "Generate RSS feed"
-  [f filename    FILENAME    str   "generated RSS feed filename"
-   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-rss`)"
-   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
-   o out-dir     OUTDIR      str   "the output directory"
-   t site-title  TITLE       str   "feed title"
-   p description DESCRIPTION str   "feed description"
-   l base-url    LINK        str   "feed link"]
-  (let [pod (create-pod rss-deps)
-        tmp (boot/tmp-dir!)]
-    (boot/with-pre-wrap fileset
-      (let [global-meta   (pm/get-global-meta fileset)
-            options       (merge +rss-defaults+ global-meta *opts*)
-            metas         (filter-meta-by-ext fileset options)]
-        (perun/assert-base-url (:base-url options))
-        (pod/with-call-in @pod
-          (io.perun.rss/generate-rss ~(.getPath tmp) ~metas ~(dissoc options :filterer)))
-        (commit fileset tmp)))))
-
-(def ^:private atom-deps
-  '[[org.clojure/data.xml "0.0.8"]
-    [clj-time "0.12.0"]])
-
-(def ^:private +atom-defaults+
-  {:filename "atom.xml"
-   :filterer :include-atom
-   :extensions [".html"]
-   :out-dir "public"})
-
-(deftask atom-feed
-  "Generate Atom feed"
-  [f filename    FILENAME    str   "generated Atom feed filename"
-   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-atom`)"
-   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
-   o out-dir     OUTDIR      str   "the output directory"
-   t site-title  TITLE       str   "feed title"
-   s subtitle    SUBTITLE    str   "feed subtitle"
-   p description DESCRIPTION str   "feed description"
-   l base-url    LINK        str   "feed link"]
-  (let [pod (create-pod atom-deps)
-        tmp (boot/tmp-dir!)]
-    (boot/with-pre-wrap fileset
-      (let [global-meta   (pm/get-global-meta fileset)
-            options       (merge +atom-defaults+ global-meta *opts*)
-            meta-contents (map (juxt (partial pm/meta-from-file fileset)
-                                     (comp slurp boot/tmp-file))
-                               (filter-tmp-by-ext fileset options))]
-        (perun/assert-base-url (:base-url options))
-        (pod/with-call-in @pod
-          (io.perun.atom/generate-atom ~(.getPath tmp) ~meta-contents ~(dissoc options :filterer)))
-        (commit fileset tmp)))))
-
 (def ^:private render-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
 
@@ -787,16 +724,18 @@
     (if (seq paths)
       (reduce
        (fn [result [path {:keys [entry entries]}]]
-         (let [sorted      (->> entries
-                                (sort-by sortby comparator)
-                                (map #(assoc % :content (->> (:path %)
-                                                             (boot/tmp-get fileset)
-                                                             boot/tmp-file
-                                                             slurp))))
-               new-path    (perun/create-filepath out-dir path)
-               new-entry   (assoc entry :out-dir out-dir)]
-           (assoc result new-path {:meta    global-meta
-                                   :entry   new-entry
+         (let [sorted    (->> entries
+                              (sort-by sortby comparator)
+                              (map #(assoc % :content (->> (:path %)
+                                                           (boot/tmp-get fileset)
+                                                           boot/tmp-file
+                                                           slurp))))
+               new-path  (perun/create-filepath out-dir path)
+               new-entry (merge entry
+                                {:out-dir out-dir}
+                                (pm/path-meta path global-meta))]
+           (assoc result new-path {:meta global-meta
+                                   :entry new-entry
                                    :entries (vec sorted)
                                    :input-paths (set sorted)})))
        {}
@@ -841,7 +780,7 @@
   {:out-dir "public"
    :filterer identity
    :extensions [".html"]
-   :sortby (fn [file] (:date-published file))
+   :sortby :date-published
    :comparator (fn [i1 i2] (compare i2 i1))
    :grouper #(-> {"index.html" {:entries %}})})
 
@@ -918,7 +857,7 @@
   {:out-dir "public"
    :filterer identity
    :extensions [".html"]
-   :sortby (fn [file] (:date-published file))
+   :sortby :date-published
    :comparator (fn [i1 i2] (compare i2 i1))})
 
 (deftask tags
@@ -957,14 +896,33 @@
                         :grouper grouper})]
     (assortment-pre-wrap options)))
 
+(defn page-grouper-fn
+  [{:keys [sortby comparator page-size filename-fn]}]
+  (fn [entries]
+    (let [pages (->> entries
+                     (sort-by sortby comparator)
+                     (partition-all page-size))]
+      (->> pages
+           (map-indexed
+            #(-> [(filename-fn (inc %1))
+                  {:entry (merge {:page (inc %1)
+                                  :first-page (filename-fn 1)
+                                  :last-page (filename-fn (count pages))}
+                                 (when (pos? %1)
+                                   {:prev-page (filename-fn %1)})
+                                 (when (< %1 (dec (count pages)))
+                                   {:next-page (filename-fn (inc (inc %1)))}))
+                   :entries %2}]))
+           (into {})))))
+
 (def ^:private +paginate-defaults+
   {:out-dir "public"
-   :prefix "page-"
    :page-size 10
    :filterer identity
    :extensions [".html"]
-   :sortby (fn [file] (:date-published file))
-   :comparator (fn [i1 i2] (compare i2 i1))})
+   :sortby :date-published
+   :comparator #(compare %2 %1)
+   :filename-fn #(str "page-" % ".html")})
 
 (deftask paginate
   "Render multiple collections
@@ -978,29 +936,132 @@
    to the `filterer` option.
 
    The `sortby` function can be used for ordering entries before rendering."
-  [o out-dir    OUTDIR     str   "the output directory"
-   f prefix     PREFIX     str   "the prefix for each html file, eg prefix-1.html, prefix-2.html (default: `\"page-\"`)"
-   p page-size  PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
-   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
-   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
-   e extensions EXTENSIONS [str] "extensions of files to include"
-   s sortby     SORTBY     code  "sort entries by function"
-   c comparator COMPARATOR code  "sort by comparator function"
-   m meta       META       edn   "metadata to set on each collection entry"]
-  (let [{:keys [sortby comparator page-size prefix] :as options*} (merge +paginate-defaults+ *opts*)
-        grouper (fn [entries]
-                  (->> entries
-                       (sort-by sortby comparator)
-                       (partition-all page-size)
-                       (map-indexed #(-> [(str prefix (inc %1) ".html")
-                                          {:entry {:page (inc %1)}
-                                           :entries %2}]))
-                       (into {})))
-        options (assoc options*
-                       :task-name "paginate"
-                       :tracer :io.perun/paginate
-                       :grouper grouper)]
+  [o out-dir     OUTDIR     str   "the output directory"
+   f filename-fn FILEFN     code  "takes page num, returns filename (default: page-1.html, page-2.html)"
+   p page-size   PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
+   r renderer    RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer    FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions  EXTENSIONS [str] "extensions of files to include"
+   s sortby      SORTBY     code  "sort entries by function"
+   c comparator  COMPARATOR code  "sort by comparator function"
+   m meta        META       edn   "metadata to set on each collection entry"]
+  (let [options* (merge +paginate-defaults+
+                        *opts*
+                        {:task-name "paginate"
+                         :tracer :io.perun/paginate})
+        options (assoc options* :grouper (page-grouper-fn options*))]
     (assortment-pre-wrap options)))
+
+(defn atom-paths
+  [fileset options]
+  (let [{:keys [site-title base-url author]} (merge (pm/get-global-meta fileset)
+                                                    options)
+        paths (grouped-paths "atom-feed" fileset options)
+        missing-title (not (seq site-title))
+        entries (mapcat :entries (vals paths))
+        dupe-uuids (->> (keep :uuid entries)
+                        frequencies
+                        (filter (fn [[_ num]] (> num 1)))
+                        (map first)
+                        seq)
+        no-uuid (seq (remove :uuid entries))
+        no-author (when-not author (seq (remove :author entries)))]
+    (perun/assert-base-url base-url)
+    (when missing-title
+      (u/fail "Atom XML requires non-empty site-title\n"))
+    (doseq [uuid dupe-uuids]
+      (let [dupe-paths (map :path (filter #(= uuid (:uuid %)) entries))]
+        (u/fail
+         (format (str "The same uuid is assigned to these files: %s. You may "
+                      "find these fresh uuids handy: %s\n")
+                 (string/join ", " dupe-paths)
+                 (->> (repeatedly #(str (java.util.UUID/randomUUID)))
+                      (take (dec (count dupe-paths)))
+                      (string/join ", "))))))
+    (doseq [{:keys [path]} no-uuid]
+      (u/fail
+       (format (str "Atom XML requires that each post has a unique uuid. %s is "
+                    "missing one. If you need one, use this: %s\n")
+               path
+               (str (java.util.UUID/randomUUID)))))
+    (doseq [{:keys [path]} no-author]
+      (u/fail
+       (format (str "Atom XML requires that each post has an author name. "
+                    "%s is missing one\n")
+               path)))
+    (when-not (or missing-title dupe-uuids no-uuid no-author)
+      paths)))
+
+(def ^:private atom-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [org.clojure/data.xml "0.0.8"]
+    [clj-time "0.12.0"]])
+
+(def ^:private +atom-defaults+
+  {:filename "atom.xml"
+   :page-size 10
+   :filterer :include-atom
+   :extensions [".html"]
+   :out-dir "public"})
+
+(deftask atom-feed
+  "Generate Atom feed"
+  [f filename    FILENAME    str   "generated Atom feed filename"
+   p page-size   PAGESIZE    int   "the number of entries to include in each page (default: `10`)"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-atom`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   s subtitle    SUBTITLE    str   "feed subtitle"
+   d description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
+  (let [{:keys [filename] :as options*} (merge +atom-defaults+
+                                               *opts*
+                                               {:sortby :date-published
+                                                :comparator #(compare %2 %1)})
+        filename-fn (fn [i]
+                      (case i
+                        1 filename
+                        (str (perun/filename filename) "-" i
+                             "." (perun/extension filename))))
+        options (assoc options*
+                       :grouper (page-grouper-fn (assoc options* :filename-fn filename-fn)))]
+    (content-pre-wrap
+     {:render-form-fn (fn [data] `(io.perun.atom/generate-atom ~data))
+      :paths-fn #(atom-paths % options)
+      :task-name "atom-feed"
+      :tracer :io.perun/atom-feed
+      :pod (create-pod atom-deps)})))
+
+(def ^:private rss-deps
+  '[[clj-rss "0.2.3"]
+    [clj-time "0.12.0"]])
+
+(def ^:private +rss-defaults+
+  {:filename "feed.rss"
+   :filterer :include-rss
+   :extensions [".html"]
+   :out-dir "public"})
+
+(deftask rss
+  "Generate RSS feed"
+  [f filename    FILENAME    str   "generated RSS feed filename"
+   _ filterer    FILTER      code  "predicate to use for selecting entries (default: `:include-rss`)"
+   e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
+   o out-dir     OUTDIR      str   "the output directory"
+   t site-title  TITLE       str   "feed title"
+   p description DESCRIPTION str   "feed description"
+   l base-url    LINK        str   "feed link"]
+  (let [pod (create-pod rss-deps)
+        tmp (boot/tmp-dir!)]
+    (boot/with-pre-wrap fileset
+      (let [global-meta   (pm/get-global-meta fileset)
+            options       (merge +rss-defaults+ global-meta *opts*)
+            metas         (filter-meta-by-ext fileset options)]
+        (perun/assert-base-url (:base-url options))
+        (pod/with-call-in @pod
+          (io.perun.rss/generate-rss ~(.getPath tmp) ~metas ~(dissoc options :filterer)))
+        (commit fileset tmp)))))
 
 (def +inject-scripts-defaults+
   {:extensions [".html"]})

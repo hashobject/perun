@@ -29,11 +29,7 @@
   (let [file (or file (io/file path))
         filename (.getName file)
         slug (slug filename)
-        match-doc-root (re-pattern (str "^" doc-root))
-        permalink (-> path
-                      (string/replace match-doc-root "")
-                      (string/replace #"(^|/)index\.html$" "/")
-                      perun/absolutize-url)]
+        permalink (perun/path->permalink path doc-root)]
     (merge {:path path
             :parent-path (perun/parent-path path filename)
             :full-path (.getPath file)
@@ -44,7 +40,8 @@
             :extension (perun/extension filename)}
            (when base-url
              (perun/assert-base-url base-url)
-             {:canonical-url (str base-url (subs permalink 1))}))))
+             {:canonical-url (perun/permalink->canonical-url
+                              permalink base-url)}))))
 
 (defn meta-from-file
   [fileset tmpfile]
