@@ -369,12 +369,12 @@
   [d out-dir  OUTDIR str  "the output directory"
    _ filterer FILTER code "predicate to use for selecting entries (default: `identity`)"
    m meta     META   edn  "metadata to set on each entry; keys here will be overridden by metadata in each file"
-   o options  OPTS   edn  "options to be passed to the markdown parser"]
+   e md-exts  MDEXTS edn  "parsing extensions to be used by the markdown parser"]
   (let [pod (create-pod markdown-deps)
-        options* (merge +markdown-defaults+ *opts*)]
+        options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
-     {:render-form-fn (fn [data] `(io.perun.markdown/process-markdown ~data ~options))
-      :paths-fn #(content-paths % (assoc options*
+     {:render-form-fn (fn [data] `(io.perun.markdown/process-markdown ~data ~md-exts))
+      :paths-fn #(content-paths % (assoc options
                                          :output-extension ".html"
                                          :extensions [".md" ".markdown"]))
       :passthru-fn content-passthru
@@ -394,10 +394,10 @@
   [d out-dir  OUTDIR str  "the output directory"
    _ filterer FILTER code "predicate to use for selecting entries (default: `identity`)"
    m meta     META   edn  "metadata to set on each entry; keys here will be overridden by metadata in each file"
-   o options  OPTS   edn  "options to be passed to the markdown parser"]
-  (let [{:keys [out-dir filterer meta options]} (merge +markdown-defaults+ *opts*)]
+   e md-exts  MDEXTS edn  "parsing extensions to be used by the markdown parser"]
+  (let [{:keys [out-dir filterer meta md-exts]} (merge +markdown-defaults+ *opts*)]
     (comp (yaml-metadata :filterer filterer :extensions [".md" ".markdown"])
-          (markdown* :out-dir out-dir :filterer filterer :meta meta :options options))))
+          (markdown* :out-dir out-dir :filterer filterer :meta meta :md-exts md-exts))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.

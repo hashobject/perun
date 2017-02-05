@@ -373,7 +373,7 @@ This --- be ___markdown___.")
         (p/markdown :out-dir "hammock"
                     :filterer #(= (:path %) "test.md")
                     :meta {:markdown-set :metadata}
-                    :options {:extensions {:smarts true}})
+                    :md-exts {:smarts true})
         (testing "markdown"
           (content-check :path "hammock/test.html"
                          :content parsed-md-smarts
