@@ -29,7 +29,8 @@
        (into {})))
 
 (defn generate-atom [{:keys [entry entries meta]}]
-  (let [{:keys [site-title description base-url canonical-url] :as options} (merge meta entry)
+  (let [{:keys [site-title description base-url
+                canonical-url io.perun/version] :as options} (merge meta entry)
         {global-author :author global-author-email :author-email} meta
         navs (nav-hrefs options)
         atom (xml/emit-str
@@ -38,8 +39,7 @@
                 [:title site-title]
                 (when (seq description)
                   [:subtitle description])
-                ;; FIXME: :version property
-                [:generator {:uri "https://perun.io/"} "Perun"]
+                [:generator {:uri "https://perun.io/" :version version} "Perun"]
                 [:link {:href base-url :type "text/html"}]
                 [:link {:href canonical-url :rel "self"}]
                 [:link {:href (:first navs) :rel "first"}]

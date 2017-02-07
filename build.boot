@@ -16,10 +16,9 @@
                   [org.clojure/tools.namespace "0.3.0-alpha3" :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
+(require '[io.perun.core :refer [+version+]])
 (require '[io.perun-test])
 (require '[boot.test :refer [runtests]])
-
-(def +version+ "0.4.2-SNAPSHOT")
 
 (bootlaces! +version+)
 
@@ -42,17 +41,6 @@
   []
   (comp (build-jar) (push-snapshot)))
 
-(deftask dev
-  "Dev process"
-  []
-  (comp
-    (watch)
-    (repl :server true)
-    (pom)
-    (jar)
-    (install)))
-
-
 (deftask build
   "Build process"
   []
@@ -60,3 +48,11 @@
     (pom)
     (jar)
     (install)))
+
+(deftask dev
+  "Dev process"
+  []
+  (comp
+    (watch)
+    (repl :server true)
+    (build)))
