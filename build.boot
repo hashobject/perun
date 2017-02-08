@@ -19,7 +19,7 @@
 (require '[io.perun-test])
 (require '[boot.test :refer [runtests]])
 
-(def +version+ "0.4.1-SNAPSHOT")
+(def +version+ "0.4.2-SNAPSHOT")
 
 (bootlaces! +version+)
 
