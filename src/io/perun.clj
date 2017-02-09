@@ -301,7 +301,8 @@
                                             global-meta
                                             (boot/tmp-file (boot/tmp-get fileset path)))]
                 (assoc result
-                       new-path {:entry (merge entry
+                       new-path {:entry (merge {:original-path path}
+                                               entry
                                                meta
                                                (when out-dir
                                                  {:out-dir out-dir})
