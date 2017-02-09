@@ -37,6 +37,9 @@ All posts have a path which is used as a key to identify the post.
 - **:content** The post content
     - Populated from file content
     - Only set in the `:entry` value of the map passed to `renderer` functions
+- **:original-path** The path for the input file from which this entry is descended
+    - Set by input parsing tasks (like `markdown`) on output files
+    - Passed through by rendering tasks
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
