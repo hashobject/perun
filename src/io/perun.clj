@@ -1012,7 +1012,6 @@
    e extensions  EXTENSIONS  [str] "extensions of files to include in the feed"
    o out-dir     OUTDIR      str   "the output directory"
    t site-title  TITLE       str   "feed title"
-   s subtitle    SUBTITLE    str   "feed subtitle"
    d description DESCRIPTION str   "feed description"
    l base-url    LINK        str   "feed link"]
   (let [{:keys [filename] :as options*} (merge +atom-defaults+
