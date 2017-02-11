@@ -27,6 +27,11 @@
   (boot/with-pass-thru fileset
     (->> path (boot/tmp-get fileset) pm/+meta-key+ key prn)))
 
+(deftask prn-content
+  [p path PATH str "path of the file to print"]
+  (boot/with-pass-thru fileset
+    (->> path (boot/tmp-get fileset) boot/tmp-file slurp prn)))
+
 (deftask key-check
   [p path PATH str "path of the file to test"
    k key  KEY  kw  "the key to test"
@@ -186,6 +191,8 @@ This --- be ___markdown___.")
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
+(def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
+
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>\n")
 
 (def js-content "(function somejs() { console.log('$foo'); })();")
@@ -226,11 +233,19 @@ This --- be ___markdown___.")
   "<h1>static</h1>")
 
 (deftesttask default-tests []
-  (comp (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
-        (boot/with-pre-wrap fileset
+  (comp (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
                                        :description "Test Desc"}))
+
+        (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
+        (p/pandoc)
+        (testing "pandoc"
+          (content-check :path "public/2017-01-01-test.html"
+                         :content parsed-pandoc-basic
+                         :msg "`pandoc` should populate HTML file with parsed content"))
+
+        (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (p/markdown)
 
         (testing "markdown"
@@ -364,12 +379,25 @@ This --- be ___markdown___.")
                         :msg "`draft` should remove files"))))
 
 (deftesttask with-arguments-test []
-  (comp (add-txt-file :path "test.md" :content (nth input-strings 0))
-        (boot/with-pre-wrap fileset
+  (comp (boot/with-pre-wrap fileset
           (pm/set-global-meta fileset {:base-url "http://example.com/"
                                        :site-title "Test Title"
                                        :description "Test Desc"
                                        :doc-root "hammock"}))
+
+        (add-txt-file :path "test.html" :content parsed-pandoc-basic)
+        (p/pandoc :out-dir nil
+                  :out-ext ".md"
+                  :filterer #(= (:path %) "test.html")
+                  :extensions [".html"]
+                  :meta {:pandoc-set :metadata}
+                  :cmd-opts ["-f" "html" "-t" "markdown"])
+        (testing "pandoc"
+          (content-check :path "test.md"
+                         :content "Hello there\n===========\n\nThis --- be ***markdown***.\n"
+                         :msg "`pandoc` should parse HTML to markdown"))
+
+        (add-txt-file :path "test.md" :content (nth input-strings 0))
         (p/markdown :out-dir "hammock"
                     :filterer #(= (:path %) "test.md")
                     :meta {:markdown-set :metadata}

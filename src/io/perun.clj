@@ -340,11 +340,12 @@
   a file, and then overwrite that file with the YAML removed, and
   with the parsed data added as perun metadata."
   [_ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
-   e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+   e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"
+   r keep-yaml             bool  "if `true`, remove the yaml header from files"]
   (let [pod (create-pod yaml-metadata-deps)
         options (merge +yaml-metadata-defaults+ *opts*)]
     (content-task
-     {:render-form-fn (fn [data] `(io.perun.yaml/parse-yaml ~data))
+     {:render-form-fn (fn [data] `(io.perun.yaml/parse-yaml ~data ~keep-yaml))
       :paths-fn #(content-paths % options)
       :passthru-fn content-passthru
       :task-name "yaml-metadata"
@@ -403,6 +404,58 @@
   (let [{:keys [out-dir filterer meta md-exts]} (merge +markdown-defaults+ *opts*)]
     (comp (yaml-metadata :filterer filterer :extensions [".md" ".markdown"])
           (markdown* :out-dir out-dir :filterer filterer :meta meta :md-exts md-exts))))
+
+(def ^:private +pandoc-defaults+
+  {:out-dir "public"
+   :out-ext ".html"
+   :filterer identity
+   :cmd-opts ["-f" "markdown" "-t" "html5"] ;; convert markdown to html5
+   :extensions [".md" ".markdown"]})
+
+(deftask pandoc*
+  "Parse files with pandoc
+
+  `pandoc` must be installed and on your PATH. YAML metadata at the
+  head of files will only be available to `pandoc`, and will not be
+  added to Perun metadata. By default, looks for markdown files and
+  parses them into HTML."
+  [d out-dir    OUTDIR     str   "the output directory"
+   x out-ext    OUTEXT     str   "extension output"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   m meta       META       edn   "metadata to set on each entry"
+   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
+  (let [options (merge +pandoc-defaults+ *opts*)]
+    (content-pre-wrap
+     {:render-form-fn (fn [data] `(io.perun.pandoc/process-pandoc ~data ~cmd-opts))
+      :paths-fn #(content-paths % options)
+      :passthru-fn content-passthru
+      :task-name "pandoc"
+      :tracer :io.perun/pandoc
+      :rm-originals true})))
+
+(deftask pandoc
+  "Parse files with pandoc
+
+  `pandoc` must be installed and on your PATH. YAML metadata at the
+  head of files will be added to Perun metadata, as well as available
+  to `pandoc`. By default, looks for markdown files and parses them
+  into HTML."
+  [d out-dir    OUTDIR     str   "the output directory"
+   x out-ext    OUTEXT     str   "extension output"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   m meta       META       edn   "metadata to set on each entry"
+   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
+  (let [{:keys [out-dir out-ext filterer
+                extensions meta cmd-opts]} (merge +pandoc-defaults+ *opts*)]
+    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml true)
+          (pandoc* :out-dir out-dir
+                   :out-ext out-ext
+                   :filterer filterer
+                   :extensions extensions
+                   :meta meta
+                   :cmd-opts cmd-opts))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
