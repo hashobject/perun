@@ -70,14 +70,15 @@
 
 (deftask print-meta
   "Utility task to print perun metadata"
-  [m map-fn     MAPFN      code  "function to map over metadata items before printing (default: `identity`)"
-   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
-   e extensions EXTENSIONS [str] "extensions of files to include (default: `[]`, aka, all extensions)"]
+  [m map-fn       MAPFN      code   "function to map over metadata items before printing (default: `identity`)"
+   _ filterer     FILTER     code   "predicate to use for selecting entries (default: `identity`)"
+   e extensions   EXTENSIONS [str]  "extensions of files to include (default: `[]`, aka, all extensions)"
+   b content-exts NOCONTENT  #{str} "print content for these extensions, default `#{}`"]
   (boot/with-pass-thru fileset
     (let [options (merge +print-meta-defaults+ *opts*)
           entries (doall (map (:map-fn options) (filter-meta-by-ext fileset options)))]
       (pod/with-call-in @print-meta-pod
-        (io.perun.print-meta/print-meta ~entries)))))
+        (io.perun.print-meta/print-meta ~entries ~content-exts)))))
 
 (defn trace
   "Helper function, conj `kw` onto the `:io.perun/trace` metadata
