@@ -813,8 +813,7 @@
   `assortment` for more info)
 
   Returns a boot `with-pre-wrap` result"
-  [{{:keys [comparator filterer sortby meta renderer] :as options*} :options
-    :keys [task-name tracer grouper]}]
+  [{:keys [task-name comparator filterer sortby grouper meta renderer tracer] :as options*}]
   (cond (not (fn? comparator))
         (u/fail (str task-name " task :comparator option should implement Fn\n"))
         (not (ifn? filterer))
@@ -871,12 +870,12 @@
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [grouper (or grouper #(-> {"index.html" {:entries %}}))
-        options (merge +assortment-defaults+ (dissoc *opts* :grouper))]
-    (assortment-pre-wrap {:task-name "assortment"
-                          :tracer :io.perun/assortment
-                          :grouper grouper
-                          :options options})))
+  (let [options (merge +assortment-defaults+
+                       *opts*
+                       {:task-name "assortment"
+                        :tracer :io.perun/assortment
+                        :grouper (or grouper #(-> {"index.html" {:entries %}}))})]
+    (assortment-pre-wrap options)))
 
 (def ^:private +collection-defaults+
   {:out-dir "public"
@@ -906,11 +905,13 @@
    c comparator COMPARATOR code  "sort by comparator function"
    p page       PAGE       str   "collection result page path"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [p (or page "index.html")]
-    (assortment-pre-wrap {:task-name "collection"
-                          :tracer :io.perun/collection
-                          :grouper #(-> {p {:entries %}})
-                          :options (merge +collection-defaults+ (dissoc *opts* :page))})))
+  (let [p (or page "index.html")
+        options (merge +collection-defaults+
+                       (dissoc *opts* :page)
+                       {:task-name "collection"
+                        :tracer :io.perun/collection
+                        :grouper #(-> {p {:entries %}})})]
+    (assortment-pre-wrap options)))
 
 (def ^:private +tags-defaults+
   {:out-dir "public"
@@ -947,11 +948,13 @@
                                    (-> result
                                        (update-in [path :entries] conj entry)
                                        (assoc-in [path :entry :tag] tag))))
-                               {})))]
-    (assortment-pre-wrap {:task-name "tags"
-                          :tracer :io.perun/tags
-                          :grouper grouper
-                          :options (merge +tags-defaults+ *opts*)})))
+                               {})))
+        options (merge +tags-defaults+
+                       *opts*
+                       {:task-name "tags"
+                        :tracer :io.perun/tags
+                        :grouper grouper})]
+    (assortment-pre-wrap options)))
 
 (def ^:private +paginate-defaults+
   {:out-dir "public"
@@ -983,7 +986,7 @@
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [{:keys [sortby comparator page-size prefix] :as options} (merge +paginate-defaults+ *opts*)
+  (let [{:keys [sortby comparator page-size prefix] :as options*} (merge +paginate-defaults+ *opts*)
         grouper (fn [entries]
                   (->> entries
                        (sort-by sortby comparator)
@@ -991,11 +994,12 @@
                        (map-indexed #(-> [(str prefix (inc %1) ".html")
                                           {:entry {:page (inc %1)}
                                            :entries %2}]))
-                       (into {})))]
-    (assortment-pre-wrap {:task-name "paginate"
-                          :tracer :io.perun/paginate
-                          :grouper grouper
-                          :options options})))
+                       (into {})))
+        options (assoc options*
+                       :task-name "paginate"
+                       :tracer :io.perun/paginate
+                       :grouper grouper)]
+    (assortment-pre-wrap options)))
 
 (def +inject-scripts-defaults+
   {:extensions [".html"]})
