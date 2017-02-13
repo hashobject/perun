@@ -66,7 +66,8 @@
 (def ^:private +print-meta-defaults+
   {:map-fn identity
    :filterer identity
-   :extensions []})
+   :extensions []
+   :content-exts #{}})
 
 (deftask print-meta
   "Utility task to print perun metadata"
@@ -75,7 +76,7 @@
    e extensions   EXTENSIONS  [str]  "extensions of files to include (default: `[]`, aka, all extensions)"
    b content-exts CONTENTEXTS #{str} "print content for these extensions, default `#{}`"]
   (boot/with-pass-thru fileset
-    (let [options (merge +print-meta-defaults+ *opts*)
+    (let [{:keys [content-exts] :as options} (merge +print-meta-defaults+ *opts*)
           entries (doall (map (:map-fn options) (filter-meta-by-ext fileset options)))]
       (pod/with-call-in @print-meta-pod
         (io.perun.print-meta/print-meta ~entries ~content-exts)))))
