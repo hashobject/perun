@@ -1,7 +1,6 @@
 (ns io.perun.contrib.inject-scripts
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [io.perun.core   :as perun]))
+            [clojure.string :as str]))
 
 (defn inject [html scripts]
   (->> scripts
@@ -11,7 +10,6 @@
         #(.replaceFirst %1 "</body>" (format "<script>%s</script></body>" %2))
         html)))
 
-(defn inject-scripts [scripts in-path out-path]
-  (let [html (-> in-path io/file slurp)
-        updated-html (inject html scripts)]
-    (spit (io/file out-path) updated-html)))
+(defn inject-scripts [{:keys [entry scripts]}]
+  (let [file-content (-> entry :full-path io/file slurp)]
+    (assoc entry :rendered (inject file-content scripts))))

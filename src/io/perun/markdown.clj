@@ -48,13 +48,8 @@
          char-array
          (.markdownToHtml processor))))
 
-(defn process-file [file options]
-  (perun/report-debug "markdown" "processing markdown" (:filename file))
-  (let [file-content (-> file :full-path io/file slurp)
-        html (markdown-to-html file-content (:options options))]
-    (merge (:meta options) {:parsed html} file)))
-
-(defn parse-markdown [markdown-files options]
-  (let [updated-files (doall (map #(process-file % options) markdown-files))]
-    (perun/report-info "markdown" "parsed %s markdown files" (count markdown-files))
-    updated-files))
+(defn process-markdown [{:keys [entry]} options]
+  (perun/report-debug "markdown" "processing markdown" (:filename entry))
+  (let [file-content (-> entry :full-path io/file slurp)
+        html (markdown-to-html file-content options)]
+    (assoc entry :rendered html)))

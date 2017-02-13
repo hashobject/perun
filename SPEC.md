@@ -40,8 +40,6 @@ All posts have a path which is used as a key to identify the post.
 - **:original-path** The path for the input file from which this entry is descended
     - Set by input parsing tasks (like `markdown`) on output files
     - Passed through by rendering tasks
-- **:parsed** Contains the parsed file content
-    - Set by input parsing tasks (like `markdown`) on input files
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
