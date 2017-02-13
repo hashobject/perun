@@ -42,14 +42,14 @@
        (apply bit-or 0)
        int))
 
-(defn markdown-to-html [file-content options]
-  (let [processor (PegDownProcessor. (extensions-map->int (:extensions options)))]
+(defn markdown-to-html [file-content extensions]
+  (let [processor (PegDownProcessor. (extensions-map->int extensions))]
     (->> file-content
          char-array
          (.markdownToHtml processor))))
 
-(defn process-markdown [{:keys [entry]} options]
+(defn process-markdown [{:keys [entry]} extensions]
   (perun/report-debug "markdown" "processing markdown" (:filename entry))
   (let [file-content (-> entry :full-path io/file slurp)
-        html (markdown-to-html file-content options)]
+        html (markdown-to-html file-content extensions)]
     (assoc entry :rendered html)))
