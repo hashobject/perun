@@ -290,12 +290,12 @@
 
 (defn content-paths
   "Returns a map of path -> parser input for basic content tasks"
-  [fileset {:keys [out-dir extensions output-extension meta] :as options}]
+  [fileset {:keys [out-dir extensions out-ext meta] :as options}]
   (let [global-meta (pm/get-global-meta fileset)]
     (reduce (fn [result {:keys [path] :as entry}]
               (let [ext-pattern (re-pattern (str "(" (string/join "|" extensions) ")$"))
-                    new-path (if output-extension
-                               (->> output-extension
+                    new-path (if out-ext
+                               (->> out-ext
                                     (string/replace path ext-pattern)
                                     (perun/create-filepath out-dir))
                                (perun/create-filepath out-dir path))
@@ -355,6 +355,7 @@
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"
+   :out-ext ".html"
    :filterer identity
    :meta {:original true
           :include-rss true
@@ -368,6 +369,7 @@
   processing the markdown file's content. It will _not_ parse
   YAML metadata at the head of the file."
   [d out-dir  OUTDIR str  "the output directory"
+   x out-ext  OUTEXT str  "the output extension"
    _ filterer FILTER code "predicate to use for selecting entries (default: `identity`)"
    m meta     META   edn  "metadata to set on each entry; keys here will be overridden by metadata in each file"
    e md-exts  MDEXTS edn  "parsing extensions to be used by the markdown parser"]
@@ -375,9 +377,7 @@
         options (merge +markdown-defaults+ *opts*)]
     (content-pre-wrap
      {:render-form-fn (fn [data] `(io.perun.markdown/process-markdown ~data ~md-exts))
-      :paths-fn #(content-paths % (assoc options
-                                         :output-extension ".html"
-                                         :extensions [".md" ".markdown"]))
+      :paths-fn #(content-paths % (assoc options :extensions [".md" ".markdown"]))
       :passthru-fn content-passthru
       :task-name "markdown"
       :tracer :io.perun/markdown
@@ -643,7 +643,7 @@
     :rm-originals rm-originals}))
 
 (def ^:private +render-defaults+
-  {:out-dir  "public"
+  {:out-dir "public"
    :filterer identity
    :extensions [".html"]})
 
@@ -855,6 +855,7 @@
 
 (def ^:private +tags-defaults+
   {:out-dir "public"
+   :out-ext ".html"
    :filterer identity
    :extensions [".html"]
    :sortby :date-published
@@ -873,27 +874,28 @@
 
    The `sortby` function can be used for ordering entries before rendering."
   [o out-dir    OUTDIR     str   "the output directory"
+   x out-ext    OUTEXT     str   "the output extension"
    r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    m meta       META       edn   "metadata to set on each collection entry"]
-  (let [grouper (fn [entries]
+  (let [{:keys [out-ext] :as options*} (merge +tags-defaults+ *opts*)
+        grouper (fn [entries]
                   (->> entries
                        (mapcat (fn [entry]
                                  (map #(-> [% entry]) (:tags entry))))
                        (reduce (fn [result [tag entry]]
-                                 (let [path (str tag ".html")]
+                                 (let [path (str tag out-ext)]
                                    (-> result
                                        (update-in [path :entries] conj entry)
                                        (assoc-in [path :entry :tag] tag))))
                                {})))
-        options (merge +tags-defaults+
-                       *opts*
-                       {:task-name "tags"
-                        :tracer :io.perun/tags
-                        :grouper grouper})]
+        options (assoc options*
+                       :task-name "tags"
+                       :tracer :io.perun/tags
+                       :grouper grouper)]
     (assortment-pre-wrap options)))
 
 (defn page-grouper-fn
@@ -917,12 +919,13 @@
 
 (def ^:private +paginate-defaults+
   {:out-dir "public"
+   :out-ext ".html"
    :page-size 10
    :filterer identity
    :extensions [".html"]
    :sortby :date-published
    :comparator #(compare %2 %1)
-   :filename-fn #(str "page-" % ".html")})
+   :slug-fn #(str "page-" %)})
 
 (deftask paginate
   "Render multiple collections
@@ -936,19 +939,21 @@
    to the `filterer` option.
 
    The `sortby` function can be used for ordering entries before rendering."
-  [o out-dir     OUTDIR     str   "the output directory"
-   f filename-fn FILEFN     code  "takes page num, returns filename (default: page-1.html, page-2.html)"
-   p page-size   PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
-   r renderer    RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
-   _ filterer    FILTER     code  "predicate to use for selecting entries (default: `identity`)"
-   e extensions  EXTENSIONS [str] "extensions of files to include"
-   s sortby      SORTBY     code  "sort entries by function"
-   c comparator  COMPARATOR code  "sort by comparator function"
-   m meta        META       edn   "metadata to set on each collection entry"]
-  (let [options* (merge +paginate-defaults+
-                        *opts*
-                        {:task-name "paginate"
-                         :tracer :io.perun/paginate})
+  [o out-dir    OUTDIR     str   "the output directory"
+   x out-ext    OUTEXT     str   "the output extension"
+   f slug-fn    SLUGFN     code  "takes page num, returns a slug (default: page-1, page-2, etc)"
+   p page-size  PAGESIZE   int   "the number of entries to include in each page (default: `10`)"
+   r renderer   RENDERER   sym   "page renderer (fully qualified symbol resolving to a function)"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to include"
+   s sortby     SORTBY     code  "sort entries by function"
+   c comparator COMPARATOR code  "sort by comparator function"
+   m meta       META       edn   "metadata to set on each collection entry"]
+  (let [{:keys [slug-fn out-ext] :as options**} (merge +paginate-defaults+
+                                                       *opts*
+                                                       {:task-name "paginate"
+                                                        :tracer :io.perun/paginate})
+        options* (assoc options** :filename-fn #(str (slug-fn %) out-ext))
         options (assoc options* :grouper (page-grouper-fn options*))]
     (assortment-pre-wrap options)))
 
