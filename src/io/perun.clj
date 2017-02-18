@@ -458,7 +458,7 @@
    e extensions EXTENSIONS [str] "extensions of files to include"]
   (let [pod     (create-pod word-count-deps)
         options (merge +word-count-defaults+ *opts*)]
-    (content-pre-wrap
+    (content-task
      {:render-form-fn (fn [data] `(io.perun.word-count/word-count ~data))
       :paths-fn #(content-paths % options)
       :passthru-fn content-passthru
