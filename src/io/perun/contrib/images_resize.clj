@@ -9,31 +9,14 @@
      [java.awt.image BufferedImage]
      [javax.imageio ImageIO ImageWriter]))
 
-(defn ^String new-filename [file-path resolution]
-  (str (perun/filename file-path)
-       "_"
-       resolution
-       "."
-      (perun/extension file-path)))
-
-(defn ^String new-image-filepath [file-path filename new-filename]
-  (perun/relativize-url
-   (str (perun/parent-path file-path filename)
-        "/"
-        new-filename)))
-
 (defn write-file [options tmp file ^BufferedImage buffered-file resolution]
-  (let [filepath (:path file)
-        filename (:filename file)
-        new-filename (new-filename filepath resolution)
-        filepath-with-resolution (new-image-filepath filepath filename new-filename)
-        image-filepath (perun/create-filepath (:out-dir options) filepath-with-resolution)
-        new-file (io/file tmp image-filepath)]
+  (let [{:keys [slug extension parent-path]} file
+        new-filename (str slug "_" resolution "." extension)
+        new-path (perun/create-filepath (:out-dir options) parent-path new-filename)
+        new-file (io/file tmp new-path)]
     (io/make-parents new-file)
-    (ImageIO/write buffered-file (:extension file) new-file)
-    {:short-name (perun/filename new-filename)
-     :filename new-filename
-     :path image-filepath}))
+    (ImageIO/write buffered-file extension new-file)
+    {:path new-path}))
 
 (defn resize-to [tgt-path file options resolution]
   (let [io-file (-> file :full-path io/file)

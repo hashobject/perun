@@ -44,7 +44,7 @@
 (defn relativize-url
   "Removes slashes url start of the string."
   [url]
-  (string/replace url #"^[\/]*" ""))
+  (string/replace url #"^/*" ""))
 
 (defn create-filepath
   "Creates a filepath using system path separator."
@@ -54,16 +54,22 @@
 (defn url-to-path
   "Converts a url to filepath."
   [url]
-  (apply create-filepath (string/split (relativize-url url) #"\/")))
+  (apply create-filepath (string/split url #"/")))
 
-(defn filename [name]
-  (second (re-find #"(.+?)(\.[^.]*$|$)" (last (string/split name #"/")))))
+(defn path-to-url
+  "Converts a path to url"
+  [path]
+  (->> java.io.File/separator
+       java.util.regex.Pattern/quote
+       re-pattern
+       (string/split path)
+       (string/join "/")))
 
 (defn parent-path [filepath filename-with-extension]
   (if (.endsWith filepath filename-with-extension)
-      (.substring filepath 0 (- (count filepath)
+    (.substring filepath 0 (- (count filepath)
                               (count filename-with-extension)))
-     filepath))
+    filepath))
 
 (defn ^String extension [name]
   (last (seq (string/split name #"\."))))
@@ -78,6 +84,7 @@
   (let [match-doc-root (re-pattern (str "^" doc-root))]
     (-> path
         (string/replace match-doc-root "")
+        path-to-url
         (string/replace #"(^|/)index\.html$" "/")
         absolutize-url)))
 
