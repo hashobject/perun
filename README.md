@@ -114,6 +114,10 @@ Following sites were created with perun and Boot:
  - [code.hashobject.com](http://code.hashobject.com). See [build.boot](https://github.com/hashobject/code.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
  - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
+ - [presumably.de](https://presumably.de/). See [build.boot](https://github.com/pesterhazy/presumably/blob/master/build.boot)
+ - [nicerthantriton.com](https://nicerthantriton.com/). See [build.boot](https://github.com/bhagany/nicerthantriton.com/blob/master/build.boot)
+ - [200ok.ch](http://200ok.ch). See [build.boot](https://gitlab.com/200ok/200ok.gitlab.io/blob/master/build.boot)
+ - [sooheon.com](http://sooheon.com). See [build.boot](https://github.com/sooheon/sooheon.com/blob/master/build.boot)
 
 Also check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder.
 

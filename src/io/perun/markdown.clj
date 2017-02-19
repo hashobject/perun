@@ -44,24 +44,16 @@
        (apply bit-or 0)
        int))
 
-(defn markdown-to-html [file-content options]
-  (let [flexmark-opts (-> options
-                          :extensions
-                          extensions-map->int
-                          PegdownOptionsAdapter/flexmarkOptions)
+(defn markdown-to-html [file-content extensions]
+  (let [flexmark-opts (PegdownOptionsAdapter/flexmarkOptions (extensions-map->int extensions))
         parser (.build (Parser/builder flexmark-opts))
         renderer (.build (HtmlRenderer/builder flexmark-opts))]
     (->> file-content
          (.parse parser)
          (.render renderer))))
 
-(defn process-file [file options]
-  (perun/report-debug "markdown" "processing markdown" (:filename file))
-  (let [file-content (-> file :full-path io/file slurp)
-        html (markdown-to-html file-content (:options options))]
-    (merge (:meta options) {:parsed html} file)))
-
-(defn parse-markdown [markdown-files options]
-  (let [updated-files (doall (map #(process-file % options) markdown-files))]
-    (perun/report-info "markdown" "parsed %s markdown files" (count markdown-files))
-    updated-files))
+(defn process-markdown [{:keys [entry]} extensions]
+  (perun/report-debug "markdown" "processing markdown" (:filename entry))
+  (let [file-content (-> entry :full-path io/file slurp)
+        html (markdown-to-html file-content extensions)]
+    (assoc entry :rendered html)))

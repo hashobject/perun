@@ -40,8 +40,6 @@ All posts have a path which is used as a key to identify the post.
 - **:original-path** The path for the input file from which this entry is descended
     - Set by input parsing tasks (like `markdown`) on output files
     - Passed through by rendering tasks
-- **:parsed** Contains the parsed file content
-    - Set by input parsing tasks (like `markdown`) on input files
 - **:description**
     - Used by: *rss* either this or title is required
 - **:slug**
@@ -84,6 +82,30 @@ All posts have a path which is used as a key to identify the post.
 - **:include-rss**
     - Set by: *markdown*, true by default
     - Used by: *rss*
+- **:tags**
+    - Used by: *tags*, *atom-feed*
+- **:tag**
+    - Set by: *tags*, on the pages generated for each tag listed
+- **:page**
+    - The number of this page
+    - Set by: *paginate*
+    - Set by: *atom-feed*
+- **:first-page**
+    - The filename of the first page in this group of pages
+    - Set by: *paginate*
+    - Set by: *atom-feed*
+- **:last-page**
+    - The filename of the last page in this group of pages
+    - Set by: *paginate*
+    - Set by: *atom-feed*
+- **:prev-page**
+    - The filename of the previous page in this group of pages, if it exists
+    - Set by: *paginate*
+    - Set by: *atom-feed*
+- **:next-page**
+    - The filename of the next page in this group of pages, if it exists
+    - Set by: *paginate*
+    - Set by: *atom-feed*
 - **:io.perun/trace**
     - Conjed onto by every task that modifies metadata
     - Serves as a record of tasks to touch a file
