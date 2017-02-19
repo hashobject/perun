@@ -445,7 +445,7 @@
         (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-metas))
         (pm/set-meta fileset updated-metas)))))
 
-(def ^:private word-count-deps
+(def ^:private ^:deps word-count-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
     [org.apache.lucene/lucene-analyzers-common "6.4.1"]])
 
