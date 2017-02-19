@@ -377,12 +377,16 @@
     [com.vladsch.flexmark/flexmark-ext-wikilink "0.15.1"]
     [com.vladsch.flexmark/flexmark-ext-yaml-front-matter "0.15.1"]
     [com.vladsch.flexmark/flexmark-ext-zzzzzz "0.15.1"]
+    [com.vladsch.flexmark/flexmark-formatter "0.15.1"]
+    [com.vladsch.flexmark/flexmark-html-parser "0.15.1"]
     [com.vladsch.flexmark/flexmark-integration-test "0.15.1"]
     [com.vladsch.flexmark/flexmark-jira-converter "0.15.1"]
+    [com.vladsch.flexmark/flexmark-pdf-converter "0.15.1"]
     [com.vladsch.flexmark/flexmark-youtrack-converter "0.15.1"]
+    [com.vladsch.flexmark/flexmark-profile-pegdown "0.15.1"]
     [com.vladsch.flexmark/flexmark-test-util "0.15.1"]
     [com.vladsch.flexmark/flexmark-util "0.15.1"]
-    [com.vladsch.flexmark/pegdown-profile "0.15.1"]])
+    [com.vladsch.flexmark/flexmark-parent "0.15.1"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"

@@ -5,7 +5,6 @@
                   [adzerk/boot-test "1.1.2" :scope "test"]
                   [adzerk/bootlaces "0.1.13" :scope "test"]
                   [circleci/clj-yaml "0.5.5" :scope "test"]
-                  [com.vladsch.flexmark/pegdown-profile "0.11.9" :scope "test"]
                   [time-to-read "0.1.0" :scope "test"]
                   [sitemap "0.2.5" :scope "test"]
                   [clj-rss "0.2.3" :scope "test"]
