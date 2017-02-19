@@ -11,7 +11,7 @@
             [io.perun.core :as perun]
             [io.perun.meta :as pm]))
 
-(def ^:private global-deps
+(def ^:private ^:deps global-deps
   '[])
 
 (defn- create-pod' [deps]
@@ -58,7 +58,7 @@
   [fileset {:keys [filterer extensions]}]
   (filter filterer (meta-by-ext fileset extensions)))
 
-(def ^:private print-meta-deps
+(def ^:private ^:deps print-meta-deps
   '[[mvxcvi/puget "1.0.0"]])
 
 (def print-meta-pod (delay (create-pod' print-meta-deps)))
@@ -95,7 +95,7 @@
     (u/warn (str "The `base` task is deprecated. Metadata based on a files' path is now "
                  "automatically set when other tasks access metadata\n"))))
 
-(def ^:private mime-type-deps
+(def ^:private ^:deps mime-type-deps
   '[[com.novemberain/pantomime "2.8.0"]])
 
 (def ^:private +mime-type-defaults+
@@ -114,7 +114,7 @@
         (perun/report-info "mime-type" "set `:mime-type` and `:file-type` on %s files" (count updated-metas))
         (pm/set-meta fileset updated-metas)))))
 
-(def ^:private images-dimensions-deps
+(def ^:private ^:deps images-dimensions-deps
   '[[image-resizer "0.1.8"]])
 
 (deftask images-dimensions
@@ -130,7 +130,7 @@
                          (io.perun.contrib.images-dimensions/images-dimensions ~metas {}))]
       (pm/set-meta fileset updated-metas))))
 
-(def ^:private images-resize-deps
+(def ^:private ^:deps images-resize-deps
   '[[image-resizer "0.1.8"]])
 
 (def ^:private +images-resize-defaults+
@@ -217,7 +217,7 @@
               []
               copy-meta))))
 
-(def ^:private content-deps
+(def ^:private ^:deps content-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
 
 (defn content-task
@@ -287,8 +287,9 @@
             1 (perun/report-info task-name "copied unchanged file %s" (first (keys copy-files)))
             (perun/report-info task-name "copied %s unchanged file(s)" (count copy-files)))
           (boot/empty-dir! tmp)
-          (next-task output-fs)
-          (pod/with-call-in @pod (io.perun.render/reset-refreshed!)))))))
+          (let [result-fs (next-task output-fs)]
+            (pod/with-call-in @pod (io.perun.render/reset-refreshed!))
+            result-fs))))))
 
 (defn content-paths
   "Returns a map of path -> parser input for basic content tasks"
@@ -323,7 +324,7 @@
          (for [[path {:keys [entry]}] inputs]
            (merge entry (pm/path-meta path global-meta)))))
 
-(def ^:private yaml-metadata-deps
+(def ^:private ^:deps yaml-metadata-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
     [circleci/clj-yaml "0.5.5"]])
 
@@ -351,7 +352,7 @@
       :rm-originals true
       :pod pod})))
 
-(def ^:private markdown-deps
+(def ^:private ^:deps markdown-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
     [org.pegdown/pegdown "1.6.0"]])
 
@@ -421,7 +422,7 @@
       (perun/report-info "global-metadata" "read global metadata from %s" meta-file)
       (pm/set-global-meta fileset global-meta))))
 
-(def ^:private ttr-deps
+(def ^:private ^:deps ttr-deps
   '[[time-to-read "0.1.0"]])
 
 (def ^:private +ttr-defaults+
@@ -466,7 +467,7 @@
       :tracer :io.perun/word-count
       :pod pod})))
 
-(def ^:private gravatar-deps
+(def ^:private ^:deps gravatar-deps
   '[[gravatar "1.1.1"]])
 
 (def ^:private +gravatar-defaults+
@@ -596,7 +597,7 @@
                  "automatically be set in the `entry` map passed to your render functions, "
                  "based on the location of the file in the fileset\n"))))
 
-(def ^:private sitemap-deps
+(def ^:private ^:deps sitemap-deps
   '[[sitemap "0.2.4"]
     [clj-time "0.12.0"]])
 
@@ -622,7 +623,7 @@
           (io.perun.sitemap/generate-sitemap ~(.getPath tmp) ~metas ~(dissoc options :filterer)))
         (commit fileset tmp)))))
 
-(def ^:private render-deps
+(def ^:private ^:deps render-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
 
 (def render-pod (delay (create-pod' render-deps)))
@@ -998,7 +999,7 @@
     (when-not (or missing-title dupe-uuids no-uuid no-author)
       paths)))
 
-(def ^:private atom-deps
+(def ^:private ^:deps atom-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
     [org.clojure/data.xml "0.0.8"]
     [clj-time "0.12.0"]])
@@ -1039,7 +1040,7 @@
       :tracer :io.perun/atom-feed
       :pod (create-pod atom-deps)})))
 
-(def ^:private rss-deps
+(def ^:private ^:deps rss-deps
   '[[clj-rss "0.2.3"]
     [clj-time "0.12.0"]])
 
