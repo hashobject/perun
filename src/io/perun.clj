@@ -287,8 +287,9 @@
             1 (perun/report-info task-name "copied unchanged file %s" (first (keys copy-files)))
             (perun/report-info task-name "copied %s unchanged file(s)" (count copy-files)))
           (boot/empty-dir! tmp)
-          (next-task output-fs)
-          (pod/with-call-in @pod (io.perun.render/reset-refreshed!)))))))
+          (let [result-fs (next-task output-fs)]
+            (pod/with-call-in @pod (io.perun.render/reset-refreshed!))
+            result-fs))))))
 
 (defn content-paths
   "Returns a map of path -> parser input for basic content tasks"
