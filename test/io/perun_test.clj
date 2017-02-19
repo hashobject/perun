@@ -465,7 +465,6 @@ This --- be ___markdown___.")
                      :out-dir "foo"
                      :base-url "http://bar.com/"
                      :site-title "Test Site"
-                     :subtitle "Sub-test"
                      :description "Here we go a-testing")
         (testing "atom-feed"
           (file-exists? :path "foo/test-atom.xml"
