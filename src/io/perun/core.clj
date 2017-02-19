@@ -56,11 +56,12 @@
   [url]
   (apply create-filepath (string/split url #"/")))
 
+(def file-separator (java.util.regex.Pattern/quote java.io.File/separator))
+
 (defn path-to-url
   "Converts a path to url"
   [path]
-  (->> java.io.File/separator
-       java.util.regex.Pattern/quote
+  (->> file-separator
        re-pattern
        (string/split path)
        (string/join "/")))
@@ -70,6 +71,9 @@
     (.substring filepath 0 (- (count filepath)
                               (count filename-with-extension)))
     filepath))
+
+(defn filename [name]
+  (second (re-find #"(.+?)(\.[^.]*$|$)" (last (string/split name file-separator)))))
 
 (defn ^String extension [name]
   (last (seq (string/split name #"\."))))

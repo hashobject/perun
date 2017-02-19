@@ -12,8 +12,6 @@
   (:import [java.awt.image BufferedImage]
            [javax.imageio ImageIO]))
 
-(def file-separator (java.util.regex.Pattern/quote java.io.File/separator))
-
 (defn meta=
   [fileset file key val]
   (= (->> file (pm/meta-from-file fileset) key) val))
@@ -485,8 +483,8 @@ This --- be ___markdown___.")
         (add-txt-file :path "test5.md" :content (nth input-strings 6))
         (p/markdown :meta {:assorting true}
                     :out-dir "assorting")
-        (sift :move {(re-pattern (str "assorting" file-separator "(.*)\\.html"))
-                     (str/replace (str "assorting" file-separator "$1.htm")
+        (sift :move {(re-pattern (str "assorting" perun/file-separator "(.*)\\.html"))
+                     (str/replace (str "assorting" perun/file-separator "$1.htm")
                                   #"([\\])"
                                   "\\\\$1")})
 
