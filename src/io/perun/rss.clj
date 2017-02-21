@@ -12,9 +12,9 @@
      :author      (:author-email file)}))
 
 (defn generate-rss-str [files options]
-  (let [rss-options  {:title       (or (:title options) (:site-title options))
+  (let [rss-options  {:title       (:site-title options)
                       :description (:description options)
-                      :link        (or (:link options) (:base-url options))}
+                      :link        (:base-url options)}
         items        (rss-definitions (filter :title files))
         rss-str      (apply rss-gen/channel-xml rss-options items)]
     rss-str))
