@@ -426,7 +426,7 @@
    m meta       META       edn   "metadata to set on each entry"
    o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
   (let [options (merge +pandoc-defaults+ *opts*)]
-    (content-pre-wrap
+    (content-task
      {:render-form-fn (fn [data] `(io.perun.pandoc/process-pandoc ~data ~cmd-opts))
       :paths-fn #(content-paths % options)
       :passthru-fn content-passthru
