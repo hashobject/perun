@@ -567,10 +567,11 @@
 
 (def ^:private +permalink-defaults+
   {:permalink-fn (fn [global-meta m]
-                   (perun/absolutize-url
-                    (string/replace (str (:parent-path m) (:slug m) "/")
-                                    (re-pattern (str "^" (:doc-root global-meta)))
-                                    "")))
+                   (-> (str (:parent-path m) (:slug m))
+                       perun/path-to-url
+                       (str "/")
+                       (string/replace (re-pattern (str "^" (:doc-root global-meta))) "")
+                       perun/absolutize-url))
    :filterer identity
    :extensions [".html"]})
 
@@ -583,7 +584,7 @@
         path-fn (fn [global-meta m]
                   (let [permalink (permalink-fn global-meta m)]
                     (str (:doc-root global-meta)
-                         (string/replace permalink #"/$" "/index.html"))))]
+                         (perun/url-to-path (string/replace permalink #"/$" "/index.html")))))]
     (mv-pre-wrap {:task-name "permalink"
                   :path-fn path-fn
                   :tracer :io.perun/permalink
