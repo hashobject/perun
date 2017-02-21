@@ -354,7 +354,8 @@
 
 (def ^:private ^:deps markdown-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [org.pegdown/pegdown "1.6.0"]])
+    [com.vladsch.flexmark/flexmark "0.15.1"]
+    [com.vladsch.flexmark/flexmark-profile-pegdown "0.15.1"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"

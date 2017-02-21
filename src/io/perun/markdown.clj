@@ -1,7 +1,9 @@
 (ns io.perun.markdown
   (:require [io.perun.core   :as perun]
             [clojure.java.io :as io])
-  (:import [org.pegdown PegDownProcessor Extensions]))
+  (:import [com.vladsch.flexmark.html HtmlRenderer]
+           [com.vladsch.flexmark.parser Parser]
+           [com.vladsch.flexmark.profiles.pegdown Extensions PegdownOptionsAdapter]))
 
 ;; Extension handling has been copied from endophile.core
 ;; See https://github.com/sirthias/pegdown/blob/master/src/main/java/org/pegdown/Extensions.java
@@ -43,10 +45,12 @@
        int))
 
 (defn markdown-to-html [file-content extensions]
-  (let [processor (PegDownProcessor. (extensions-map->int extensions))]
+  (let [flexmark-opts (PegdownOptionsAdapter/flexmarkOptions (extensions-map->int extensions))
+        parser (.build (Parser/builder flexmark-opts))
+        renderer (.build (HtmlRenderer/builder flexmark-opts))]
     (->> file-content
-         char-array
-         (.markdownToHtml processor))))
+         (.parse parser)
+         (.render renderer))))
 
 (defn process-markdown [{:keys [entry]} extensions]
   (perun/report-debug "markdown" "processing markdown" (:filename entry))
