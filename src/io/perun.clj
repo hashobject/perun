@@ -445,6 +445,10 @@
         (perun/report-debug "ttr" "generated time-to-read" (map :ttr updated-metas))
         (pm/set-meta fileset updated-metas)))))
 
+(def ^:private ^:deps word-count-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [org.apache.lucene/lucene-analyzers-common "6.4.1"]])
+
 (def ^:private +word-count-defaults+
   {:filterer identity
    :extensions [".html"]})
@@ -453,16 +457,15 @@
   "Count words in each file. Add `:word-count` key to the files' meta"
   [_ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to include"]
-  (let [options (merge +word-count-defaults+ *opts*)]
-    (boot/with-pre-wrap fileset
-      (let [updated-metas (->> (filter-tmp-by-ext fileset options)
-                               (keep #(when-let [content (-> % boot/tmp-file slurp)]
-                                        (let [meta (pm/meta-from-file fileset %)]
-                                          (assoc meta :word-count (count (string/split content #"\s"))))))
-                               (trace :io.perun/word-count))]
-        (perun/report-info "word-count" "added word-count to %s files" (count updated-metas))
-        (perun/report-debug "word-count" "counted words" (map :word-count updated-metas))
-        (pm/set-meta fileset updated-metas)))))
+  (let [pod     (create-pod word-count-deps)
+        options (merge +word-count-defaults+ *opts*)]
+    (content-task
+     {:render-form-fn (fn [data] `(io.perun.word-count/word-count ~data))
+      :paths-fn #(content-paths % options)
+      :passthru-fn content-passthru
+      :task-name "word-count"
+      :tracer :io.perun/word-count
+      :pod pod})))
 
 (def ^:private ^:deps gravatar-deps
   '[[gravatar "1.1.1"]])
