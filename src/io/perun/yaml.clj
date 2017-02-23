@@ -42,9 +42,12 @@
       (first (drop 2 splitted))
       content)))
 
-(defn parse-yaml [{:keys [entry]}]
+(defn parse-yaml [{:keys [entry]} keep-yaml]
   (let [content (-> entry :full-path io/file slurp)
         parsed-metadata (if-let [metadata-str (substr-between content *yaml-head* *yaml-head*)]
                           (normal-colls (yaml/parse-string metadata-str))
-                          {})]
-    (merge entry parsed-metadata {:rendered (remove-metadata content)})))
+                          {})
+        rendered (if keep-yaml
+                   content
+                   (remove-metadata content))]
+    (merge entry parsed-metadata {:rendered rendered})))
