@@ -49,7 +49,7 @@
 (defn create-filepath
   "Creates a filepath using system path separator."
   [& args]
-  (.getPath (apply io/file args)))
+  (.getPath (apply io/file (remove empty? args))))
 
 (defn url-to-path
   "Converts a url to filepath."

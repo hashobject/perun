@@ -637,6 +637,7 @@
         path-fn (fn [global-meta m]
                   (let [permalink (permalink-fn global-meta m)]
                     (str (:doc-root global-meta)
+                         "/"
                          (perun/url-to-path (string/replace permalink #"/$" "/index.html")))))]
     (mv-pre-wrap {:task-name "permalink"
                   :path-fn path-fn
