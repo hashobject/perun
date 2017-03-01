@@ -47,7 +47,7 @@
         parsed-metadata (if-let [metadata-str (substr-between content *yaml-head* *yaml-head*)]
                           (normal-colls (yaml/parse-string metadata-str))
                           {})
-        rendered (if keep-yaml
-                   content
-                   (remove-metadata content))]
-    (merge entry parsed-metadata {:rendered rendered})))
+        metadata (merge entry parsed-metadata)]
+    (if keep-yaml
+      metadata
+      (assoc metadata :rendered (remove-metadata content)))))
