@@ -1086,8 +1086,15 @@
                         1 filename
                         (str (perun/filename filename) "-" i
                              "." (perun/extension filename))))
-        options (assoc options*
-                       :grouper (page-grouper-fn (assoc options* :filename-fn filename-fn)))]
+        page-fn (page-grouper-fn (assoc options* :filename-fn filename-fn))
+        global-overrides (select-keys options* [:site-title :description :base-url])
+        meta-grouper (fn [entries]
+                       (->> entries
+                            page-fn
+                            (map (fn [[path data]]
+                                   [path (update-in data [:entry] merge global-overrides)]))
+                            (into {})))
+        options (assoc options* :grouper meta-grouper)]
     (content-task
      {:render-form-fn (fn [data] `(io.perun.atom/generate-atom ~data))
       :paths-fn #(atom-paths % options)

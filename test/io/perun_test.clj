@@ -501,8 +501,15 @@ This --- be ___markdown___.")
                      :site-title "Test Site"
                      :description "Here we go a-testing")
         (testing "atom-feed"
-          (file-exists? :path (perun/url-to-path "foo/test-atom.xml")
-                        :msg "`atom-feed` should write test-atom.xml"))
+          (comp
+           (file-exists? :path (perun/url-to-path "foo/test-atom.xml")
+                         :msg "`atom-feed` should write test-atom.xml")
+           (content-check :path (perun/url-to-path "foo/test-atom.xml")
+                          :content "http://bar.com/")
+           (content-check :path (perun/url-to-path "foo/test-atom.xml")
+                          :content "Test Site")
+           (content-check :path (perun/url-to-path "foo/test-atom.xml")
+                          :content "Here we go a-testing")))
 
         (add-txt-file :path "test1.md" :content (nth input-strings 2))
         (add-txt-file :path "test2.md" :content (nth input-strings 3))
