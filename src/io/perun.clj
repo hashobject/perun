@@ -350,7 +350,6 @@
       :passthru-fn content-passthru
       :task-name "yaml-metadata"
       :tracer :io.perun/yaml-metadata
-      :rm-originals true
       :pod pod})))
 
 (def ^:private ^:deps markdown-deps
