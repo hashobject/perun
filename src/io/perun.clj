@@ -168,9 +168,11 @@
   [{:keys [task-name inputs tracer pod global-meta render-form-fn]}]
   (trace tracer
          (for [[path input] inputs]
-           (do
+           (let [[f :as render-form] (render-form-fn input)
+                 render-ns (symbol (namespace f))]
              (perun/report-debug task-name "rendered page for path" path)
-             (merge (pod/with-call-in @pod ~(render-form-fn input))
+             (pod/with-eval-in @pod (require '~render-ns))
+             (merge (pod/with-call-in @pod ~render-form)
                     (pm/path-meta path global-meta))))))
 
 (defn diff-inputs-meta
