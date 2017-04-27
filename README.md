@@ -73,7 +73,7 @@ But if you want to make permalinks, generate sitemap and rss feed, hide unfinish
 
 ```clojure
 (deftask build
-  "Build blog."
+  "Build your blog"
   []
   (comp (markdown)
         (draft)
