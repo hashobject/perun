@@ -188,11 +188,22 @@
 
 This --- be ___markdown___.")
 
+(def adoc-content
+  "= Hello there
+
+This --- be _asciidoc_.")
+
 (def input-strings (map #(str "---\n" % "\n---\n" md-content) yamls))
+
+(def adoc-input-strings (map #(str "---\n" % "\n---\n" adoc-content) yamls))
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
 (def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
+
+(def parsed-asciidoctor-md "<div class=\"paragraph\">\n<p>This --- be <em><em>markdown</em></em>.</p>\n</div>")
+
+(def parsed-asciidoctor-adoc "<div class=\"paragraph\">\n<p>This --- be <em>asciidoc</em>.</p>\n</div>")
 
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>\n")
 
@@ -245,6 +256,20 @@ This --- be ___markdown___.")
           (content-check :path "public/2017-01-01-test.html"
                          :content parsed-pandoc-basic
                          :msg "`pandoc` should populate HTML file with parsed content"))
+
+        (add-txt-file :path "2017-01-01-test.adoc" :content (nth input-strings 0))
+        (p/asciidoctor)
+        (testing "asciidoctor for markdown"
+          (content-check :path (perun/url-to-path "public/2017-01-01-test.html")
+                         :content parsed-asciidoctor-md
+                         :msg "`asciidoctor` should populate HTML file with parsed markdown content"))
+
+        (add-txt-file :path "2017-01-01-test.adoc" :content (nth adoc-input-strings 0))
+        (p/asciidoctor)
+        (testing "asciidoctor for asciidoc"
+          (content-check :path (perun/url-to-path "public/2017-01-01-test.html")
+                         :content parsed-asciidoctor-adoc
+                         :msg "`asciidoctor` should populate HTML file with parsed asciidoc content"))
 
         (add-txt-file :path "2017-01-01-test.md" :content (nth input-strings 0))
         (p/markdown)
@@ -398,6 +423,26 @@ This --- be ___markdown___.")
           (content-check :path "test.md"
                          :content "Hello there\n===========\n\nThis --- be ***markdown***.\n"
                          :msg "`pandoc` should parse HTML to markdown"))
+
+        (add-txt-file :path "test.md" :content (nth input-strings 0))
+        (p/asciidoctor :out-dir nil
+                       :filterer #(= (:path %) "test.md")
+                       :extensions [".md"]
+                       :meta {:asciidoctor-set :metadata})
+        (testing "asciidoctor for markdown"
+          (content-check :path "test.html"
+                         :content parsed-asciidoctor-md
+                         :msg "`asciidoctor` should populate HTML with parsed markdown content"))
+
+        (add-txt-file :path "test.adoc" :content (nth adoc-input-strings 0))
+        (p/asciidoctor :out-dir nil
+                       :filterer #(= (:path %) "test.adoc")
+                       :extensions [".adoc"]
+                       :meta {:asciidoctor-set :metadata})
+        (testing "asciidoctor for asciidoc"
+          (content-check :path "test.html"
+                         :content parsed-asciidoctor-adoc
+                         :msg "`asciidoctor` should populate HTML with parsed asciidoc content"))
 
         (add-txt-file :path "test.md" :content (nth input-strings 0))
         (p/markdown :out-dir "hammock"

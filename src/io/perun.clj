@@ -458,6 +458,55 @@
                    :meta meta
                    :cmd-opts cmd-opts))))
 
+(def ^:private ^:deps asciidoctor-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [org.asciidoctor/asciidoctorj "1.5.4"]])
+
+(def ^:private +asciidoctor-defaults+
+  {:out-dir    "public"
+   :out-ext    ".html"
+   :filterer   identity
+   :extensions [".ad" ".asc" ".adoc" ".asciidoc"]
+   :meta       {:original     true
+                :include-rss  true
+                :include-atom true}})
+
+(deftask asciidoctor*
+  "Parse asciidoc files using Asciidoctor
+
+   Asciidoctor has basic support for markdown, and can therefore also be used
+   for parsing `.md` files."
+  [d out-dir    OUTDIR     str   "the output directory"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   m meta       META       edn   "metadata to set on each entry"]
+  (let [pod     (create-pod asciidoctor-deps)
+        options (merge +asciidoctor-defaults+ *opts*)]
+    (content-task
+     {:render-form-fn (fn [data] `(io.perun.asciidoctor/process-asciidoctor ~data))
+      :paths-fn       #(content-paths % options)
+      :passthru-fn    content-passthru
+      :task-name      "asciidoctor"
+      :tracer         :io.perun/asciidoctor
+      :rm-originals   true
+      :pod            pod})))
+
+(deftask asciidoctor
+  "Parse asciidoc files with yaml front matter using Asciidoctor
+
+   Asciidoctor has basic support for markdown, and can therefore also be used
+   for parsing `.md` files."
+  [d out-dir    OUTDIR     str   "the output directory"
+   _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   m meta       META       edn   "metadata to set on each entry"]
+  (let [{:keys [out-dir filterer extensions meta]} (merge +asciidoctor-defaults+ *opts*)]
+    (comp (yaml-metadata :filterer filterer :extensions extensions)
+          (asciidoctor* :out-dir    out-dir
+                        :filterer   filterer
+                        :extensions extensions
+                        :meta       meta))))
+
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
 
