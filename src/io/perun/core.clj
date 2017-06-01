@@ -85,7 +85,9 @@
 
 (defn path->permalink
   [path doc-root]
-  (let [match-doc-root (re-pattern (str "^" doc-root))]
+  (let [match-doc-root (if (= doc-root ".")
+                         ""
+                         (re-pattern (str "^" doc-root)))]
     (-> path
         (string/replace match-doc-root "")
         path-to-url
