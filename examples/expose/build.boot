@@ -5,7 +5,7 @@
                   [hiccup "1.0.5"]
                   [pandeiro/boot-http "0.6.3-SNAPSHOT"]])
 
-(require '[io.perun :refer :all]
+(require '[io.perun :as perun]
          '[io.perun.example.index :as index-view]
          '[io.perun.example.post :as post-view]
          '[pandeiro.boot-http :refer [serve]])
@@ -14,20 +14,20 @@
   "Build test blog. This task is just for testing different plugins together."
   []
   (comp
-        (global-metadata)
-        (images-dimensions)
-        (images-resize)
-        (base)
-        (markdown)
-        (draft)
-        (print-meta)
-        (slug)
-        (permalink)
-        (canonical-url)
-        (build-date)
-        (render :renderer 'io.perun.example.post/render)
-        (collection :renderer 'io.perun.example.index/render :page "index.html")
-        (sitemap)
+        (perun/global-metadata)
+        (perun/images-dimensions)
+        (perun/images-resize)
+        (perun/base)
+        (perun/markdown)
+        (perun/draft)
+        (perun/print-meta)
+        (perun/slug)
+        (perun/permalink)
+        (perun/canonical-url)
+        (perun/build-date)
+        (perun/render :renderer 'io.perun.example.post/render)
+        (perun/collection :renderer 'io.perun.example.index/render :page "index.html")
+        (perun/sitemap)
         (notify)))
 
 (deftask dev
