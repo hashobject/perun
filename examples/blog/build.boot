@@ -2,7 +2,7 @@
   :source-paths #{"src"}
   :resource-paths #{"resources"}
   :dependencies '[[perun "0.4.2-SNAPSHOT"]
-                  [hiccup "1.0.5"]
+                  [hiccup "1.0.5" :exclusions [org.clojure/clojure]]
                   [pandeiro/boot-http "0.6.3-SNAPSHOT"]])
 
 (require '[clojure.string :as str]
