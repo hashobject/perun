@@ -459,7 +459,8 @@
                    :cmd-opts cmd-opts))))
 
 (def ^:private ^:deps asciidoctor-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+  '[[clj-time "0.14.0"]
+    [org.clojure/tools.namespace "0.3.0-alpha3"]
     [org.asciidoctor/asciidoctorj "1.5.4"]])
 
 (def ^:private +asciidoctor-defaults+
