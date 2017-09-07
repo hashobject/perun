@@ -9,7 +9,8 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [io.perun.core :as perun]
-            [io.perun.meta :as pm]))
+            [io.perun.meta :as pm]
+            [clojure.string :as str]))
 
 (def ^:private ^:deps global-deps
   '[])
@@ -458,19 +459,57 @@
                    :meta meta
                    :cmd-opts cmd-opts))))
 
-(def ^:private ^:deps asciidoctor-deps
-  '[[clj-time "0.14.0"]
-    [org.clojure/tools.namespace "0.3.0-alpha3"]
-    [org.asciidoctor/asciidoctorj "1.5.4"]])
+(defn extensions->regex
+  "Helper function to convert a sequence of extensions to a regex"
+  [extensions]
+  {:pre [map (fn [ext] (assert (.startsWith ext ".")) extensions)]}
+  (->> extensions
+       (map (fn [ext] (str/escape ext {\. "\\."})))
+       (str/join "|")
+       (#(str ".*(?:" % ")$"))
+       re-pattern))
+
+(def ^:private +collect-images-defaults+
+  {:extensions [".png" ".svg" ".jpg"]})
+
+(deftask collect-images
+  "Collect images from a directory"
+  [d img-dir    IMGDIR     str   "the image directory"
+   e extensions EXTENSIONS [str] "extensions of files to include"]
+  (let [{:keys [img-dir extensions] :as options} (merge +collect-images-defaults+ *opts*)
+        include-regex                            (extensions->regex extensions)]
+    (boot/with-pre-wrap fileset
+      (-> fileset
+          (boot/add-resource (clojure.java.io/file img-dir) :include #{include-regex})
+          (boot/commit!)))))
+
+(defn asciidoctor-deps [diagram?]
+  (let [adoc-deps    '[[clj-time "0.14.0"]
+                       [org.clojure/tools.namespace "0.3.0-alpha3"]
+                       [org.asciidoctor/asciidoctorj "1.5.4"]]
+        diagram-deps '[[org.asciidoctor/asciidoctorj-diagram "1.5.0"]]]
+    (-> (if diagram?
+          (into adoc-deps diagram-deps)
+          adoc-deps)
+        (with-meta {:private true :deps true}))))
 
 (def ^:private +asciidoctor-defaults+
   {:out-dir    "public"
    :out-ext    ".html"
    :filterer   identity
+   :images     false
    :extensions [".ad" ".asc" ".adoc" ".asciidoc"]
    :meta       {:original     true
                 :include-rss  true
-                :include-atom true}})
+                :include-atom true}
+   :safe       1})
+
+(defn strip-nil-vals
+  "Helper function for removing nil values, to ensure proper merge of maps"
+  [m]
+  (->> m
+       (remove #(nil? (second %)))
+       (into {})))
 
 (deftask asciidoctor*
   "Parse asciidoc files using Asciidoctor
@@ -480,17 +519,23 @@
   [d out-dir    OUTDIR     str   "the output directory"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to process"
-   m meta       META       edn   "metadata to set on each entry"]
-  (let [pod     (create-pod asciidoctor-deps)
-        options (merge +asciidoctor-defaults+ *opts*)]
-    (content-task
-     {:render-form-fn (fn [data] `(io.perun.asciidoctor/process-asciidoctor ~data))
-      :paths-fn       #(content-paths % options)
-      :passthru-fn    content-passthru
-      :task-name      "asciidoctor"
-      :tracer         :io.perun/asciidoctor
-      :rm-originals   true
-      :pod            pod})))
+   _ diagram               bool  "if `true`, generate images from inline text using asciidoctor-diagram"
+   m meta       META       edn   "metadata to set on each entry"
+   s safe       SAFE       int   "security level (default: 1)"]
+  (let [{:keys [diagram safe out-dir] :as options} (merge +asciidoctor-defaults+ (strip-nil-vals *opts*))
+        pod                                        (create-pod (asciidoctor-deps diagram))
+        img-dir                                    (.getPath (boot/tmp-dir!))]
+    (comp (content-task
+           {:render-form-fn (fn [data] `(io.perun.asciidoctor/process-asciidoctor ~out-dir ~img-dir ~diagram ~safe ~data))
+            :paths-fn       #(content-paths % options)
+            :passthru-fn    content-passthru
+            :task-name      "asciidoctor"
+            :tracer         :io.perun/asciidoctor
+            :rm-originals   true
+            :pod            pod})
+          (if diagram
+            (collect-images :img-dir img-dir)
+            identity))))
 
 (deftask asciidoctor
   "Parse asciidoc files with yaml front matter using Asciidoctor
@@ -500,13 +545,17 @@
   [d out-dir    OUTDIR     str   "the output directory"
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to process"
-   m meta       META       edn   "metadata to set on each entry"]
+   _ diagram               bool  "if `true`, generate images from inline text using asciidoctor-diagram"
+   m meta       META       edn   "metadata to set on each entry"
+   s safe       SAFE       int   "security level (default: 1)"]
   (let [{:keys [out-dir filterer extensions meta]} (merge +asciidoctor-defaults+ *opts*)]
     (comp (yaml-metadata :filterer filterer :extensions extensions)
           (asciidoctor* :out-dir    out-dir
                         :filterer   filterer
+                        :diagram    diagram
                         :extensions extensions
-                        :meta       meta))))
+                        :meta       meta
+                        :safe       safe))))
 
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.

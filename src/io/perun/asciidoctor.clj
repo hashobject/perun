@@ -2,7 +2,8 @@
   (:require [io.perun.core :as perun]
             [clj-time.coerce :as tc]
             [clj-time.format :as tf]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import [org.asciidoctor Asciidoctor Asciidoctor$Factory]))
 
 (defn keywords->names
@@ -17,8 +18,14 @@
   [m]
   (reduce-kv #(assoc %1 (keyword %2) %3) {} m))
 
-(def container
-  (Asciidoctor$Factory/create ""))
+(defn container
+  "Creates a new Asciidoctor container, with or without the
+  `asciidoctor-diagram` library."
+  [diagram]
+  (doto (Asciidoctor$Factory/create "")
+    (.requireLibraries (if diagram
+                         '("asciidoctor-diagram")
+                         '()))))
 
 (defn meta->attributes
   "Takes the Perun meta and converts it to a collection of attributes, which can
@@ -52,28 +59,43 @@
   function."
   [meta]
   (dissoc meta
-          :canonical-url :extension :filename :full-path :parent-path :permalink
-          :short-filename :slug))
+          :canonical-url :content :extension :filename :full-path :parent-path
+          :path :permalink :short-filename :slug))
+
+(defn options
+  "Create an options object"
+  [safe attributes outdir]
+  {:pre [(number? safe)]}
+  {"attributes" (if attributes
+                  attributes
+                  (java.util.HashMap.))
+   "safe"       (int safe)
+   "base_dir"   outdir})
 
 (defn parse-file-metadata
   "Processes the asciidoctor content and extracts all the attributes."
-  [adoc-content]
-  (->> (.readDocumentStructure container adoc-content {})
+  [container adoc-content options]
+  (->> (.readDocumentStructure container adoc-content options)
        (.getHeader)
        (.getAttributes)
        attributes->meta
        protect-meta))
 
-(defn asciidoctor-to-html [file-content attributes]
-  (let [options (if attributes
-                  {"attributes" attributes}
-                  {})]
-    (.convert container file-content options)))
+(defn asciidoctor-to-html [container file-content options]
+  (.convert container file-content options))
 
-(defn process-asciidoctor [{:keys [entry]}]
+(defn strip-trailing-slash
+  [path]
+  (str/replace path "/^" ""))
+
+(defn process-asciidoctor [out-dir img-dir diagram safe {:keys [entry]}]
   (perun/report-debug "asciidoctor" "processing asciidoctor" (:filename entry))
-  (let [file-content (-> entry :full-path io/file slurp)
-        attributes   (meta->attributes entry)
-        html         (asciidoctor-to-html file-content attributes)
-        meta         (parse-file-metadata file-content)]
+  (let [outdir       (str/replace (str/join "/" [img-dir out-dir (:parent-path entry)]) "/^" "")
+        _            (.mkdirs (clojure.java.io/file outdir))
+        file-content (-> entry :full-path io/file slurp)
+        attributes   (meta->attributes (assoc entry :outdir outdir))
+        opts         (options safe attributes outdir)
+        cont         (container diagram)
+        html         (asciidoctor-to-html cont file-content opts)
+        meta         (parse-file-metadata cont file-content opts)]
     (merge (assoc entry :rendered html) meta)))
