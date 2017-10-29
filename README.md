@@ -54,7 +54,7 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
 
 ## Version
 
-We use Clojure 1.7.0 and Boot 2.5.0. You should have those versions in order to use perun.
+We use Clojure 1.7.0 and Boot 2.7.2. You should have those versions in order to use perun.
 
 ## Plugins system
 
