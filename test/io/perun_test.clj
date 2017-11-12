@@ -201,12 +201,20 @@ This --- be _asciidoc_.")
 
 (def adoc-input-strings (map #(str (meta-block %) adoc-content) yamls))
 
-(def highlight-input-string
+(def highlight-input-md-string
   (str
    (meta-block (yaml/generate-string (assoc base-meta :uuid "f948c938-3cf2-4feb-bf02-f284c2fe9665")))
    "```scss
 @import 'bootstrap';
 ```"))
+
+(def highlight-input-ad-string
+  (str
+   (meta-block (yaml/generate-string (assoc base-meta :uuid "ce14e4fc-8c65-4e26-94fe-55faaa650c01")))
+   "[source,scss]
+----
+@import 'bootstrap';
+----"))
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
@@ -219,6 +227,8 @@ This --- be _asciidoc_.")
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>\n")
 
 (def highlighted-md "<pre><code class=\"highlight\"><span></span><span class=\"k\">@import</span> <span class=\"s1\">'</span><span class=\"s2\">bootstrap'</span><span class=\"p\">;</span>\n</code></pre>")
+
+(def highlighted-ad "<pre class=\"highlight\"><code class=\"highlight\" data-lang=\"scss\"><span></span><span class=\"k\">@import</span> <span class=\"s1\">'</span><span class=\"s2\">bootstrap'</span><span class=\"p\">;</span>\n</code></pre>")
 
 (def js-content "(function somejs() { console.log('$foo'); })();")
 
@@ -292,13 +302,22 @@ This --- be _asciidoc_.")
                          :content parsed-md-basic
                          :msg "`markdown` should populate HTML file with parsed content"))
 
-        (add-txt-file :path "highlight-test.md" :content highlight-input-string)
+        (add-txt-file :path "highlight-test.md" :content highlight-input-md-string)
         (p/markdown)
         (p/highlight)
 
-        (testing "highlight"
+        (testing "highlight for markdown"
           (content-check :path (perun/url-to-path "public/highlight-test.html")
                          :content highlighted-md
+                         :msg "`highlight` should add Pygments syntax highlighting to HTML file"))
+
+        (add-txt-file :path "highlight-test.ad" :content highlight-input-ad-string)
+        (p/asciidoctor)
+        (p/highlight)
+
+        (testing "highlight for asciidoc"
+          (content-check :path (perun/url-to-path "public/highlight-test.html")
+                         :content highlighted-ad
                          :msg "`highlight` should add Pygments syntax highlighting to HTML file"))
 
         (p/ttr)
