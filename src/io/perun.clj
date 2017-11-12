@@ -520,9 +520,10 @@
 (deftask highlight
   "Syntax highlighting for code blocks using Pygments.
 
-   Requires Pygments CSS styles to be present, see https://github.com/richleland/pygments-css."
-  [_ filterer FILTER code "predicate to use for selecting entries (default: `identity`)"
-   _ class    CLASS  str  "CSS class to wrap code blocks with (default: `highlight`)"]
+   Pygments CSS styles must be provided, see https://github.com/richleland/pygments-css."
+  [_ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   c class      CLASS      str   "CSS class to wrap code blocks with (default: `highlight`)"]
   (let [pod     (create-pod highlight-deps)
         options (merge +highlight-defaults+ *opts*)]
     (content-task
