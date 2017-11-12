@@ -193,9 +193,20 @@ This --- be ___markdown___.")
 
 This --- be _asciidoc_.")
 
-(def input-strings (map #(str "---\n" % "\n---\n" md-content) yamls))
+(defn meta-block
+  [meta]
+  (str "---\n" meta "\n---\n"))
 
-(def adoc-input-strings (map #(str "---\n" % "\n---\n" adoc-content) yamls))
+(def input-strings (map #(str (meta-block %) md-content) yamls))
+
+(def adoc-input-strings (map #(str (meta-block %) adoc-content) yamls))
+
+(def highlight-input-string
+  (str
+   (meta-block (yaml/generate-string (assoc base-meta :uuid "f948c938-3cf2-4feb-bf02-f284c2fe9665")))
+   "```scss
+@import 'bootstrap';
+```"))
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
@@ -206,6 +217,8 @@ This --- be _asciidoc_.")
 (def parsed-asciidoctor-adoc "<div class=\"paragraph\">\n<p>This --- be <em>asciidoc</em>.</p>\n</div>")
 
 (def parsed-md-smarts "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This &mdash; be <strong><em>markdown</em></strong>.</p>\n")
+
+(def highlighted-md "<pre><code class=\"highlight\"><span></span><span class=\"k\">@import</span> <span class=\"s1\">'</span><span class=\"s2\">bootstrap'</span><span class=\"p\">;</span>\n</code></pre>")
 
 (def js-content "(function somejs() { console.log('$foo'); })();")
 
@@ -278,6 +291,15 @@ This --- be _asciidoc_.")
           (content-check :path (perun/url-to-path "public/2017-01-01-test.html")
                          :content parsed-md-basic
                          :msg "`markdown` should populate HTML file with parsed content"))
+
+        (add-txt-file :path "highlight-test.md" :content highlight-input-string)
+        (p/markdown)
+        (p/highlight)
+
+        (testing "highlight"
+          (content-check :path (perun/url-to-path "public/highlight-test.html")
+                         :content highlighted-md
+                         :msg "`highlight` should add Pygments syntax highlighting to HTML file"))
 
         (p/ttr)
         (testing "ttr"
@@ -352,13 +374,13 @@ This --- be _asciidoc_.")
         (p/assortment :renderer 'io.perun-test/render-assortment)
         (testing "assortment"
           (content-check :path (perun/url-to-path "public/index.html")
-                         :content "assortment 5"
+                         :content "assortment 6"
                          :msg "assortment should modify file contents"))
 
         (p/collection :renderer 'io.perun-test/render-collection)
         (testing "collection"
           (content-check :path (perun/url-to-path "public/index.html")
-                         :content "collection 6"
+                         :content "collection 7"
                          :msg "collection should modify file contents"))
 
         (p/tags :renderer 'io.perun-test/render-tags)
@@ -377,7 +399,7 @@ This --- be _asciidoc_.")
         (p/paginate :renderer 'io.perun-test/render-paginate)
         (testing "paginate"
           (content-check :path (perun/url-to-path "public/page-1.html")
-                         :content "paginate 9"
+                         :content "paginate 10"
                          :msg "`paginate` should write new files"))
 
         (p/static :renderer 'io.perun-test/render-static)
