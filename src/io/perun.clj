@@ -507,6 +507,34 @@
                         :extensions extensions
                         :meta       meta))))
 
+(def ^:private ^:deps highlight-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [enlive "1.1.5"]
+    [clygments "1.0.0"]])
+
+(def ^:private +highlight-defaults+
+  {:filterer identity
+   :class "highlight"
+   :extensions [".html"]})
+
+(deftask highlight
+  "Syntax highlighting for code blocks using Pygments.
+
+   Pygments CSS styles must be provided, see https://github.com/richleland/pygments-css."
+  [_ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions EXTENSIONS [str] "extensions of files to process"
+   c class      CLASS      str   "CSS class to wrap code blocks with (default: `highlight`)"]
+  (let [pod     (create-pod highlight-deps)
+        options (merge +highlight-defaults+ *opts*)]
+    (content-task
+     {:render-form-fn (fn [data] `(io.perun.highlight/highlight-code-blocks ~data ~(:class options)))
+      :paths-fn #(content-paths % options)
+      :passthru-fn content-passthru
+      :task-name "highlight"
+      :tracer :io.perun/highlight
+      :rm-originals true
+      :pod pod})))
+
 (deftask global-metadata
   "Read global metadata from `perun.base.edn` or configured file.
 
