@@ -119,6 +119,7 @@ Following sites were created with perun and Boot:
  - [200ok.ch](http://200ok.ch). See [build.boot](https://gitlab.com/200ok/200ok.gitlab.io/blob/master/build.boot)
  - [sooheon.org](http://sooheon.org). See [build.boot](https://github.com/sooheon/sooheon.org/blob/master/build.boot)
  - [ballpointcarrot.net](http://ballpointcarrot.net). See [build.boot](https://github.com/ballpointcarrot/ballpointcarrot.github.io/blob/master/.perun/build.boot)
+ - [jstaffans.github.io](https://jstaffans.github.io). See [build.boot](https://github.com/jstaffans/jstaffans.github.io/blob/static-perun/build.boot)
 
 Also check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder.
 
