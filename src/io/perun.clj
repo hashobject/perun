@@ -805,11 +805,11 @@
     (letfn [(render-paths [fileset]
               (let [entries (filter-meta-by-ext fileset options)]
                 (reduce
-                 (fn [result {:keys [path out-dir] :as entry}]
+                 (fn [result {:keys [out-dir filename path] :as entry}]
                    (let [content (slurp (boot/tmp-file (boot/tmp-get fileset path)))
-                         path-args (if (= out-dir (:out-dir options))
+                         path-args (if (= out-dir (:out-dir options)) ;; if custom out-dir we cannot rely on pre-built :path
                                      [path]
-                                     [(:out-dir options) path])
+                                     [out-dir (:out-dir options) filename])
                          new-path (apply perun/create-filepath path-args)
                          new-entry (merge entry
                                           meta
