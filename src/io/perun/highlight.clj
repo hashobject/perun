@@ -8,12 +8,12 @@
 
 (defn- extract-code
   [highlighted]
-  (-> highlighted
-      java.io.StringReader.
-      enlive/html-resource
-      (enlive/select [:pre])
-      first
-      :content))
+  (some-> highlighted
+          java.io.StringReader.
+          enlive/html-resource
+          (enlive/select [:pre])
+          first
+          :content))
 
 (defn- highlight [node]
   (let [code (->> node :content (apply str))
