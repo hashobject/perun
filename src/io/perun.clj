@@ -1244,3 +1244,35 @@
         :passthru-fn content-passthru
         :task-name "inject-scripts"
         :tracer :io.perun/inject-scripts}))))
+
+(def ^:private +lessc-defaults+
+  {:out-dir "public"
+   :out-ext ".css"
+   :filterer identity
+   :extensions [".less"]
+   :include-dirs []})
+
+(deftask lessc
+  "Compile CSS using Less.
+
+  `lessc` must be installed and on your PATH."
+  [d out-dir      OUTDIR     str   "the output directory"
+   x out-ext      OUTEXT     str   "extension output"
+   _ filterer     FILTER     code  "predicate to use for selecting entries (default: `identity`)"
+   e extensions   EXTENSIONS [str] "extensions of files to process"
+   m meta         META       edn   "metadata to set on each entry"
+   i include-dirs PATH       [str] "Include directories for lessc."]
+  (let [options (merge +lessc-defaults+ *opts*)
+        include-dirs-str (->> (:include-dirs options)
+                              (mapcat (fn [dir]
+                                        (if (.startsWith dir "/")
+                                          [dir]
+                                          (map #(str % "/" dir) (boot/get-env :directories)))))
+                              (string/join ":"))]
+    (content-task
+     {:render-form-fn (fn [data] `(io.perun.lessc/compile-less ~data ~include-dirs-str))
+      :paths-fn #(content-paths % options)
+      :passthru-fn content-passthru
+      :task-name "lessc"
+      :tracer :io.perun/lessc
+      :rm-originals true})))
