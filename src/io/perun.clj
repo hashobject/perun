@@ -1295,25 +1295,30 @@
    :icon-path "icon.png"
    :resolutions #{192 512}
    :theme-color "#ffffff"
+   :background-color "#ffffff"
    :display "standalone"
    :scope "/"})
 
 (deftask manifest*
-  [o out-dir     OUTDIR  str "the output directory"
-   t site-title  TITLE   str "name for the installable web application"
-   c theme-color COLOR   str "background color theme for icon (default \"#ffffff\")"
-   d display     DISPLAY str "display mode for browser (default \"standalone\")"
-   s scope       SCOPE   str "the scope to which the manifest applies (default \"/\")"]
-  (let [{:keys [site-title] :as opts} (merge +manifest-defaults+ *opts*)
+  [o out-dir          OUTDIR     str "the output directory"
+   t site-title       TITLE      str "name for the installable web application"
+   l short-title      SHORTTITLE str "short name for the installable web application (default :site-title)"
+   c theme-color      COLOR      str "background color theme for icon (default \"#ffffff\")"
+   b background-color BGCOLOR    str "background color for app loading state (default \"#ffffff\")"
+   d display          DISPLAY    str "display mode for browser (default \"standalone\")"
+   s scope            SCOPE      str "the scope to which the manifest applies (default \"/\")"]
+  (let [opts (merge +manifest-defaults+ *opts*)
         pod (create-pod manifest-deps)]
     (letfn [(manifest-path [fileset]
               (let [icon-metas (filter-meta-by-ext fileset {:filterer :manifest-icon})
                     path (perun/create-filepath out-dir "manifest.json")
                     global-meta (pm/get-global-meta fileset)
+                    site-title (or site-title (:site-title global-meta))
                     args (merge opts
                                 {:icons icon-metas
                                  :input-paths (into #{} (map :path icon-metas))
-                                 :site-title (or site-title (:site-title global-meta))})]
+                                 :site-title site-title
+                                 :short-title (or short-title site-title)})]
                 {path args}))]
       (content-task
        {:render-form-fn (fn [data] `(io.perun.manifest/manifest ~data))
@@ -1323,15 +1328,18 @@
         :pod pod}))))
 
 (deftask manifest
-  "Creates a manifest.json for Android (currently)"
-  [o out-dir     OUTDIR      str    "the output directory"
-   i icon-path   PATH        str    "The input icon to be resized (default \"icon.png\""
-   r resolutions RESOLUTIONS #{int} "resolutions to which images should be resized (default #{192 512})"
-   t site-title  TITLE       str    "name for the installable web application"
-   c theme-color COLOR       str    "background color theme for icon (default \"#ffffff\")"
-   d display     DISPLAY     str    "display mode for browser (default \"standalone\")"
-   s scope       SCOPE       str    "the scope to which the manifest applies (default \"/\")"]
-  (let [{:keys [out-dir icon-path resolutions site-title theme-color display scope]}
+  "Creates a manifest.json for installable web applications"
+  [o out-dir          OUTDIR      str    "the output directory"
+   i icon-path        PATH        str    "The input icon to be resized (default \"icon.png\""
+   r resolutions      RESOLUTIONS #{int} "resolutions to which images should be resized (default #{192 512})"
+   t site-title       TITLE       str    "name for the installable web application"
+   l short-title      SHORTTITLE  str    "short name for the installable web application (default :site-title)"
+   c theme-color      COLOR       str    "background color theme for icon (default \"#ffffff\")"
+   b background-color BGCOLOR     str    "background color for app loading state (default \"#ffffff\")"
+   d display          DISPLAY     str    "display mode for browser (default \"standalone\")"
+   s scope            SCOPE       str    "the scope to which the manifest applies (default \"/\")"]
+  (let [{:keys [out-dir icon-path resolutions site-title short-title
+                theme-color background-color display scope]}
         (merge +manifest-defaults+ *opts*)]
     (comp (images-resize :out-dir out-dir
                          :resolutions resolutions
@@ -1340,6 +1348,8 @@
           (mime-type :filterer :manifest-icon)
           (manifest* :out-dir out-dir
                      :site-title site-title
+                     :short-title short-title
                      :theme-color theme-color
+                     :background-color background-color
                      :display display
                      :scope scope))))
