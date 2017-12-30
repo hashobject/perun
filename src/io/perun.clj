@@ -1330,7 +1330,7 @@
 (deftask manifest
   "Creates a manifest.json for installable web applications"
   [o out-dir          OUTDIR      str    "the output directory"
-   i icon-path        PATH        str    "The input icon to be resized (default \"icon.png\""
+   i icon-path        PATH        str    "The input icon to be resized (default \"icon.png\")"
    r resolutions      RESOLUTIONS #{int} "resolutions to which images should be resized (default #{192 512})"
    t site-title       TITLE       str    "name for the installable web application"
    l short-title      SHORTTITLE  str    "short name for the installable web application (default :site-title)"
