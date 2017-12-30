@@ -1285,3 +1285,61 @@
         :passthru-fn content-passthru
         :task-name "inject-scripts"
         :tracer :io.perun/inject-scripts}))))
+
+(def ^:private ^:deps manifest-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [cheshire "5.7.0"]])
+
+(def +manifest-defaults+
+  {:out-dir "public"
+   :icon-path "icon.png"
+   :resolutions #{192 512}
+   :theme-color "#ffffff"
+   :display "standalone"
+   :scope "/"})
+
+(deftask manifest*
+  [o out-dir     OUTDIR  str "the output directory"
+   t site-title  TITLE   str "name for the installable web application"
+   c theme-color COLOR   str "background color theme for icon (default \"#ffffff\")"
+   d display     DISPLAY str "display mode for browser (default \"standalone\")"
+   s scope       SCOPE   str "the scope to which the manifest applies (default \"/\")"]
+  (let [{:keys [site-title] :as opts} (merge +manifest-defaults+ *opts*)
+        pod (create-pod manifest-deps)]
+    (letfn [(manifest-path [fileset]
+              (let [icon-metas (filter-meta-by-ext fileset {:filterer :manifest-icon})
+                    path (perun/create-filepath out-dir "manifest.json")
+                    global-meta (pm/get-global-meta fileset)
+                    args (merge opts
+                                {:icons icon-metas
+                                 :input-paths (into #{} (map :path icon-metas))
+                                 :site-title (or site-title (:site-title global-meta))})]
+                {path args}))]
+      (content-task
+       {:render-form-fn (fn [data] `(io.perun.manifest/manifest ~data))
+        :paths-fn manifest-path
+        :task-name "manifest"
+        :tracer :io.perun/manifest
+        :pod pod}))))
+
+(deftask manifest
+  "Creates a manifest.json for Android (currently)"
+  [o out-dir     OUTDIR      str    "the output directory"
+   i icon-path   PATH        str    "The input icon to be resized (default \"icon.png\""
+   r resolutions RESOLUTIONS #{int} "resolutions to which images should be resized (default #{192 512})"
+   t site-title  TITLE       str    "name for the installable web application"
+   c theme-color COLOR       str    "background color theme for icon (default \"#ffffff\")"
+   d display     DISPLAY     str    "display mode for browser (default \"standalone\")"
+   s scope       SCOPE       str    "the scope to which the manifest applies (default \"/\")"]
+  (let [{:keys [out-dir icon-path resolutions site-title theme-color display scope]}
+        (merge +manifest-defaults+ *opts*)]
+    (comp (images-resize :out-dir out-dir
+                         :resolutions resolutions
+                         :filterer #(= (:path %) icon-path)
+                         :meta {:manifest-icon true})
+          (mime-type :filterer :manifest-icon)
+          (manifest* :out-dir out-dir
+                     :site-title site-title
+                     :theme-color theme-color
+                     :display display
+                     :scope scope))))

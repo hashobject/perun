@@ -444,7 +444,17 @@ This --- be _asciidoc_.")
         (testing "draft"
           (file-exists? :path (perun/url-to-path "public/test/index.html")
                         :negate? true
-                        :msg "`draft` should remove files"))))
+                        :msg "`draft` should remove files"))
+
+        (add-image :path "icon.png" :type "PNG" :width 10 :height 10)
+        (p/manifest)
+        (testing "manifest"
+          (file-exists? :path (perun/url-to-path "public/manifest.json")
+                        :msg "`manifest` should write manifest.json")
+          (file-exists? :path (perun/url-to-path "public/icon_192.png")
+                        :msg "`manifest` should write icon resized to 192px")
+          (file-exists? :path (perun/url-to-path "public/icon_512.png")
+                        :msg "`manifest` should write icon resized to 512px"))))
 
 (deftesttask with-arguments-test []
   (comp (boot/with-pre-wrap fileset
@@ -757,7 +767,21 @@ This --- be _asciidoc_.")
            (content-check :path "baz.htm"
                           :content (str "<script>" js-content "</script>")
                           :negate? true
-                          :msg "`inject-scripts` should not alter the contents of a removed file")))))
+                          :msg "`inject-scripts` should not alter the contents of a removed file")))
+
+        (add-image :path "an-icon.png" :type "PNG" :width 10 :height 10)
+        (p/manifest :out-dir "foop"
+                    :icon-path "an-icon.png"
+                    :resolutions #{20}
+                    :site-title "Blarg"
+                    :theme-color "#f0987d"
+                    :display "fullscreen"
+                    :scope "/blarp")
+        (testing "manifest"
+          (file-exists? :path (perun/url-to-path "foop/manifest.json")
+                        :msg "`manifest` should write manifest.json")
+          (file-exists? :path (perun/url-to-path "foop/an-icon_20.png")
+                        :msg "`manifest` should write icon resized to 20px"))))
 
 (deftesttask content-tests []
   (comp (testing "Collection works without input files" ;; #77
