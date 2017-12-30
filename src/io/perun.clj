@@ -7,7 +7,6 @@
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]
-            [clojure.edn :as edn]
             [io.perun.core :as perun]
             [io.perun.meta :as pm]))
 
@@ -122,6 +121,8 @@
    - width
    - height"
   []
+  ;; This prevents a Java icon appearing in the dock on a Mac, and stealing program focus
+  (System/setProperty "java.awt.headless" "true")
   (boot/with-pre-wrap fileset
     (let [pod (create-pod images-dimensions-deps)
           metas (trace :io.perun/images-dimensions
