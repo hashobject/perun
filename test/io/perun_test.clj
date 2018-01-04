@@ -232,6 +232,32 @@ This --- be _asciidoc_.")
 
 (def js-content "(function somejs() { console.log('$foo'); })();")
 
+(def less-content "@base: #f938ab;
+
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  -webkit-box-shadow: @style @c;
+  box-shadow:         @style @c;
+}
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(0, 0, 0, @alpha));
+}
+.box {
+  color: saturate(@base, 5%);
+  border-color: lighten(@base, 30%);
+  div { .box-shadow(0 0 5px, 30%) }
+}")
+
+(def import-less "@import \"content\";")
+
+(def parsed-less ".box {
+  color: #fe33ac;
+  border-color: #fdcdea;
+}
+.box div {
+  -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}")
+
 (deftesttask global-metadata-test []
   (comp (add-txt-file :path "perun.base.edn" :content "{:global \"metadata!\"}")
         (p/global-metadata)
@@ -444,7 +470,14 @@ This --- be _asciidoc_.")
         (testing "draft"
           (file-exists? :path (perun/url-to-path "public/test/index.html")
                         :negate? true
-                        :msg "`draft` should remove files"))))
+                        :msg "`draft` should remove files"))
+
+        (add-txt-file :path "test.less" :content less-content)
+        (p/lessc)
+        (testing "lessc"
+          (content-check :path (perun/url-to-path "public/test.css")
+                         :content parsed-less
+                         :msg "`lessc` should parse less into css"))))
 
 (deftesttask with-arguments-test []
   (comp (boot/with-pre-wrap fileset
@@ -757,7 +790,19 @@ This --- be _asciidoc_.")
            (content-check :path "baz.htm"
                           :content (str "<script>" js-content "</script>")
                           :negate? true
-                          :msg "`inject-scripts` should not alter the contents of a removed file")))))
+                          :msg "`inject-scripts` should not alter the contents of a removed file")))
+
+        (add-txt-file :path "test.lss" :content import-less)
+        (add-txt-file :path "import-dir/content.less" :content less-content)
+        (p/lessc :out-dir "foo"
+                 :out-ext ".csss"
+                 :filterer #(= (:path %) "test.lss")
+                 :extensions [".lss"]
+                 :include-dirs ["import-dir"])
+        (testing "lessc"
+          (content-check :path (perun/url-to-path "foo/test.csss")
+                         :content parsed-less
+                         :msg "`lessc` should parse less into css"))))
 
 (deftesttask content-tests []
   (comp (testing "Collection works without input files" ;; #77
