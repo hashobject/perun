@@ -157,6 +157,13 @@
           (commit tmp)
           (pm/set-meta updated-metas)))))
 
+(defn apply-out-dir
+  [path old-out-dir new-out-dir]
+  (let [path-args (if (= old-out-dir new-out-dir)
+                    [path]
+                    [new-out-dir path])]
+    (apply perun/create-filepath path-args)))
+
 (defn render-in-pod
   "Renders paths in `inputs`, using `render-form-fn` in `pod`
 
@@ -300,11 +307,10 @@
   (let [global-meta (pm/get-global-meta fileset)]
     (reduce (fn [result {:keys [path] :as entry}]
               (let [ext-pattern (re-pattern (str "(" (string/join "|" extensions) ")$"))
-                    new-path (if out-ext
-                               (->> out-ext
-                                    (string/replace path ext-pattern)
-                                    (perun/create-filepath out-dir))
-                               (perun/create-filepath out-dir path))
+                    ext-path (if out-ext
+                               (string/replace path ext-pattern out-ext)
+                               path)
+                    new-path (apply-out-dir ext-path (:out-dir entry) out-dir)
                     path-meta (pm/path-meta path
                                             global-meta
                                             (boot/tmp-file (boot/tmp-get fileset path)))]
@@ -802,20 +808,17 @@
    e extensions EXTENSIONS [str] "extensions of files to include"
    r renderer   RENDERER   sym   "page renderer (fully qualified symbol which resolves to a function)"
    m meta       META       edn   "metadata to set on each entry"]
-  (let [{:keys [renderer] :as options} (merge +render-defaults+ *opts*)]
+  (let [{:keys [renderer out-dir] :as options} (merge +render-defaults+ *opts*)]
     (letfn [(render-paths [fileset]
               (let [entries (filter-meta-by-ext fileset options)]
                 (reduce
-                 (fn [result {:keys [out-dir filename path] :as entry}]
+                 (fn [result {:keys [path] :as entry}]
                    (let [content (slurp (boot/tmp-file (boot/tmp-get fileset path)))
-                         path-args (if (= out-dir (:out-dir options)) ;; if custom out-dir we cannot rely on pre-built :path
-                                     [path]
-                                     [out-dir (:out-dir options) filename])
-                         new-path (apply perun/create-filepath path-args)
+                         new-path (apply-out-dir path (:out-dir entry) out-dir)
                          new-entry (merge entry
                                           meta
                                           {:content content
-                                           :out-dir (:out-dir options)})]
+                                           :out-dir out-dir})]
                      (assoc result new-path {:meta    (pm/get-global-meta fileset)
                                              :entries entries
                                              :entry   new-entry
@@ -848,7 +851,7 @@
         path (perun/create-filepath out-dir page)
         static-path (fn [fileset]
                       {path {:meta (pm/get-global-meta fileset)
-                             :entry (assoc meta :path path)}})]
+                             :entry (assoc meta :path path :out-dir out-dir)}})]
     (render-task {:task-name "static"
                   :paths-fn static-path
                   :renderer renderer
@@ -869,7 +872,7 @@
                                                            (boot/tmp-get fileset)
                                                            boot/tmp-file
                                                            slurp))))
-               new-path  (perun/create-filepath out-dir path)
+               new-path  (apply-out-dir path (:out-dir entry) out-dir)
                new-entry (merge entry
                                 {:out-dir out-dir}
                                 (pm/path-meta path global-meta))]
