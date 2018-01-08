@@ -1,0 +1,10 @@
+/*******************************
+    User Variable Overrides
+*******************************/
+
+/* Similar to active */
+@labelHoverBackgroundColor: @green;
+@labelHoverTextColor: @greenTextColor;
+
+@labelActiveBackgroundColor: @green;
+@labelActiveTextColor: @greenTextColor;

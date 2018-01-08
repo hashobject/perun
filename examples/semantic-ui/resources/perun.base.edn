@@ -1,0 +1,17 @@
+{:site-title "Programming Clojure, ClojureScript and Node.js."
+ :site-description "A programming blog targeted to developers where the author
+ will try to write tips, tutorials and programming patterns to the best of his
+ knowledge. The topics are broad but will focus on Clojure, ClojureScript,
+ niche development tools and programming languages."
+ :site-author "Andrea Richiardi"
+ :site-author-email "a.richiardi.work@gmail.com"
+ :site-author-twitter "https://twitter.com/richiardiandrea"
+ :site-author-github "https://github.com/arichiardi"
+ :site-author-linkedin "https://www.linkedin.com/in/richiardiandrea"
+ :site-author-keybase "https://keybase.io/arichiardi"
+ :site-author-gravatar "https://www.gravatar.com/avatar/708f9c347fce0493d929be88dbf70ea9"
+ :site-org-url "https://andrearichiardi.com"
+ :site-org-logo-url "https://andrearichiardi.com/images/logo512x512.png"
+ :site-org-logo-width "512"
+ :site-org-logo-height "512"
+ :copyright-initial-year 2015}
