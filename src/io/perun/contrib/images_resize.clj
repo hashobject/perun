@@ -9,29 +9,29 @@
      [java.awt.image BufferedImage]
      [javax.imageio ImageIO ImageWriter]))
 
-(defn write-file [options tmp file ^BufferedImage buffered-file resolution]
-  (let [{:keys [slug extension parent-path]} file
-        new-filename (str slug "_" resolution "." extension)
-        new-path (perun/create-filepath (:out-dir options) parent-path new-filename)
-        new-file (io/file tmp new-path)]
-    (io/make-parents new-file)
-    (ImageIO/write buffered-file extension new-file)
-    {:path new-path}))
+(def img-cache (atom {}))
 
-(defn resize-to [tgt-path file options resolution]
-  (let [io-file (-> file :full-path io/file)
-        buffered-image (iu/buffered-image io-file)
+(defn get-input-img
+  [{:keys [input-meta]}]
+  (let [input-path (:full-path input-meta)
+        key (str input-path "-" (:hash input-meta))]
+    (if-let [buffered-image (get @img-cache key)]
+      @buffered-image
+      (let [buffered-image (future (-> input-path
+                                       io/file
+                                       iu/buffered-image))]
+        (swap! img-cache assoc key buffered-image)
+        @buffered-image))))
+
+(defn image-resize
+  [{:keys [path resolution extension tmp-dir] :as data}]
+  (perun/report-debug "image-resize" "resizing" path)
+  (let [buffered-image (get-input-img data)
         resized-buffered-image (resize/resize-to-width buffered-image resolution)
-        new-dimensions (iu/dimensions resized-buffered-image)
-        new-meta (write-file options tgt-path file resized-buffered-image resolution)
-        dimensions {:width (first new-dimensions) :height (second new-dimensions)}]
-    (merge file new-meta dimensions (select-keys options [:out-dir]))))
-
-(defn process-image [tgt-path file options]
-  (perun/report-debug "image-resize" "resizing" (:path file))
-  (pmap #(resize-to tgt-path file options %) (:resolutions options)))
-
-(defn images-resize [tgt-path files options]
-  (let [updated-files (doall (mapcat #(process-image tgt-path % options) files))]
-    (perun/report-info "image-resize" "processed %s image files" (count files))
-    updated-files))
+        new-file (io/file tmp-dir path)]
+    (io/make-parents new-file)
+    (ImageIO/write resized-buffered-image extension new-file)
+    (merge (dissoc data :input-meta :tmp-dir)
+           (into {} (map vector
+                         [:width :height]
+                         (iu/dimensions resized-buffered-image))))))
