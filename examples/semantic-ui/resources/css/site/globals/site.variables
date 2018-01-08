@@ -1,0 +1,18 @@
+/*******************************
+     User Global Variables
+*******************************/
+
+@imagePath: "themes/default/assets/images";
+@fontPath: "themes/default/assets/fonts";
+@fontSize: 16px;
+
+/* Colors */
+
+@primaryColor: #DCF9BB;
+
+@green: #DCF9BB;
+@pink: #EF81E7;
+
+@linkHoverUnderline: underline;
+
+@linkColor: @pink;
