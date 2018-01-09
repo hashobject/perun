@@ -131,32 +131,6 @@
                          (io.perun.contrib.images-dimensions/images-dimensions ~metas {}))]
       (pm/set-meta fileset updated-metas))))
 
-(def ^:private ^:deps images-resize-deps
-  '[[image-resizer "0.1.8"]])
-
-(def ^:private +images-resize-defaults+
-  {:out-dir "public"
-   :resolutions #{3840 2560 1920 1280 1024 640}})
-
-(deftask images-resize
-  "Resize images to the provided resolutions.
-   Each image file would have resolution appended to it's name:
-   e.x. san-francisco.jpg would become san-francisco_3840.jpg"
-  [o out-dir     OUTDIR       str    "the output directory"
-   r resolutions RESOLUTIONS  #{int} "resoulitions to which images should be resized"]
-  (boot/with-pre-wrap fileset
-    (let [options (merge +images-resize-defaults+ *opts*)
-          tmp (boot/tmp-dir!)
-          pod (create-pod images-resize-deps)
-          metas (trace :io.perun/images-resize
-                       (meta-by-ext fileset [".png" ".jpeg" ".jpg"]))
-          updated-metas (pod/with-call-in @pod
-                         (io.perun.contrib.images-resize/images-resize ~(.getPath tmp) ~metas ~options))]
-      (perun/report-debug "images-resize" "new resized images" updated-metas)
-      (-> fileset
-          (commit tmp)
-          (pm/set-meta updated-metas)))))
-
 (defn apply-out-dir
   [path old-out-dir new-out-dir]
   (let [path-args (if (= old-out-dir new-out-dir)
@@ -239,9 +213,9 @@
   `passthru-fn` to handle setting changed metadata on files copied from the
   previous fileset. If input files should be removed from the fileset, set
   `rm-originals` to `true`."
-  [{:keys [task-name render-form-fn paths-fn passthru-fn tracer pod rm-originals]}]
-  (let [tmp  (boot/tmp-dir!)
-        prev (atom {})
+  [{:keys [task-name render-form-fn paths-fn passthru-fn tracer pod tmp rm-originals]}]
+  (let [prev (atom {})
+        tmp (or tmp (boot/tmp-dir!))
         pod (or pod (create-pod content-deps))]
     (fn [next-task]
       (fn [fileset]
@@ -332,6 +306,69 @@
   (trace tracer
          (for [[path {:keys [entry]}] inputs]
            (merge entry (pm/path-meta path global-meta)))))
+
+(defn resize-paths
+  "Returns a map of path -> input for images-resize"
+  [fileset {:keys [out-dir parent-path meta resolutions] :as options} tmp-dir]
+  (let [global-meta (pm/get-global-meta fileset)
+        files (boot/ls fileset)]
+    (reduce
+     (fn [result {:keys [slug path extension] :as entry}]
+       (reduce
+        (fn [result* resolution]
+          (let [new-filename (str slug "_" resolution "." extension)
+                new-path (-> (perun/create-filepath parent-path new-filename)
+                             (apply-out-dir (:out-dir entry) out-dir))
+                input-file (first (boot/by-path [path] files))
+                img-meta (assoc (pm/path-meta new-path global-meta)
+                                :resolution resolution
+                                :input-paths #{path}
+                                :input-meta (merge (pm/meta-from-file fileset input-file)
+                                                   (select-keys input-file [:hash]))
+                                :tmp-dir tmp-dir)]
+            (assoc result*
+                   new-path (merge entry
+                                   meta
+                                   (when out-dir
+                                     {:out-dir out-dir})
+                                   img-meta))))
+        result
+        resolutions))
+     {}
+     (filter-meta-by-ext fileset options))))
+
+(def ^:private ^:deps images-resize-deps
+  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+    [image-resizer "0.1.8"]])
+
+(def ^:private +images-resize-defaults+
+  {:out-dir "public"
+   :resolutions #{3840 2560 1920 1280 1024 640}
+   :filterer identity
+   :extensions [".png" ".jpeg" ".jpg"]})
+
+(deftask images-resize
+  "Resize images to the provided resolutions.
+   Each image file would have resolution appended to it's name:
+   e.x. san-francisco.jpg would become san-francisco_3840.jpg"
+  [o out-dir     OUTDIR      str    "the output directory"
+   r resolutions RESOLUTIONS #{int} "resolutions to which images should be resized"
+   _ filterer    FILTER      code   "predicate to use for selecting entries (default: `identity`)"
+   e extensions  EXTENSIONS  [str]  "extensions of files to include (default: `[]`, aka, all extensions)"
+   m meta        META        edn    "metadata to set on each entry"]
+  ;; This prevents a Java icon appearing in the dock on a Mac, and stealing program focus
+  (System/setProperty "java.awt.headless" "true")
+  (let [pod (create-pod images-resize-deps)
+        tmp (boot/tmp-dir!)
+        options (merge +images-resize-defaults+ *opts*)]
+    (content-task
+     {:render-form-fn (fn [data] `(io.perun.contrib.images-resize/image-resize ~data))
+      :paths-fn #(resize-paths % options (.getPath tmp))
+      :passthru-fn content-passthru
+      :task-name "images-resize"
+      :tracer :io.perun/images-resize
+      :pod pod
+      :tmp tmp})))
 
 (def ^:private ^:deps yaml-metadata-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
