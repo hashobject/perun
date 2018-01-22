@@ -19,23 +19,8 @@ Check [SPEC.md](./SPEC.md) for documentation about metadata keys used by built-i
 
 ## Plugins
 
- - markdown - parse markdown files with YAML metadata
- - global-metadata - read global metadata from edn file. Default to `perun.base.edn`
- - collections - generate page that takes all posts data as parameter
- - drafts - exclude pages that have `:draft` flag
- - time-to-read - calculate time to read for each page (available under `:ttr` key)
- - word-count - count words for each page (available under `:word-count` key)
- - sitemap - generate sitemap for site
- - rss - generate RSS feed
- - atom-feed - generate Atom feed
- - print-meta - utility task to print perun metadata (useful for debugging each task)
- - slugs - generate slugs based on any property (available under `:slug` key)
- - build-date - add `:date-build` to global meta and each file meta
- - permalink - create permalink for each page
- - canonical-url - create canonical-url for each page
- - gravatar - find gravatar urls using emails
- - rendering to any format - flexible rendering
- - inject-scripts - inject JS scripts into HTML pages. Can be used e.x. to add Google Analytics script to all pages
+See the [Built-Ins Guide](https://perun.io/guides/built-ins/) for a list of built-in tasks.
+
 
 ## 3rd party useful plugins
 
