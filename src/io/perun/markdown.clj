@@ -30,7 +30,8 @@
    :tasklistitems        Extensions/TASKLISTITEMS
    :extanchorlinks       Extensions/EXTANCHORLINKS
    :all-optionals        Extensions/ALL_OPTIONALS
-   :all-with-optionals   Extensions/ALL_WITH_OPTIONALS})
+   :all-with-optionals   Extensions/ALL_WITH_OPTIONALS
+   :footnotes            Extensions/FOOTNOTES})
 
 (defn extensions-map->int [opts]
   (->> opts
