@@ -3,13 +3,15 @@
             [clj-rss.core  :as rss-gen]))
 
 (defn rss-definitions [files]
-  (for [file files]
-    {:link        (:canonical-url file)
-     :guid        (:canonical-url file)
-     :pubDate     (:date-published file)
-     :title       (:title file)
-     :description (:description file)
-     :author      (:author-email file)}))
+  (reverse
+   (sort-by :pubDate
+            (for [file files]
+              {:link        (:canonical-url file)
+               :guid        (:canonical-url file)
+               :pubDate     (:date-published file)
+               :title       (:title file)
+               :description (:description file)
+               :author      (:author-email file)}))))
 
 (defn generate-rss-str [files options]
   (let [rss-options  {:title       (:site-title options)
