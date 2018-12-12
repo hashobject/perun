@@ -1,8 +1,8 @@
 (set-env!
   :source-paths #{"test"}
   :resource-paths #{"src"}
-  :dependencies '[[boot/core "2.6.0" :scope "provided"]
-                  [adzerk/boot-test "1.1.2" :scope "test"]
+  :dependencies '[[boot/core "2.7.2" :scope "provided"]
+                  [adzerk/boot-test "1.2.0" :scope "test"]
                   [adzerk/bootlaces "0.1.13" :scope "test"]])
 
 (require 'io.perun)
