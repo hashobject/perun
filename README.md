@@ -34,7 +34,7 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
  - [boot-garden](https://github.com/martinklepsch/boot-garden) - task to compile Garden stylesheets to CSS
  - [boot-autoprefixer](https://github.com/danielsz/boot-autoprefixer) - add vendor prefixes to your CSS
  - [boot-reload](https://github.com/adzerk-oss/boot-reload) - live-reload of browser Cljs, HTML, CSS and images (Requires Cljs).
- - [boot-livereload](https://github.com/deraen/boot-livereload) - live-reload of browser Js, HTML, CSS and images.
+ - [boot-livereload](https://github.com/deraen/boot-livereload) - live-reload of browser JS, HTML, CSS and images.
  - [boot-hyphenate](https://github.com/deraen/boot-hyphenate) - hyphenate HTML files with soft-hyphens.
 
 ## Version
@@ -86,9 +86,9 @@ Then your code might look like this:
 
 ## Use cases
 
- - generate blog from markdown files
- - generate documentation for your open source library bases on README.md
- - any case where you'd want to use Jekyll or another static site generator
+ - Generate blog from markdown files.
+ - Generate documentation for your open source library based on README.
+ - Any case where you'd want to use Jekyll or another static site generator.
 
 ## Examples
 
@@ -107,7 +107,7 @@ Following sites were created with perun and Boot:
  - [jstaffans.github.io](https://jstaffans.github.io). See [build.boot](https://github.com/jstaffans/jstaffans.github.io/blob/static-perun/build.boot)
  - [www.clojurebridgemn.org](http://www.clojurebridgemn.org/). See [build.boot](https://gitlab.com/clojurebridge-mn/clojurebridgemn.org/blob/master/build.boot)
 
-Also check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder.
+Check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder for some inpspiration.
 
 ## How does it work
 
@@ -118,9 +118,15 @@ Perun works in the following steps:
   3. Write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
-When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
+When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. 
+Perun takes set of files as input 
+(e.x. source markdown files for your blog) 
+and produces another set of files as output 
+(e.x. generated deployable html for your blog).
 
-Fileset passed to every task has metadata `(:metadata (meta fileset)`. This metadata contains accumulated information from each task. More info about structure of this metadata is coming.
+Fileset passed to every task has metadata `(:metadata (meta fileset)`. 
+This metadata contains accumulated information from each task. 
+More info about structure of this metadata is coming.
 
 ## Install
 
