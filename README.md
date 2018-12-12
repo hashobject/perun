@@ -113,9 +113,9 @@ Also check out [examples](https://github.com/hashobject/perun/tree/master/exampl
 
 Perun works in the following steps:
 
-  1. read all the files from the source directory and create fileset metadata `(:metadata (meta fileset)` with all meta information available for all tasks/plugins
-  2. call each perun task/plugin to manipulate the fileset metadata
-  3. write the results to the destination/target directory
+  1. Read all the files from the source directory and create fileset metadata `(:metadata (meta fileset)` with all meta information available for all tasks/plugins
+  2. Call each perun task/plugin to manipulate the fileset metadata
+  3. Write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
 When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. Perun takes set of files as input (e.x. source markdown files for your blog) and produces another set of files as output (e.x. generated deployable html for your blog).
@@ -193,13 +193,13 @@ boot build
 To see more detailed output from each task (useful for debugging) please use
 `--verbose` boot flag. E.x. `boot --verbose dev`
 
-### Dev setup
+### Development setup
 
 Perun is static site generator. So usually you'd use it by just running `boot build` which will generate your static site.
 This process is robust and great for production but it's slow and lacks fast feedback when you're developing your site locally.
 In order to solve this problem we recommend following setup:
 
-1. Have 2 separate tasks for building dev version and production version. E.x. `build-dev` and `build`.
+1. Have 2 separate tasks for building local version and production version. E.x. `build-dev` and `build`.
 2. Include [boot-http](https://github.com/pandeiro/boot-http) into your `build.boot` file. This will enable serving your site using web server.
 3. Create task `dev` that will call `build-dev` on any change to your source files:
 
@@ -211,7 +211,7 @@ In order to solve this problem we recommend following setup:
           (serve :resource-root "public")))
 ```
 4. Run`boot dev`
-In such setup you will have http web server serving your generated content that would be regenerated every time you change
+In such setup you will have HTTP web server serving your generated content that would be regenerated every time you change
 your source files. So you'd be able to preview your changes almost immediately.
 
 
@@ -243,6 +243,6 @@ We love contributions. Please submit your pull requests.
 
 ## License
 
-Copyright © 2013-2017 Hashobject Ltd (team@hashobject.com).
+Copyright © 2013-2018 Hashobject Ltd (team@hashobject.com).
 
 Distributed under the [Eclipse Public License](http://opensource.org/licenses/eclipse-1.0).

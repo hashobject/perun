@@ -11,9 +11,9 @@ has a channel [#perun](https://clojurians.slack.com/messages/perun/) for talk ab
 
 ## Making changes
 
-* Fork the repository on Github
+* Fork the repository on GitHub
 * Create a topic branch from where you want to base your work (usually the master branch)
-* Check the formatting rules from existing code (no trailing whitepace, mostly default indentation)
+* Check the formatting rules from existing code (no trailing whitespace, mostly default indentation)
 * Test the changes
 * Push your code to your fork of the repository
 * Make a Pull Request
