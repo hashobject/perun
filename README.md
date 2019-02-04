@@ -98,6 +98,7 @@ Following sites were created with perun and Boot:
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
  - [code.hashobject.com](http://code.hashobject.com). See [build.boot](https://github.com/hashobject/code.hashobject.com/blob/master/build.boot)
  - [deraen.github.io](http://deraen.github.io/). See [build.boot](https://github.com/Deraen/deraen.github.io/blob/blog/build.boot)
+ - [eccentric-j.com](https://eccentric-j.com). See [build.boot](https://github.com/eccentric-j/idle-parens/blob/master/build.boot)
  - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
  - [presumably.de](https://presumably.de/). See [build.boot](https://github.com/pesterhazy/presumably/blob/master/build.boot)
  - [nicerthantriton.com](https://nicerthantriton.com/). See [build.boot](https://github.com/bhagany/nicerthantriton.com/blob/master/build.boot)
