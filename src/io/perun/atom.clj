@@ -77,7 +77,7 @@
                     [:name author]
                     (when author-email [:email author-email])]
                    (for [tag tags]
-                     [:category {:term tag}])
                    ;; FIXME: post-image media:thumbnail
-                   ])]))]
+                     [:category {:term tag}])])]))]
+
     (assoc entry :rendered atom)))
