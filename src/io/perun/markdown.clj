@@ -1,7 +1,8 @@
 (ns io.perun.markdown
   (:require [io.perun.core   :as perun]
             [clojure.java.io :as io])
-  (:import [com.vladsch.flexmark.html HtmlRenderer]
+  (:import [com.vladsch.flexmark Extension]
+           [com.vladsch.flexmark.html HtmlRenderer]
            [com.vladsch.flexmark.parser Parser]
            [com.vladsch.flexmark.profiles.pegdown Extensions PegdownOptionsAdapter]))
 
@@ -46,7 +47,9 @@
        int))
 
 (defn markdown-to-html [file-content extensions]
-  (let [flexmark-opts (PegdownOptionsAdapter/flexmarkOptions (extensions-map->int extensions))
+  (let [flexmark-opts (PegdownOptionsAdapter/flexmarkOptions
+                       (extensions-map->int extensions)
+                       (into-array Extension []))
         parser (.build (Parser/builder flexmark-opts))
         renderer (.build (HtmlRenderer/builder flexmark-opts))]
     (->> file-content

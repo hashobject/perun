@@ -1,0 +1,9 @@
+version: '3'
+services:
+  perun-java11:
+    build:
+      context: .
+      dockerfile: Dockerfile_java11
+    volumes:
+      - ./examples/blog:/usr/src/app
+      - .:/usr/src/perun
