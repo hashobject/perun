@@ -58,7 +58,7 @@
   (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private ^:deps print-meta-deps
-  '[[mvxcvi/puget "1.0.0"]])
+  '[[mvxcvi/puget "1.1.0"]])
 
 (def print-meta-pod (delay (create-pod' print-meta-deps)))
 
@@ -372,7 +372,7 @@
 
 (def ^:private ^:deps yaml-metadata-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [circleci/clj-yaml "0.5.5"]])
+    [circleci/clj-yaml "0.6.0"]])
 
 (def ^:private +yaml-metadata-defaults+
   {:filterer identity
@@ -400,8 +400,8 @@
 
 (def ^:private ^:deps markdown-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [com.vladsch.flexmark/flexmark "0.15.1"]
-    [com.vladsch.flexmark/flexmark-profile-pegdown "0.15.1"]])
+    [com.vladsch.flexmark/flexmark "0.40.16"]
+    [com.vladsch.flexmark/flexmark-profile-pegdown "0.40.16"]])
 
 (def ^:private +markdown-defaults+
   {:out-dir "public"
@@ -776,7 +776,7 @@
                  "based on the location of the file in the fileset\n"))))
 
 (def ^:private ^:deps sitemap-deps
-  '[[sitemap "0.2.4"]
+  '[[sitemap "0.3.0"]
     [clj-time "0.12.0"]])
 
 (def ^:private +sitemap-defaults+
