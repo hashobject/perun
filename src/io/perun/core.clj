@@ -5,7 +5,7 @@
             [boot.from.io.aviso.ansi :as ansi]
             [boot.util               :as u]))
 
-(def +version+ "0.4.2-SNAPSHOT")
+(def +version+ "0.4.3-SNAPSHOT")
 
 (defn report-info [task msg & args]
   (apply u/info
