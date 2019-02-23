@@ -1,9 +1,9 @@
 (set-env!
   :source-paths #{"src"}
   :resource-paths #{"resources"}
-  :dependencies '[[perun "0.4.3-SNAPSHOT"]
+  :dependencies '[[perun "0.4.3-SNAPSHOT" :scope "test"]
                   [hiccup "1.0.5" :exclusions [org.clojure/clojure]]
-                  [pandeiro/boot-http "0.6.3-SNAPSHOT"]])
+                  [pandeiro/boot-http "0.8.3" :exclusions [org.clojure/clojure]]])
 
 (require '[clojure.string :as str]
          '[io.perun :as perun]
