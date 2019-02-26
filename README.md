@@ -104,7 +104,7 @@ Real-world websites created with perun:
  - [www.martinklepsch.org](http://www.martinklepsch.org/). See [build.boot](https://github.com/martinklepsch/martinklepsch.org/blob/master/build.boot)
  - [presumably.de](https://presumably.de/). See [build.boot](https://github.com/pesterhazy/presumably/blob/master/build.boot)
  - [nicerthantriton.com](https://nicerthantriton.com/). See [build.boot](https://github.com/bhagany/nicerthantriton.com/blob/master/build.boot)
- - [200ok.ch](http://200ok.ch). See [build.boot](https://gitlab.com/200ok/200ok.gitlab.io/blob/master/build.boot)
+ - [200ok.ch](http://200ok.ch). See [build.boot](https://gitlab.200ok.ch/200ok/200ok.ch/blob/master/build.boot)
  - [sooheon.org](http://sooheon.org). See [build.boot](https://github.com/sooheon/sooheon.org/blob/master/build.boot)
  - [ballpointcarrot.net](http://ballpointcarrot.net). See [build.boot](https://github.com/ballpointcarrot/ballpointcarrot.github.io/blob/master/.perun/build.boot)
  - [jstaffans.github.io](https://jstaffans.github.io). See [build.boot](https://github.com/jstaffans/jstaffans.github.io/blob/static-perun/build.boot)
