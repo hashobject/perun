@@ -92,7 +92,9 @@ Then your code might look like this:
 
 ## Examples
 
-Following sites were created with perun and Boot:
+[A minimal example](https://github.com/hashobject/perun/tree/master/example), included in this repo.
+
+Real-world websites created with perun:
 
  - [perun.io](https://perun.io). See [build.boot](https://github.com/hashobject/perun.io/blob/master/build.boot)
  - [blog.hashobject.com](http://blog.hashobject.com). See [build.boot](https://github.com/hashobject/blog.hashobject.com/blob/master/build.boot)
@@ -108,7 +110,6 @@ Following sites were created with perun and Boot:
  - [jstaffans.github.io](https://jstaffans.github.io). See [build.boot](https://github.com/jstaffans/jstaffans.github.io/blob/static-perun/build.boot)
  - [www.clojurebridgemn.org](http://www.clojurebridgemn.org/). See [build.boot](https://gitlab.com/clojurebridge-mn/clojurebridgemn.org/blob/master/build.boot)
 
-Check out [examples](https://github.com/hashobject/perun/tree/master/examples) folder for some inpspiration.
 
 ## How does it work
 
