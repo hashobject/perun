@@ -120,14 +120,14 @@ Perun works in the following steps:
   3. Write the results to the destination/target directory
 
 Perun embraces Boot task model. Fileset is the main abstraction and the most important thing you should care about.
-When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions. 
-Perun takes set of files as input 
-(e.x. source markdown files for your blog) 
-and produces another set of files as output 
+When you use perun you need to create custom task that is a composition of standard and 3d party tasks/plugins/functions.
+Perun takes set of files as input
+(e.x. source markdown files for your blog)
+and produces another set of files as output
 (e.x. generated deployable html for your blog).
 
-Fileset passed to every task has metadata `(:metadata (meta fileset)`. 
-This metadata contains accumulated information from each task. 
+Fileset passed to every task has metadata `(:metadata (meta fileset)`.
+This metadata contains accumulated information from each task.
 More info about structure of this metadata is coming.
 
 ## Install
