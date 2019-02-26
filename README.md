@@ -92,7 +92,7 @@ Then your code might look like this:
 
 ## Examples
 
-[A minimal example](https://github.com/hashobject/perun/tree/master/example), included in this repo.
+[A minimal blog example](/example-blog/), included in this repo. See [build.boot](/example-blog/build.boot)
 
 Real-world websites created with perun:
 
