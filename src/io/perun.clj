@@ -504,7 +504,7 @@
 
 (def ^:private ^:deps asciidoctor-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha4"]
-    [org.asciidoctor/asciidoctorj "1.6.1"]])
+    [org.asciidoctor/asciidoctorj "1.5.4"]])
 
 (def ^:private +asciidoctor-defaults+
   {:out-dir    "public"
