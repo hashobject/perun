@@ -243,14 +243,14 @@ Similar auto deployment can be configured using [CircleCI](http://circleci.com) 
 
 We love contributions. Please submit your pull requests.
 
-## Contributors
+## Main Contributors
 
 - [Martin Klepsch](https://github.com/martinklepsch)
 - [Juho Teperi](https://github.com/Deraen)
 - [Brent Hagany](https://github.com/bhagany)
 
-## License
+## Copyright and License
 
-Copyright © 2013-2019 Hashobject Ltd (team@hashobject.com).
+Copyright © 2013-2019 Hashobject Ltd (team@hashobject.com) and [perun Contributors](https://github.com/hashobject/perun/graphs/contributors).
 
 Distributed under the [Eclipse Public License](http://opensource.org/licenses/eclipse-1.0).
