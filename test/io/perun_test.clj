@@ -218,7 +218,7 @@ This --- be _asciidoc_.")
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
-(def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
+(def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This — be <strong><em>markdown</em></strong>.</p>\n")
 
 (def parsed-asciidoctor-md "<div class=\"paragraph\">\n<p>This --- be <em><em>markdown</em></em>.</p>\n</div>")
 
