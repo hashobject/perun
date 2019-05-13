@@ -73,7 +73,7 @@
    g height HEIGHT int "height of the image"]
   (boot/with-pre-wrap fileset
     (let [tmp (boot/tmp-dir!)
-          buffered-image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB)
+          buffered-image (BufferedImage. width height BufferedImage/TYPE_INT_RGB)
           file (io/file tmp path)]
       (io/make-parents file)
       (ImageIO/write buffered-image type file)
@@ -218,7 +218,7 @@ This --- be _asciidoc_.")
 
 (def parsed-md-basic "<h1><a href=\"#hello-there\" id=\"hello-there\"></a>Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
 
-(def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This --- be <strong><em>markdown</em></strong>.</p>\n")
+(def parsed-pandoc-basic "<h1 id=\"hello-there\">Hello there</h1>\n<p>This — be <strong><em>markdown</em></strong>.</p>\n")
 
 (def parsed-asciidoctor-md "<div class=\"paragraph\">\n<p>This --- be <em><em>markdown</em></em>.</p>\n</div>")
 

@@ -95,7 +95,7 @@
                  "automatically set when other tasks access metadata\n"))))
 
 (def ^:private ^:deps mime-type-deps
-  '[[com.novemberain/pantomime "2.8.0"]])
+  '[[com.novemberain/pantomime "2.10.0"]])
 
 (def ^:private +mime-type-defaults+
   {:filterer identity
@@ -114,7 +114,7 @@
         (pm/set-meta fileset updated-metas)))))
 
 (def ^:private ^:deps images-dimensions-deps
-  '[[image-resizer "0.1.8"]])
+  '[[image-resizer "0.1.10"]])
 
 (deftask images-dimensions
   "Add images' dimensions to the file metadata:
@@ -202,7 +202,7 @@
               copy-meta))))
 
 (def ^:private ^:deps content-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]])
 
 (defn content-task
   "Wrapper for input parsing tasks. Calls the return from `render-form-fn` on
@@ -338,8 +338,8 @@
      (filter-meta-by-ext fileset options))))
 
 (def ^:private ^:deps images-resize-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [image-resizer "0.1.8"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+    [image-resizer "0.1.10"]])
 
 (def ^:private +images-resize-defaults+
   {:out-dir "public"
@@ -371,7 +371,7 @@
       :tmp tmp})))
 
 (def ^:private ^:deps yaml-metadata-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
     [circleci/clj-yaml "0.6.0"]])
 
 (def ^:private +yaml-metadata-defaults+
@@ -399,7 +399,7 @@
       :pod pod})))
 
 (def ^:private ^:deps markdown-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
     [com.vladsch.flexmark/flexmark "0.40.16"]
     [com.vladsch.flexmark/flexmark-profile-pegdown "0.40.16"]])
 
@@ -503,8 +503,8 @@
                    :cmd-opts cmd-opts))))
 
 (def ^:private ^:deps asciidoctor-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [org.asciidoctor/asciidoctorj "1.5.4"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+    [org.asciidoctor/asciidoctorj "1.5.8.1"]])
 
 (def ^:private +asciidoctor-defaults+
   {:out-dir    "public"
@@ -552,8 +552,8 @@
                         :meta       meta))))
 
 (def ^:private ^:deps highlight-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [enlive "1.1.5"]
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+    [enlive "1.1.6"]
     [clygments "1.0.0"]])
 
 (def ^:private +highlight-defaults+
@@ -622,8 +622,8 @@
         (pm/set-meta fileset updated-metas)))))
 
 (def ^:private ^:deps word-count-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [org.apache.lucene/lucene-analyzers-common "6.4.1"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+    [org.apache.lucene/lucene-analyzers-common "7.7.1"]])
 
 (def ^:private +word-count-defaults+
   {:filterer identity
@@ -776,8 +776,8 @@
                  "based on the location of the file in the fileset\n"))))
 
 (def ^:private ^:deps sitemap-deps
-  '[[sitemap "0.3.0"]
-    [clj-time "0.12.0"]])
+  '[[sitemap "0.4.0"]
+    [clj-time "0.15.1"]])
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
@@ -802,7 +802,7 @@
         (commit fileset tmp)))))
 
 (def ^:private ^:deps render-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]])
 
 (def render-pod (delay (create-pod' render-deps)))
 
@@ -1175,9 +1175,9 @@
       paths)))
 
 (def ^:private ^:deps atom-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha3"]
-    [org.clojure/data.xml "0.0.8"]
-    [clj-time "0.12.0"]])
+  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+    [org.clojure/data.xml "0.2.0-alpha6"]
+    [clj-time "0.15.1"]])
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
@@ -1223,7 +1223,7 @@
 
 (def ^:private ^:deps rss-deps
   '[[clj-rss "0.2.3"]
-    [clj-time "0.12.0"]])
+    [clj-time "0.15.1"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
