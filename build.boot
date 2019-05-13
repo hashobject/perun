@@ -3,7 +3,7 @@
   :resource-paths #{"src"}
   :dependencies '[[boot/core "2.8.2" :scope "provided"]
                   [adzerk/boot-test "1.2.0" :scope "test"]
-                  [adzerk/bootlaces "0.1.13" :scope "test"]])
+                  [adzerk/bootlaces "0.2.0" :scope "test"]])
 
 (require 'io.perun)
 (def pod-deps
