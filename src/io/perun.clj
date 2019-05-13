@@ -58,7 +58,7 @@
   (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private ^:deps print-meta-deps
-  '[[mvxcvi/puget "1.1.0"]])
+  '[[mvxcvi/puget "1.1.2"]])
 
 (def print-meta-pod (delay (create-pod' print-meta-deps)))
 
@@ -95,7 +95,7 @@
                  "automatically set when other tasks access metadata\n"))))
 
 (def ^:private ^:deps mime-type-deps
-  '[[com.novemberain/pantomime "2.10.0"]])
+  '[[com.novemberain/pantomime "2.11.0"]])
 
 (def ^:private +mime-type-defaults+
   {:filterer identity
@@ -625,7 +625,7 @@
 
 (def ^:private ^:deps word-count-deps
   '[[org.clojure/tools.namespace "0.3.0-alpha4"]
-    [org.apache.lucene/lucene-analyzers-common "7.7.1"]])
+    [org.apache.lucene/lucene-analyzers-common "8.1.0"]])
 
 (def ^:private +word-count-defaults+
   {:filterer identity
@@ -1224,7 +1224,7 @@
       :pod (create-pod atom-deps)})))
 
 (def ^:private ^:deps rss-deps
-  '[[clj-rss "0.2.3"]
+  '[[clj-rss "0.2.5"]
     [clj-time "0.15.1"]])
 
 (def ^:private +rss-defaults+
