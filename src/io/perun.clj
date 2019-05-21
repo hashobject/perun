@@ -494,7 +494,7 @@
    o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
   (let [{:keys [out-dir out-ext filterer
                 extensions meta cmd-opts]} (merge +pandoc-defaults+ *opts*)]
-    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml true)
+    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml false)
           (pandoc* :out-dir out-dir
                    :out-ext out-ext
                    :filterer filterer
