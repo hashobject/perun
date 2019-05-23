@@ -717,11 +717,12 @@
 (def ^:private +slug-defaults+
   {; Parses `slug` portion out of the filename in the format: YYYY-MM-DD-slug-title.ext
    ; Jekyll uses the same format by default.
-   :slug-fn (fn [_ m] (->> (string/split (:filename m) #"[-\.]")
-                           (drop 3)
-                           drop-last
-                           (string/join "-")
-                           string/lower-case))
+   :slug-fn (fn [_ m]
+              (let [f (:filename m)
+                    matches (re-matches #"(?:[0-9]+.[0-9]+.[0-9]+.)?(.+)\..+" f)]
+                (if matches
+                  (second matches)
+                  f)))
    :filterer identity
    :extensions [".html"]})
 
