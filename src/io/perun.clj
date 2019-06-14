@@ -455,7 +455,8 @@
    :out-ext ".html"
    :filterer identity
    :cmd-opts ["-f" "markdown" "-t" "html5"] ;; convert markdown to html5
-   :extensions [".md" ".markdown"]})
+   :extensions [".md" ".markdown"]
+   :keep-yaml false})
 
 (deftask pandoc*
   "Parse files with pandoc
@@ -491,10 +492,11 @@
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to process"
    m meta       META       edn   "metadata to set on each entry"
-   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
+   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"
+   r keep-yaml             bool  "if `true`, remove the yaml header from files"]
   (let [{:keys [out-dir out-ext filterer
                 extensions meta cmd-opts]} (merge +pandoc-defaults+ *opts*)]
-    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml true)
+    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml keep-yaml)
           (pandoc* :out-dir out-dir
                    :out-ext out-ext
                    :filterer filterer
