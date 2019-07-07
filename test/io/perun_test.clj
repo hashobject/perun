@@ -363,7 +363,7 @@ This --- be _asciidoc_.")
         (testing "gravatar"
           (value-check :path (perun/url-to-path "public/2017-01-01-test.html")
                        :value-fn
-                       #(meta= %1 %2 :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
+                       #(meta= %1 %2 :gravatar "https://secure.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
                        :msg "`gravatar` should set `:gravatar` metadata"))
 
         (p/build-date)
@@ -554,7 +554,7 @@ This --- be _asciidoc_.")
         (testing "gravatar"
           (value-check :path (perun/url-to-path "hammock/test.htm")
                        :value-fn
-                       #(meta= %1 %2 :gravatar "http://www.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
+                       #(meta= %1 %2 :gravatar "https://secure.gravatar.com/avatar/a1a361f6c96acb1e31ad4b3bbf7aa444")
                        :msg "`gravatar` should set `:gravatar` metadata"))
 
         (p/build-date :filterer :markdown-set
