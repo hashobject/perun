@@ -4,7 +4,7 @@
   (:import [org.asciidoctor Asciidoctor Asciidoctor$Factory]))
 
 (def container
-  (Asciidoctor$Factory/create ""))
+  (Asciidoctor$Factory/create))
 
 (defn asciidoctor-to-html [file-content]
   (.convert container file-content {}))
