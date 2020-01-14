@@ -19,7 +19,7 @@
 (require '[adzerk.bootlaces :refer :all])
 (require '[io.perun.core :refer [+version+]])
 (require '[io.perun-test])
-(require '[boot.test :refer [runtests]])
+(require '[boot.test :refer [runtests test-report test-exit]])
 
 (bootlaces! +version+)
 
@@ -57,3 +57,11 @@
     (watch)
     (repl :server true)
     (build)))
+
+(deftask test
+  "Run tests"
+  []
+  (comp
+    (runtests)
+    (test-report)
+    (test-exit)))
