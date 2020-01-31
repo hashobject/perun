@@ -58,7 +58,7 @@
   (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private ^:deps print-meta-deps
-  '[[mvxcvi/puget "1.1.2"]])
+  '[[mvxcvi/puget "1.2.0"]])
 
 (def print-meta-pod (delay (create-pod' print-meta-deps)))
 
@@ -202,7 +202,7 @@
               copy-meta))))
 
 (def ^:private ^:deps content-deps
-  '[[org.clojure/tools.namespace "0.3.0"]])
+  '[[org.clojure/tools.namespace "0.3.1"]])
 
 (defn content-task
   "Wrapper for input parsing tasks. Calls the return from `render-form-fn` on
@@ -338,7 +338,7 @@
      (filter-meta-by-ext fileset options))))
 
 (def ^:private ^:deps images-resize-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [image-resizer "0.1.10"]])
 
 (def ^:private +images-resize-defaults+
@@ -371,7 +371,7 @@
       :tmp tmp})))
 
 (def ^:private ^:deps yaml-metadata-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [circleci/clj-yaml "0.6.0"]])
 
 (def ^:private +yaml-metadata-defaults+
@@ -399,7 +399,7 @@
       :pod pod})))
 
 (def ^:private ^:deps markdown-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [com.vladsch.flexmark/flexmark "0.40.16"]
     [com.vladsch.flexmark/flexmark-profile-pegdown "0.40.16"]])
 
@@ -505,7 +505,7 @@
                    :cmd-opts cmd-opts))))
 
 (def ^:private ^:deps asciidoctor-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [org.asciidoctor/asciidoctorj "2.0.0"]])
 
 (def ^:private +asciidoctor-defaults+
@@ -554,7 +554,7 @@
                         :meta       meta))))
 
 (def ^:private ^:deps highlight-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [enlive "1.1.6"]
     [clygments "1.0.0"]])
 
@@ -624,8 +624,8 @@
         (pm/set-meta fileset updated-metas)))))
 
 (def ^:private ^:deps word-count-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
-    [org.apache.lucene/lucene-analyzers-common "8.1.0"]])
+  '[[org.clojure/tools.namespace "0.3.1"]
+    [org.apache.lucene/lucene-analyzers-common "8.4.1"]])
 
 (def ^:private +word-count-defaults+
   {:filterer identity
@@ -779,7 +779,7 @@
 
 (def ^:private ^:deps sitemap-deps
   '[[sitemap "0.4.0"]
-    [clj-time "0.15.1"]])
+    [clj-time "0.15.2"]])
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
@@ -804,7 +804,7 @@
         (commit fileset tmp)))))
 
 (def ^:private ^:deps render-deps
-  '[[org.clojure/tools.namespace "0.3.0"]])
+  '[[org.clojure/tools.namespace "0.3.1"]])
 
 (def render-pod (delay (create-pod' render-deps)))
 
@@ -1177,9 +1177,9 @@
       paths)))
 
 (def ^:private ^:deps atom-deps
-  '[[org.clojure/tools.namespace "0.3.0"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [org.clojure/data.xml "0.2.0-alpha6"]
-    [clj-time "0.15.1"]])
+    [clj-time "0.15.2"]])
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
@@ -1225,7 +1225,7 @@
 
 (def ^:private ^:deps rss-deps
   '[[clj-rss "0.2.5"]
-    [clj-time "0.15.1"]])
+    [clj-time "0.15.2"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"
