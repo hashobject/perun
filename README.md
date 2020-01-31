@@ -239,9 +239,22 @@ Assuming you have setup similar to [example](https://github.com/hashobject/blog.
 
 Similar auto deployment can be configured using [CircleCI](http://circleci.com) too.
 
-## Contributions
 
-We love contributions. Please submit your pull requests.
+## Contributing
+
+We love contributions :)
+Just open a pull request.
+
+# Misc
+
+- What's the origin of the name 'Perun'? How- How should I pronounce 'Perun'?
+- How should I pronounce 'Perun'?
+ should I pronounce it?
+
+According to @podviaznikov in [#88](https://github.com/hashobject/perun/issues/88#issuecomment-174216560), the name comes from https://en.wikipedia.org/wiki/Perun, the ancient Slavic god of thunder (similar to Zeus in Greek). But he also named it because the name was short and the domain name, available :-). So the Wikipedia reference is not so important.
+
+Anton pronounces it stressing the "u" (https://en.wikipedia.org/wiki/Close_back_rounded_vowel), and the "e" as https://en.wikipedia.org/wiki/Mid_front_unrounded_vowel. Chances are, he pronounces the "r" as in https://en.wikipedia.org/wiki/Dental_and_alveolar_flaps.
+
 
 ## Main Contributors
 
