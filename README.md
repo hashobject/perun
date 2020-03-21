@@ -7,7 +7,7 @@
 Simple, composable static site generator built on top of the [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
 Perun is a collection of boot tasks that you can chain together and build something custom
-that suits your needs. Please checkout out [Getting started](https://github.com/hashobject/perun/wiki/Getting-Started) guide.
+that suits your needs. Please check out our [Getting Started](https://perun.io/guides/getting-started/) guide.
 
 ## For information and help
 
