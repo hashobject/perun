@@ -9,6 +9,10 @@ Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
 Perun is a collection of boot tasks that you can chain together and build something custom
 that suits your needs. Please check out our [Getting Started](https://perun.io/guides/getting-started/) guide.
 
+# HELP NEEDED!
+This project is currently unmaintained!
+Want to help? Please see #241.
+
 ## For information and help
 
 [Clojurians slack](https://clojurians.slack.com/) ([join](http://clojurians.net/))
