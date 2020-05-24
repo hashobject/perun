@@ -11,7 +11,7 @@ that suits your needs. Please check out our [Getting Started](https://perun.io/g
 
 # HELP NEEDED!
 This project is currently unmaintained!
-Want to help? Please see #241.
+Want to help? Please see [#241](#241).
 
 ## For information and help
 
