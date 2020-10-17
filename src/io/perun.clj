@@ -1228,7 +1228,7 @@
       :pod (create-pod atom-deps)})))
 
 (def ^:private ^:deps rss-deps
-  '[[clj-rss "0.2.5"]
+  '[[clj-rss"0.2.6"]
     [clj-time "0.15.2"]])
 
 (def ^:private +rss-defaults+
