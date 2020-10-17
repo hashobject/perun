@@ -1,17 +1,50 @@
 (ns io.perun.rss
   (:require [io.perun.core :as perun]
-            [clj-rss.core  :as rss-gen]))
+            [clj-rss.core  :as rss-gen]
+            [clj-time.coerce :as tc]
+            [clj-time.format :as tf]))
+
+(defn iso-datetime [date]
+  (if date
+    (tf/unparse (tf/formatters :date-time-no-ms) (tc/from-date date))
+    :default))
 
 (defn rss-definitions [files]
   (reverse
-   (sort-by :pubDate
+   ;; INFO: Whilst the `:date-published` is in RFC 822 format (i.e.
+   ;; Sat, 10 Oct 2020 02:00:00 +0200), having a 'correct' sort is
+   ;; relevant. Otherwise feed readers interestingly will display an
+   ;; ordering by the names of week days.
+   (sort-by #(iso-datetime (:pubDate %))
             (for [file files]
               {:link        (:canonical-url file)
                :guid        (:canonical-url file)
                :pubDate     (:date-published file)
                :title       (:title file)
-               :description (:description file)
-               :author      (:author-email file)}))))
+               ;; FIXME: Why is there no `:content` attribute
+               ;; available? In the `:content`, there would be the
+               ;; whole post. The `atom` task has `:content`
+               ;; available.
+               ;; :description (str
+               ;;               "<![CDATA["
+               ;;               (:content file)
+               ;;               "]]>")
+               :description (str
+                             "<![CDATA["
+                             "Description: "
+                             (:description file)
+                             "<br><br>"
+                             "Read the full article here: <a href=\""
+                             (:canonical-url file)
+                             "\">"
+                             (:canonical-url file)
+                             "</a>"
+                             "]]>")
+               :author      (or (:author-email file)
+                                ;; INFO: The RSS spec says it should
+                                ;; be one email, but many articles
+                                ;; have multiple authors.
+                                (:authors file))}))))
 
 (defn generate-rss-str [files options]
   (let [rss-options  {:title       (:site-title options)
