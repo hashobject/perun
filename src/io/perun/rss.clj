@@ -44,6 +44,15 @@
                                 ;; INFO: The RSS spec says it should
                                 ;; be one email, but many articles
                                 ;; have multiple authors.
+                                ;; INFO: The proper way would be to
+                                ;; include a "dc:creator" attribute
+                                ;; per author without email, however
+                                ;; clj-rss does not allow for that at
+                                ;; the moment:
+                                ;; https://github.com/yogthos/clj-rss/blob/1399a134d48f9a699e49edd9bc1d9250301a37fd/src/clj_rss/core.clj#L74.
+                                ;; For this reason, we're going with
+                                ;; an 'invalid' rss file which is read
+                                ;; by all tested feed readers, though.
                                 (:authors file))}))))
 
 (defn generate-rss-str [files options]
