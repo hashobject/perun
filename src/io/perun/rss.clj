@@ -40,20 +40,22 @@
                              (:canonical-url file)
                              "</a>"
                              "]]>")
-               :author      (or (:author-email file)
-                                ;; INFO: The RSS spec says it should
-                                ;; be one email, but many articles
-                                ;; have multiple authors.
-                                ;; INFO: The proper way would be to
-                                ;; include a "dc:creator" attribute
-                                ;; per author without email, however
-                                ;; clj-rss does not allow for that at
-                                ;; the moment:
-                                ;; https://github.com/yogthos/clj-rss/blob/1399a134d48f9a699e49edd9bc1d9250301a37fd/src/clj_rss/core.clj#L74.
-                                ;; For this reason, we're going with
-                                ;; an 'invalid' rss file which is read
-                                ;; by all tested feed readers, though.
-                                (:authors file))}))))
+               ;; INFO: The RSS spec says it should
+               ;; be one email, and does not say how to handle multiple authors.
+               ;; have multiple authors.
+               ;; INFO: The specified way would be to
+               ;; include a "dc:creator" attribute
+               ;; per author without email, however
+               ;; clj-rss does not allow for that:
+               ;; https://github.com/yogthos/clj-rss/blob/1399a134d48f9a699e49edd9bc1d9250301a37fd/src/clj_rss/core.clj#L74.
+               ;; For this reason, we're going to include one email
+               ;; address for potentially multiple authors.
+               ;; TODO: Join it here.
+               :author      (let [author (:author file)
+                                  author-email (:author-email file)]
+                              (if (and author author-email)
+                                (str (:author-email file) " (" author ")")
+                                author-email))}))))
 
 (defn generate-rss-str [files options]
   (let [rss-options  {:title       (:site-title options)
