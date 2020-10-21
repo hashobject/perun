@@ -13,8 +13,8 @@
   (reverse
    ;; INFO: Whilst the `:date-published` is in RFC 822 format (i.e.
    ;; Sat, 10 Oct 2020 02:00:00 +0200), having a 'correct' sort is
-   ;; relevant. Otherwise feed readers interestingly will display an
-   ;; ordering by the names of week days.
+   ;; relevant. Otherwise some feed readers interestingly will display
+   ;; an ordering by the names of week days.
    (sort-by #(iso-datetime (:pubDate %))
             (for [file files]
               {:link        (:canonical-url file)
@@ -23,34 +23,23 @@
                :title       (:title file)
                ;; FIXME: Why is there no `:content` attribute
                ;; available? In the `:content`, there would be the
-               ;; whole post. The `atom` task has `:content`
-               ;; available.
-               ;; :description (str
+               ;; whole post.
+               ;; https://www.rssboard.org/rss-profile#namespace-elements-content-encoded
+               ;; :content (str
                ;;               "<![CDATA["
-               ;;               (:content file)
+               ;;               ("content:encoded" file)
                ;;               "]]>")
+               ;; :description can hold HTML (https://www.rssboard.org/rss-profile#data-types-characterdata) and hence wrapped in cdata.
                :description (str
                              "<![CDATA["
-                             "Description: "
                              (:description file)
-                             "<br><br>"
-                             "Read the full article here: <a href=\""
-                             (:canonical-url file)
-                             "\">"
-                             (:canonical-url file)
-                             "</a>"
                              "]]>")
-               ;; INFO: The RSS spec says it should
-               ;; be one email, and does not say how to handle multiple authors.
-               ;; have multiple authors.
-               ;; INFO: The specified way would be to
-               ;; include a "dc:creator" attribute
-               ;; per author without email, however
-               ;; clj-rss does not allow for that:
+               ;; INFO: The old RSS v1 spec assumes one blog post has one
+               ;; author who is identified via one author-email.
+               ;; INFO: The new RSS v2 spec includes a a "dc:creator"
+               ;; attribute per author without email, however clj-rss
+               ;; does not allow for that:
                ;; https://github.com/yogthos/clj-rss/blob/1399a134d48f9a699e49edd9bc1d9250301a37fd/src/clj_rss/core.clj#L74.
-               ;; For this reason, we're going to include one email
-               ;; address for potentially multiple authors.
-               ;; TODO: Join it here.
                :author      (let [author (:author file)
                                   author-email (:author-email file)]
                               (if (and author author-email)
