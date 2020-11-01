@@ -28,6 +28,12 @@
        (map vector [:next :prev :first :last])
        (into {})))
 
+;; Declare a URI alias in this namespace
+;; Rationale: Remove the auto-generated namespace in the feed, because that will lead to invalid feeds. More documentation here:
+;;  - https://github.com/hashobject/perun/pull/251
+;;  - https://stackoverflow.com/questions/64611482/how-to-generate-a-xml-without-a-namespace-with-the-latest-version-of-org-clojure
+(xml/alias-uri 'atom "http://www.w3.org/2005/Atom")
+
 (defn generate-atom [{:keys [entry entries meta]}]
   (let [{:keys [site-title description base-url
                 canonical-url io.perun/version] :as options} (merge meta entry)
@@ -35,7 +41,7 @@
         navs (nav-hrefs options)
         atom (xml/emit-str
               (xml/sexp-as-element
-               [:feed {:xmlns "http://www.w3.org/2005/Atom"}
+               [::atom/feed {:xmlns "http://www.w3.org/2005/Atom"}
                 [:title site-title]
                 (when (seq description)
                   [:subtitle description])
