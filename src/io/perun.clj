@@ -1182,7 +1182,7 @@
 
 (def ^:private ^:deps atom-deps
   '[[org.clojure/tools.namespace "0.3.1"]
-    [org.clojure/data.xml "0.0.8"]
+    [org.clojure/data.xml "0.2.0-alpha6"]
     [clj-time "0.15.2"]])
 
 (def ^:private +atom-defaults+
