@@ -1,0 +1,97 @@
+version: 2.1
+
+jobs:
+  build:
+    parameters:
+      jdk-version:
+        type: string
+        description: "The version of the JDK to test against"
+        default: "8"
+      boot-version:
+        type: string
+        description: "The version of the JDK to test against"
+        default: "2.8.3"
+      clojure-version:
+        type: string
+        description: "The version of the JDK to test against"
+        default: "1.10.1"
+      cache_version:
+        type: string
+        description: "Change this value to force a cache update"
+        default: "1"
+
+    docker:
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/clojure:openjdk-<< parameters.jdk-version >>-boot-<< parameters.boot-version >>
+
+    environment:
+      # Customize the JVM maximum heap limit
+      BOOT_JVM_OPTIONS: -Xmx3200m
+      BOOT_CLOJURE_VERSION: << parameters.clojure-version >>
+      BOOT_WATCHERS_DISABLE: yes
+      BOOT_VERSION: << parameters.boot-version >>
+    steps:
+      - checkout
+      - run:
+          name: Generate Cache Checksum
+          command: shasum "build.boot" | awk '{print $1}' > /tmp/clojure_cache_seed
+      - restore_cache:
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - run:
+          name: Boot Build
+          command: bundle install
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.boot/cache
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - run:
+          name: Ruby Test with Rspec
+          command: bundle exec rspec
+      - persist_to_workspace:
+          root: ./target
+          paths:
+            - logstash-output-mongodb-*.gem
+            # - VERSION
+
+  publish-github-release:
+    docker:
+      - image: circleci/golang:1.15.3
+    steps:
+      - attach_workspace:
+          at: ./artifacts
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get -u github.com/tcnksm/ghr
+            ls --format=single-column ./artifacts
+            repo_version=$(cat ./artifacts/VERSION)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} \
+                -r ${CIRCLE_PROJECT_REPONAME} \
+                -c ${CIRCLE_SHA1} \
+                -delete \
+                v${repo_version} ./artifacts/logstash-output-mongodb-${repo_version}.gem
+
+workflows:
+  version: 2
+  build-test-publish-on-tag:
+    jobs:
+      - build:
+          name: build-v<< matrix.logstash-version >>
+          matrix:
+            parameters:
+              logstash-version: ["7.9"]
+          filters:
+            tags:
+              only: /^v.*/
+      - publish-github-release:
+          requires:
+            - build
+          filters:
+            # only act on version tags
+            tags:
+              only: /^v.*/
+            # ignore any commit on any branch by default
+            branches:
+              ignore: /.*/
