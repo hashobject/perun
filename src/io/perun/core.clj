@@ -5,7 +5,15 @@
             [boot.from.io.aviso.ansi :as ansi]
             [boot.util               :as u]))
 
-(def +version+ "0.4.3-SNAPSHOT")
+(def ^:private +version-file-name+ "version.properties")
+
+(defn perun-version
+  []
+  (let [m (doto (java.util.Properties.)
+            (.load ^java.io.Reader (io/reader +version-file-name+)))]
+    (if-let [[k v] (find m "VERSION")]
+      v
+      (throw (Exception. (str "The " +version-file-name+ " file does not contain a VERSION property, this is a bug."))))))
 
 (defn report-info [task msg & args]
   (apply u/info
