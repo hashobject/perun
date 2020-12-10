@@ -1,0 +1,94 @@
+version: 2.1
+
+parameters:
+  jdk-version:
+    type: string
+    description: "The version of the JDK to test against"
+    default: "8"
+  boot-version:
+    type: string
+    description: "The version of the JDK to test against"
+    default: "2.8.2"
+  clojure-version:
+    type: string
+    description: "The version of the JDK to test against"
+    default: "1.10.1"
+  cache_version:
+    type: string
+    description: "Change this value to force a cache update"
+    default: "1"
+
+executors:
+  boot-clj-executor:
+    docker:
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/clojure:openjdk-<< parameters.jdk-version >>-boot-<< parameters.boot-version >>
+
+jobs:
+  test-and-build:
+    executor: boot-clj-executor
+    environment:
+      # Customize the JVM maximum heap limit
+      BOOT_JVM_OPTIONS: -Xmx3200m
+      BOOT_CLOJURE_VERSION: << parameters.clojure-version >>
+      BOOT_WATCHERS_DISABLE: yes
+      BOOT_VERSION: << parameters.boot-version >>
+    steps:
+      - checkout
+      - run:
+          name: Generate Cache Checksum
+          command: shasum "build.boot" | awk '{print $1}' > /tmp/clojure_cache_seed
+      - restore_cache:
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - run:
+          name: Test and Build
+          command: boot test build target
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.boot/cache
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - persist_to_workspace:
+          root: ./target
+          paths:
+            - perun-*.jar
+
+  deploy-snapshot:
+    executor: boot-clj-executor
+    environment:
+      # Customize the JVM maximum heap limit
+      BOOT_JVM_OPTIONS: -Xmx3200m
+      BOOT_CLOJURE_VERSION: << parameters.clojure-version >>
+      BOOT_WATCHERS_DISABLE: yes
+      BOOT_VERSION: << parameters.boot-version >>
+    steps:
+      - attach_workspace:
+          at: ./target
+      - run:
+          name: Publish Snapshot to Clojars
+          command: |
+            boot push-snapshot
+
+workflows:
+  version: 2
+  build-test-publish-on-tag:
+    jobs:
+      - build:
+          name: build-v<< matrix.jvm-version >>
+          matrix:
+            parameters:
+              jvm-version: ["8"]
+          filters:
+            tags:
+              only: /^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+      - deploy-snapshot:
+          requires:
+            - test-and-build
+          filters:
+            # only act on version tags
+            tags:
+              only: /^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)-SNAPSHOT/
+            # ignore any commit on any branch by default
+            branches:
+              ignore: /.*/
