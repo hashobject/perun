@@ -1,10 +1,8 @@
 (set-env!
-  :source-paths #{"test"}
-  :resource-paths #{"src"}
-  :dependencies '[[boot/core "2.8.2" :scope "provided"]
-                  [org.clojure/clojure "1.10.1"]
-                  [adzerk/boot-test "1.2.0" :scope "test"]
-                  [adzerk/bootlaces "0.2.0" :scope "test"]])
+ :source-paths #{"test"}
+ :resource-paths #{"src"}
+ :dependencies '[[boot/core "2.8.2" :scope "provided" :exclusions [org.clojure/clojure]]
+                 [degree9/boot-semver "1.10.0" :scope "test" :exclusions [org.clojure/clojure]]])
 
 (require 'io.perun)
 (def pod-deps
@@ -13,43 +11,29 @@
        (filter #(:deps (meta %)))
        (map deref)
        (reduce concat)
-       (map #(conj % :scope "test"))))
+       (map #(into % [:scope "test" :exclusions '[org.clojure/clojure]]))))
 
 (set-env! :dependencies #(into % pod-deps))
 
-(require '[adzerk.bootlaces :refer :all])
-(require '[io.perun.core :refer [+version+]])
 (require '[io.perun-test])
 (require '[boot.test :refer [runtests test-report test-exit]])
-
-(bootlaces! +version+)
+(require '[degree9.boot-semver :refer :all])
 
 (task-options!
-  aot {:all true}
-  push {:ensure-branch  "master"
-        :ensure-clean   false
-        :ensure-version +version+}
-  pom {:project 'perun
-       :version +version+
-       :description "Static site generator build with Clojure and Boot"
-       :url         "https://github.com/hashobject/perun"
-       :scm         {:url "https://github.com/hashobject/perun"}
-       :license     {"name" "Eclipse Public License"
-                     "url"  "http://www.eclipse.org/legal/epl-v10.html"}})
-
-
-(deftask release-snapshot
-  "Release snapshot"
-  []
-  (comp (build-jar) (push-snapshot)))
+ aot {:all true}
+ pom {:project 'powerlaces/perun
+      :description "Static site generator build with Clojure and Boot"
+      :url         "https://github.com/hashobject/perun"
+      :scm         {:url "https://github.com/hashobject/perun"}
+      :license     {"name" "Eclipse Public License"
+                    "url"  "http://www.eclipse.org/legal/epl-v10.html"}})
 
 (deftask build
   "Build process"
   []
   (comp
-    (pom)
-    (jar)
-    (install)))
+   (version :include true)
+   (build-jar)))
 
 (deftask dev
   "Dev process"
@@ -58,6 +42,8 @@
     (watch)
     (repl :server true)
     (build)))
+
+(ns-unmap *ns* 'test)
 
 (deftask test
   "Run tests"
