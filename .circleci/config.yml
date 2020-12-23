@@ -127,9 +127,7 @@ workflows:
               jdk-executor: ["openjdk-8"]
           filters: &filters-snapshot
             branches:
-              ignore: /.*/
-            tags:
-              only: /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-SNAPSHOT/
+              only: master
       - deploy-snapshot:
           requires:
             - test-and-build
