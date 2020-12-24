@@ -10,7 +10,9 @@
 (defn perun-version
   []
   (let [m (doto (java.util.Properties.)
-            (.load ^java.io.Reader (io/reader +version-file-name+)))]
+            (.load ^java.io.Reader (-> (or (io/resource +version-file-name+)
+                                           (io/file +version-file-name+))
+                                       io/reader)))]
     (if-let [[k v] (find m "VERSION")]
       v
       (throw (Exception. (str "The " +version-file-name+ " file does not contain a VERSION property, this is a bug."))))))
