@@ -309,11 +309,11 @@
 
 (defn resize-paths
   "Returns a map of path -> input for images-resize"
-  [fileset {:keys [out-dir parent-path meta resolutions] :as options} tmp-dir]
+  [fileset {:keys [out-dir meta resolutions] :as options} tmp-dir]
   (let [global-meta (pm/get-global-meta fileset)
         files (boot/ls fileset)]
     (reduce
-     (fn [result {:keys [slug path extension] :as entry}]
+     (fn [result {:keys [slug path extension parent-path] :as entry}]
        (reduce
         (fn [result* resolution]
           (let [new-filename (str slug "_" resolution "." extension)
@@ -342,8 +342,7 @@
     [image-resizer "0.1.10"]])
 
 (def ^:private +images-resize-defaults+
-  {:out-dir "public"
-   :resolutions #{3840 2560 1920 1280 1024 640}
+  {:resolutions #{3840 2560 1920 1280 1024 640}
    :filterer identity
    :extensions [".png" ".jpeg" ".jpg"]})
 
