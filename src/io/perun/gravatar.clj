@@ -4,7 +4,7 @@
 
 (defn add-gravatar [file source-prop target-prop]
   (if-let [email (get file source-prop)]
-    (assoc file target-prop (gr/avatar-url email))
+    (assoc file target-prop (gr/avatar-url email :https true))
     file))
 
 (defn find-gravatar [files source-prop target-prop]

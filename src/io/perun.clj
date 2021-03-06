@@ -58,7 +58,7 @@
   (filter filterer (meta-by-ext fileset extensions)))
 
 (def ^:private ^:deps print-meta-deps
-  '[[mvxcvi/puget "1.1.0"]])
+  '[[mvxcvi/puget "1.2.0"]])
 
 (def print-meta-pod (delay (create-pod' print-meta-deps)))
 
@@ -95,7 +95,7 @@
                  "automatically set when other tasks access metadata\n"))))
 
 (def ^:private ^:deps mime-type-deps
-  '[[com.novemberain/pantomime "2.10.0"]])
+  '[[com.novemberain/pantomime "2.11.0"]])
 
 (def ^:private +mime-type-defaults+
   {:filterer identity
@@ -202,7 +202,7 @@
               copy-meta))))
 
 (def ^:private ^:deps content-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]])
+  '[[org.clojure/tools.namespace "0.3.1"]])
 
 (defn content-task
   "Wrapper for input parsing tasks. Calls the return from `render-form-fn` on
@@ -338,7 +338,7 @@
      (filter-meta-by-ext fileset options))))
 
 (def ^:private ^:deps images-resize-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [image-resizer "0.1.10"]])
 
 (def ^:private +images-resize-defaults+
@@ -371,7 +371,7 @@
       :tmp tmp})))
 
 (def ^:private ^:deps yaml-metadata-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [circleci/clj-yaml "0.6.0"]])
 
 (def ^:private +yaml-metadata-defaults+
@@ -399,7 +399,7 @@
       :pod pod})))
 
 (def ^:private ^:deps markdown-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [com.vladsch.flexmark/flexmark "0.40.16"]
     [com.vladsch.flexmark/flexmark-profile-pegdown "0.40.16"]])
 
@@ -455,7 +455,8 @@
    :out-ext ".html"
    :filterer identity
    :cmd-opts ["-f" "markdown" "-t" "html5"] ;; convert markdown to html5
-   :extensions [".md" ".markdown"]})
+   :extensions [".md" ".markdown"]
+   :keep-yaml false})
 
 (deftask pandoc*
   "Parse files with pandoc
@@ -491,10 +492,11 @@
    _ filterer   FILTER     code  "predicate to use for selecting entries (default: `identity`)"
    e extensions EXTENSIONS [str] "extensions of files to process"
    m meta       META       edn   "metadata to set on each entry"
-   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"]
+   o cmd-opts   CMDOPTS    [str] "command line options to send to pandoc"
+   r keep-yaml             bool  "if `true`, remove the yaml header from files"]
   (let [{:keys [out-dir out-ext filterer
                 extensions meta cmd-opts]} (merge +pandoc-defaults+ *opts*)]
-    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml true)
+    (comp (yaml-metadata :filterer filterer :extensions extensions :keep-yaml keep-yaml)
           (pandoc* :out-dir out-dir
                    :out-ext out-ext
                    :filterer filterer
@@ -503,8 +505,8 @@
                    :cmd-opts cmd-opts))))
 
 (def ^:private ^:deps asciidoctor-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
-    [org.asciidoctor/asciidoctorj "1.5.8.1"]])
+  '[[org.clojure/tools.namespace "0.3.1"]
+    [org.asciidoctor/asciidoctorj "2.0.0"]])
 
 (def ^:private +asciidoctor-defaults+
   {:out-dir    "public"
@@ -552,7 +554,7 @@
                         :meta       meta))))
 
 (def ^:private ^:deps highlight-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [enlive "1.1.6"]
     [clygments "1.0.0"]])
 
@@ -622,8 +624,8 @@
         (pm/set-meta fileset updated-metas)))))
 
 (def ^:private ^:deps word-count-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
-    [org.apache.lucene/lucene-analyzers-common "7.7.1"]])
+  '[[org.clojure/tools.namespace "0.3.1"]
+    [org.apache.lucene/lucene-analyzers-common "8.4.1"]])
 
 (def ^:private +word-count-defaults+
   {:filterer identity
@@ -778,7 +780,7 @@
 
 (def ^:private ^:deps sitemap-deps
   '[[sitemap "0.4.0"]
-    [clj-time "0.15.1"]])
+    [clj-time "0.15.2"]])
 
 (def ^:private +sitemap-defaults+
   {:filename "sitemap.xml"
@@ -803,7 +805,7 @@
         (commit fileset tmp)))))
 
 (def ^:private ^:deps render-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]])
+  '[[org.clojure/tools.namespace "0.3.1"]])
 
 (def render-pod (delay (create-pod' render-deps)))
 
@@ -815,14 +817,14 @@
   "Handles common rendering task orchestration
 
   `paths-fn` takes a fileset as its only argument"
-  [{:keys [task-name paths-fn renderer tracer rm-originals]}]
+  [{:keys [task-name paths-fn renderer tracer rm-originals pod]}]
   (assert-renderer renderer)
   (content-task
    {:render-form-fn (fn [meta] `(io.perun.render/render ~renderer ~meta))
     :paths-fn paths-fn
     :task-name task-name
     :tracer tracer
-    :pod render-pod
+    :pod (or pod render-pod)
     :rm-originals rm-originals}))
 
 (def ^:private +render-defaults+
@@ -931,7 +933,7 @@
   to the `:io.perun/trace` metadata. `grouper` is a function that takes a seq
   of entries and returns a map of paths to render data (see docstring for
   `assortment` for more info)"
-  [{:keys [task-name comparator filterer sortby grouper meta renderer tracer] :as options*}]
+  [{:keys [task-name comparator filterer sortby grouper meta renderer tracer pod] :as options*}]
   (cond (not (fn? comparator))
         (u/fail (str task-name " task :comparator option should implement Fn\n"))
         (not (ifn? filterer))
@@ -952,7 +954,8 @@
           (render-task {:task-name task-name
                         :paths-fn #(grouped-paths task-name % options)
                         :renderer renderer
-                        :tracer tracer}))))
+                        :tracer tracer
+                        :pod pod}))))
 
 (def ^:private +assortment-defaults+
   {:out-dir "public"
@@ -1022,13 +1025,16 @@
    s sortby     SORTBY     code  "sort entries by function"
    c comparator COMPARATOR code  "sort by comparator function"
    p page       PAGE       str   "collection result page path"
-   m meta       META       edn   "metadata to set on each collection entry"]
+   m meta       META       edn   "metadata to set on each collection entry"
+   P pod        NAME       str   "name of the pod to run renderer in"]
   (let [p (or page "index.html")
+        pod-name (:pod *opts*)
         options (merge +collection-defaults+
                        (dissoc *opts* :page)
                        {:task-name "collection"
                         :tracer :io.perun/collection
-                        :grouper #(-> {p {:entries %}})})]
+                        :grouper #(-> {p {:entries %}})
+                        :pod (if pod-name (future (-> pod-name pod/get-pods first)))})]
     (assortment-task options)))
 
 (def ^:private +tags-defaults+
@@ -1176,9 +1182,9 @@
       paths)))
 
 (def ^:private ^:deps atom-deps
-  '[[org.clojure/tools.namespace "0.3.0-alpha4"]
+  '[[org.clojure/tools.namespace "0.3.1"]
     [org.clojure/data.xml "0.2.0-alpha6"]
-    [clj-time "0.15.1"]])
+    [clj-time "0.15.2"]])
 
 (def ^:private +atom-defaults+
   {:filename "atom.xml"
@@ -1223,8 +1229,8 @@
       :pod (create-pod atom-deps)})))
 
 (def ^:private ^:deps rss-deps
-  '[[clj-rss "0.2.3"]
-    [clj-time "0.15.1"]])
+  '[[clj-rss"0.2.6"]
+    [clj-time "0.15.2"]])
 
 (def ^:private +rss-defaults+
   {:filename "feed.rss"

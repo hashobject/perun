@@ -11,7 +11,7 @@
 
 (def +global-meta-defaults+
   {:doc-root "public"
-   :io.perun/version perun/+version+})
+   :io.perun/version (perun/perun-version)})
 
 (defn get-global-meta
   "Return global metadata that is related to the whole project

@@ -49,6 +49,8 @@ All posts have a path which is used as a key to identify the post.
     - Set implicitly based on a file's path
     - Required by: *atom-feed*
     - Required by: *canonical-url*
+- **:uuid** The post's permanent ID.
+     - Required by *atom-feed*
 - **:canonical-url** full url for the post
     - Set implicitly based on a file's path, if a `:base-url` is present in global metadata
     - Used by: *atom-feed*

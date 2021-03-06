@@ -1,0 +1,12 @@
+/*******************************
+         Site Overrides
+*******************************/
+
+#site {
+    background: @inputBackground;
+}
+
+#site .main.container {
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.8);
+}
