@@ -1299,6 +1299,22 @@
    :extensions [".less"]
    :include-dirs []})
 
+(defn lessc-paths
+  [fileset options include-dirs-str pod]
+  (let [path-map (->> fileset
+                      pm/get-meta
+                      (map (juxt :full-path :path))
+                      (into {}))]
+    (reduce (fn [inputs [path {:keys [entry] :as input}]]
+              (pod/with-eval-in @pod (require 'io.perun.lessc))
+              (->> (pod/with-call-in @pod (io.perun.lessc/lessc-deps ~entry ~include-dirs-str))
+                   (map #(get path-map %))
+                   (filter identity)
+                   (update-in input [:input-paths] into)
+                   (assoc inputs path)))
+            {}
+            (content-paths fileset options))))
+
 (deftask lessc
   "Compile CSS using Less.
 
@@ -1312,14 +1328,17 @@
   (let [options (merge +lessc-defaults+ *opts*)
         include-dirs-str (->> (:include-dirs options)
                               (mapcat (fn [dir]
-                                        (if (.startsWith dir "/")
+                                        (if (.startsWith dir java.io.File/separator)
                                           [dir]
-                                          (map #(str % "/" dir) (boot/get-env :directories)))))
-                              (string/join ":"))]
+                                          (map #(perun/create-filepath % dir)
+                                               (boot/get-env :directories)))))
+                              (string/join ":"))
+        pod (create-pod content-deps)]
     (content-task
      {:render-form-fn (fn [data] `(io.perun.lessc/compile-less ~data ~include-dirs-str))
-      :paths-fn #(content-paths % options)
+      :paths-fn #(lessc-paths % options include-dirs-str pod)
       :passthru-fn content-passthru
       :task-name "lessc"
       :tracer :io.perun/lessc
-      :rm-originals true})))
+      :rm-originals true
+      :pod pod})))
