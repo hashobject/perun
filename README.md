@@ -7,7 +7,11 @@
 Simple, composable static site generator built on top of the [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
 Perun is a collection of boot tasks that you can chain together and build something custom
-that suits your needs. Please checkout out [Getting started](https://github.com/hashobject/perun/wiki/Getting-Started) guide.
+that suits your needs. Please check out our [Getting Started](https://perun.io/guides/getting-started/) guide.
+
+# HELP NEEDED!
+This project is currently unmaintained!
+Want to help? Please see [#241](#241).
 
 ## For information and help
 
@@ -39,7 +43,7 @@ There are plenty of Boot plugins that can be useful in the when you are using pe
 
 ## Version
 
-We use Clojure 1.7.0 and Boot 2.7.2. You should have those versions in order to use perun.
+Perun is currently tested against Boot `2.8.2`. Higher versions are blocked by https://github.com/boot-clj/boot/issues/745.
 
 ## Plugins system
 

@@ -1,0 +1,153 @@
+version: 2.1
+
+jvm-env: &jvm-env
+  BOOT_JVM_OPTIONS: -Xmx3200m
+  BOOT_CLOJURE_VERSION: << pipeline.parameters.clojure-version >>
+  BOOT_WATCHERS_DISABLE: yes
+  BOOT_VERSION: << pipeline.parameters.boot-version >>
+
+parameters:
+  boot-version:
+    type: string
+    description: "The version of the JDK to test against"
+    default: "2.8.2"
+  clojure-version:
+    type: string
+    description: "The version of the JDK to test against"
+    default: "1.10.1"
+  cache_version:
+    type: string
+    description: "Change this value to force a cache update"
+    default: "1"
+  boot_semver_version:
+    type: string
+    description: "The boot-semver version we use"
+    default: "1.11.0"
+
+# CircleCI maintains a library of pre-built images
+# documented at https://circleci.com/docs/2.0/circleci-images/
+executors:
+  openjdk-8:
+    docker:
+      - image: circleci/clojure:openjdk-8-boot-<< pipeline.parameters.boot-version >>
+  openjdk-11:
+    docker:
+      - image: circleci/clojure:openjdk-11-boot-<< pipeline.parameters.boot-version >>
+
+jobs:
+  test-and-build:
+    parameters:
+      jdk-executor:
+        description: "The Boot/JDK executor to use"
+        type: executor
+
+    executor: << parameters.jdk-executor >>
+    environment:
+      <<: *jvm-env
+
+    steps:
+      - checkout
+      - run:
+          name: Generate Cache Checksum
+          command: shasum "build.boot" | awk '{print $1}' > clojure_cache_seed
+      - restore_cache:
+          key: clojure-<< pipeline.parameters.cache_version >>-{{ checksum "clojure_cache_seed" }}
+      - run:
+          name: Test and Build
+          command: boot test build target
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.boot/cache
+          key: clojure-<< pipeline.parameters.cache_version >>-{{ checksum "clojure_cache_seed" }}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/perun-*.jar
+            - version.properties
+            - clojure_cache_seed
+
+  deploy-snapshot:
+    executor: openjdk-8
+    environment:
+      <<: *jvm-env
+
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: clojure-<< pipeline.parameters.cache_version >>-{{ checksum "clojure_cache_seed" }}
+      - run:
+          name: Publish Snapshot to Clojars
+          command: |
+            jar_file=$(find target -name 'perun*.jar')
+            boot --no-boot-script --exclude-clojure \
+                 --dependencies 'degree9/boot-semver:<< pipeline.parameters.boot_semver_version >>' \
+                 --init '(require (quote [degree9.boot-semver :refer :all]))' \
+                 version push-snapshot --file "$jar_file"
+
+  deploy-release:
+    executor: openjdk-8
+    environment:
+      <<: *jvm-env
+
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: clojure-<< pipeline.parameters.cache_version >>-{{ checksum "clojure_cache_seed" }}
+      - run:
+          name: Publish Release to Clojars
+          command: |
+            jar_file=$(find target -name 'perun*.jar')
+            boot --no-boot-script --exclude-clojure \
+                 --dependencies 'degree9/boot-semver:<< pipeline.parameters.boot_semver_version >>' \
+                 --init '(require (quote [degree9.boot-semver :refer :all]))' \
+                 version push-release --file "$jar_file"
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test-and-build:
+          name: test-and-build-<< matrix.jdk-executor >>
+          matrix:
+            parameters:
+              jdk-executor: ["openjdk-8"]
+          filters:
+            branches:
+              ignore: master
+
+  tagged-snapshot:
+    jobs:
+      - test-and-build:
+          name: test-and-build-<< matrix.jdk-executor >>
+          matrix:
+            parameters:
+              jdk-executor: ["openjdk-8"]
+          filters: &filters-snapshot
+            branches:
+              only: master
+      - deploy-snapshot:
+          requires:
+            - test-and-build
+          filters:
+            <<: *filters-snapshot
+
+  tagged-release:
+    jobs:
+      - test-and-build:
+          name: test-and-build-<< matrix.jdk-executor >>
+          matrix:
+            parameters:
+              jdk-executor: ["openjdk-8"]
+          filters: &filters-release
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
+      - deploy-release:
+          requires:
+            - test-and-build
+          filters:
+            <<: *filters-release
