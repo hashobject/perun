@@ -1,9 +1,5 @@
 ![perun-logo-big](perun.png)
 
-[![Clojars Project](https://img.shields.io/clojars/v/perun.svg)](https://clojars.org/perun)
-[![Dependencies Status](http://jarkeeper.com/hashobject/perun/status.svg)](http://jarkeeper.com/hashobject/perun)
-[![Downloads](https://jarkeeper.com/hashobject/perun/downloads.svg)](https://jarkeeper.com/hashobject/perun)
-
 Simple, composable static site generator built on top of the [Boot](http://boot-clj.com/).
 Inspired by Boot task model and [Metalsmith](http://www.metalsmith.io/).
 Perun is a collection of boot tasks that you can chain together and build something custom
@@ -12,6 +8,9 @@ that suits your needs. Please check out our [Getting Started](https://perun.io/g
 # HELP NEEDED!
 This project is currently unmaintained!
 Want to help? Please see [#241](#241).
+
+If you need to create website or a blog, please consider using [Montaigne](https://montaigne.io), 
+which is aproject by [Anton](https://github.com/podviaznikov)
 
 ## For information and help
 
