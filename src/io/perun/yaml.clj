@@ -7,7 +7,7 @@
   (:import [flatland.ordered.map OrderedMap]
            [flatland.ordered.set OrderedSet]))
 
-(def ^:dynamic *yaml-head* #"---\r?\n")
+(def ^:dynamic *yaml-head* #"(?<=^|\n)---\r?\n")
 
 (defn substr-between
   "Find string that is nested in between two strings. Return first match.
