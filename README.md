@@ -252,6 +252,10 @@ We love contributions. Please submit your pull requests.
 - [Juho Teperi](https://github.com/Deraen)
 - [Brent Hagany](https://github.com/bhagany)
 
+## Newsletter
+
+Occasional updates from the author — [anton.tinysend.com](https://anton.tinysend.com)
+
 ## Copyright and License
 
 Copyright © 2013-2019 Hashobject Ltd (team@hashobject.com) and [perun Contributors](https://github.com/hashobject/perun/graphs/contributors).
