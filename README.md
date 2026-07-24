@@ -10,7 +10,7 @@ This project is currently unmaintained!
 Want to help? Please see [#241](#241).
 
 If you need to create website or a blog, please consider using [Montaigne](https://montaigne.io), 
-which is aproject by [Anton](https://github.com/podviaznikov)
+which is a project by [Anton](https://github.com/podviaznikov)
 
 ## For information and help
 
